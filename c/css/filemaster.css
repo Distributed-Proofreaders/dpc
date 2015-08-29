@@ -1,0 +1,33 @@
+#divwork {
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+#uploading {
+    visibility: hidden;
+    color: green;
+}
+
+.addfiles {
+    display: inline;
+}
+
+#upbutton {
+    visibility: hidden;
+}
+
+
+#returnto {
+    margin-left: 2em;
+}
+
+#upfile {
+    display: block;
+    border: 2px solid gray;
+}
+
+.footerbar {
+    margin-top: 3em;
+}

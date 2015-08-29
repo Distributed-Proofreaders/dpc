@@ -1,0 +1,107 @@
+
+function eSortInit() {
+    //noinspection JSUndeclaredVariable
+    makeAllSortable(document.body);
+//    parent = parent || document.body;
+    // var t = document.body.getElementsByTagName('table'), i = t.length;
+    // while (--i >= 0)
+    // if table has "sort" class {
+        // makeSortable(t[i]);
+        // initTable(t[i]);
+    // }
+}
+
+//function sortTable(table, reverse) {
+//    ǫbtain sort column from classes
+//    var i;
+//    var cells = table.tHead.rows[0].cells;
+//    for(i = 0; i < cells.length; i++ ) {
+//        var cell = cells[i];
+//        if(cell.classList.contains("asort")) {
+//            sortTable(table, i, reverse);
+//        }
+//        else if(cell.classList.contains("nsort")) {
+//            sortTableNumeric(table, i, reverse);
+//        }
+//    }
+//}
+function sortTable(table, col, reverse) {
+    var th = table.tHead;
+    var thc = th.rows[0].cells[col];
+    var npos = thc.className.search(/nsort/i);
+    if(npos >= 0) {
+        sortTableNumeric(table, col, reverse);
+    }
+    else {
+        sortTableAlpha(table, col, reverse);
+    }
+}
+
+function sortTableNumeric(table, col, reverse) {
+    var tb = table.tBodies[0], // use `<tbody>` to ignore `<thead>` and `<tfoot>` rows
+        tr = Array.prototype.slice.call(tb.rows, 0), // put rows into array
+        i;
+    // reverse is 0, first time through gets -1, then 1?
+    reverse = -((+reverse) || -1);
+    tr = tr.sort(function (a, b) { // sort rows
+        return reverse // `-1 *` if want opposite order
+            * (Number(a.cells[col].textContent.trim()) // using `.textContent.trim()` for test
+                    > Number(b.cells[col].textContent.trim())
+               );
+    });
+    for(i = 0; i < tr.length; ++i) 
+        tb.appendChild(tr[i]); // append each row in order
+}
+
+function sortTableAlpha(table, col, reverse) {
+    var tb = table.tBodies[0], // use `<tbody>` to ignore `<thead>` and `<tfoot>` rows
+        tr = Array.prototype.slice.call(tb.rows, 0), // put rows into array
+        i;
+    // reverse initializes to 0, first pass gets -1
+    reverse = -((+reverse) || -1);
+    tr = tr.sort(function (a, b) { // sort rows
+        return reverse // `-1 *` if want opposite order
+            * (a.cells[col].textContent.trim() // using `.textContent.trim()` for test
+                .localeCompare(b.cells[col].textContent.trim())
+               );
+    });
+    for(i = 0; i < tr.length; ++i) 
+        tb.appendChild(tr[i]); // append each row in order
+}
+
+/*
+function setRowClasses(table) {
+    var rows = table.tBodies(0).rows;
+    var i, ic;
+    for(i = 0, ic = 0; i < rows.length; i++) {
+        rows[i].classList.remove("odd");
+        rows[i].classList.remove("even");
+        rows[i].classList.add( ic ? "odd" : "even");
+        ic = ! ic;
+    }
+}
+*/
+
+function makeSortable(table) {
+    var th = table.tHead, i;
+    th && (th = th.rows[0]) && (th = th.cells);
+    if (! th)
+        return;
+
+    i = th.length;
+    while (--i >= 0) (function (i) {
+        var dir = 1;
+        th[i].addEventListener('click', function () {
+            sortTable(table, i, (dir = 1 - dir))
+        });
+    }(i));
+//    return table;
+}
+
+function makeAllSortable(doc) {
+//    parent = parent.body || document.body;
+    var t = doc.getElementsByTagName('table'), i = t.length;
+    while (--i >= 0) 
+        makeSortable(t[i]);
+}
+

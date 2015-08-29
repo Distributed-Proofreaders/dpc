@@ -1,0 +1,133 @@
+
+.w50 {
+    width: 50%;
+}
+
+.lfloat {
+    float: left;
+}
+
+.bordered {
+    border: solid black 1px;
+}
+
+body {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+}
+
+div#container {
+    position: relative;
+    width: 100%;
+    height: 90%;
+}
+
+div#div_context_box {
+    position: absolute;
+    right: 0;
+    width: 75%;
+    top: 0;
+    height: 100%;
+    border: 1px solid gray;
+}
+
+div#left-column {
+    float:left;
+    width: 25%;
+    height:100%;
+    background-color: #EEF;
+}
+
+div#command-section {
+    width: 100%;
+    text-align: center;
+}
+
+select {
+    margin: .3em auto;
+}
+
+select#tblcontext {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+div#div_context_box .likealink {
+    font-size: .8em;
+}
+
+div#div_context_list {
+    position:relative;
+    border-bottom: 1px solid black;
+    top: 0;
+    left: 0;
+    width:100%;
+    height: 30%;
+}
+
+div#div_context_image {
+    position: relative;
+    top: 0;
+    left: 0%;
+    height:70%;
+    width: 100%;
+}
+
+input {
+    display: inline-block;
+    margin: .5em;
+}
+
+img {
+    width: 100%;
+}
+
+.auto {
+    width: auto;
+    margin: auto;
+}
+
+span.wcontext {
+    background-color: pink;
+}
+div.ctxt-left {
+    float: left;
+    width: 7em;
+    margin-top: 1.5em;
+    text-align: center;
+}
+div.ctxt {
+    border-bottom: 1px solid gray;
+    background-color: #EEEEEE;
+}
+div.ctxt-right {
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 1.1em;
+    margin: .2em .3em .3em .5em;
+}
+
+div.ctxt-null {
+    text-align: center;
+}
+
+div#adhoc {
+    border-top: 1px solid black;
+    width: 100%;
+    padding: .3em;
+}
+
+div#adhocctl {
+    float: left;
+    width: 33%; 
+}
+
+textarea#adhoclist {
+    width: 66%;
+    height: 8em;
+    border: 1px solid blue;
+}
+
+

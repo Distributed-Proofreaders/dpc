@@ -1,0 +1,91 @@
+.pct75 {
+    font-size: 75%;
+}
+.nobold {
+    font-weight: normal;
+}
+table.diff, td.diff-otitle, td.diff-ntitle {
+    background-color: white;
+}
+td.diff-otitle,
+td.diff-ntitle {
+    text-align: center;
+    font-weight: bold;
+}
+td.diff-marker {
+    text-align: right;
+}
+.rtl td.diff-marker {
+    text-align: left;
+}
+td.diff-lineno {
+    font-weight: bold;
+}
+td.diff-addedline {
+    background: #cfc;
+}
+td.diff-deletedline {
+    background: #ffa;
+}
+td.diff-context {
+    background: #eee;
+}
+td.diff-marker,
+td.diff-addedline,
+td.diff-deletedline,
+td.diff-context {
+    font-family: DPCustomMono2, monospace;
+    font-size: smaller;
+}
+.diffchange {
+    color: red;
+    font-weight: bold;
+    text-decoration: none;
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+}
+.diffchange-inline {
+    border: 1px dotted red;
+}
+table.diff {
+    border: none;
+    border-spacing: 4px;
+}
+table.diff td {
+    padding: 0;
+}
+table.diff col.diff-marker {
+}
+table.diff col.diff-content {
+}
+table.diff td div {
+    /* Wrap long lines such as URLs or page-widening char strings.
+       CSS 3 draft..., but Gecko doesn't support it yet:
+       https://bugzilla.mozilla.org/show_bug.cgi?id=99457 */
+    word-wrap: break-word;
+    
+    /* As fallback, scrollbars will be added for very wide cells
+       instead of text overflowing or widening */
+    /* overflow: auto; */
+    
+    /* The above rule breaks on very old versions of Mozilla due
+       to a bug which collapses the table cells to a single line.
+       
+       In Mozilla 1.1 and below with JavaScript enabled, the rule
+       will be overridden with this by diff.js; wide cell contents
+       then spill horizontally without widening the rest of the
+       table: */
+    overflow: visible;
+}
+
+a.likealink,
+span.likealink {
+    margin: 0;
+    padding: 0;
+    color: blue;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.center {
+    text-align: center;
+}
