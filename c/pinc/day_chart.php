@@ -90,7 +90,7 @@ function daily_sql($phase) {
             , SUM(page_count) pages
         FROM
             user_round_pages
-        WHERE round_id = '$phase'
+        WHERE phase = '$phase'
             AND count_time < UNIX_TIMESTAMP(CURRENT_DATE())
             AND count_time > UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE, INTERVAL 3 MONTH))
         GROUP BY

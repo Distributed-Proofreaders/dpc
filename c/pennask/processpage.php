@@ -53,9 +53,14 @@ if(count($awords) > 0) {
 
 /** @var DpPage $page */
 if(! $page->UserIsOwner()) {
-    $errmsg = "You are trying to save a page that is not checked out to you.
-        If you think this is an error, please post to the System Errors topic in the Forums.";
-    die($errmsg);
+	LogMsg("Owner is " . $page->Owner() . " and User is " . $User->Username() . "
+		Action: $seltodo
+		Projectid: $projectid
+		Page: $pagename
+		Phase: $phase");
+//    $errmsg = "You are trying to save a page that is not checked out to you.
+//        If you think this is an error, please post to the System Errors topic in the Forums.";
+//    die($errmsg);
 }
 
 switch($seltodo) {

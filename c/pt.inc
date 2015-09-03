@@ -104,11 +104,11 @@ function echo_page_table( $project ) {
 		$P3_text = PageVersionText($projectid, $pagename, $P3_version);
 		$P4_text = PageVersionText($projectid, $pagename, $P4_version);
 		$P5_text = PageVersionText($projectid, $pagename, $P5_version);
-		$row['P1_diff'] = (trim($P0_text) != trim($P1_text));
-		$row['P2_diff'] = (trim($P1_text) != trim($P2_text));
-		$row['P3_diff'] = (trim($P2_text) != trim($P3_text));
-		$row['P4_diff'] = (trim($P3_text) != trim($P4_text));
-		$row['P5_diff'] = (trim($P4_text) != trim($P5_text));
+		$row['P1_diff'] = (rtrim($P0_text) != rtrim($P1_text));
+		$row['P2_diff'] = (rtrim($P1_text) != rtrim($P2_text));
+		$row['P3_diff'] = (rtrim($P2_text) != rtrim($P3_text));
+		$row['P4_diff'] = (rtrim($P3_text) != rtrim($P4_text));
+		$row['P5_diff'] = (rtrim($P4_text) != rtrim($P5_text));
 //		$row['PREP_length'] = mb_strlen($P0_text);
 //		$row['P1_length'] = mb_strlen($P1_text);
 //		$row['P2_length'] = mb_strlen($P2_text);
@@ -183,9 +183,20 @@ function estate($state) {
 //    return "{$roundid}_length";
 //}
 
+// diff is asking about diff with preceding phase
 function ediff($phase, $row) {
-	if($phase == "PREP") {
-		return "";
+	switch($phase) {
+		case "PREP":
+			return "";
+		case "P4":
+			$phase2 = "F1";
+			break;
+		case "P5":
+			$phase2 = "F2";
+			break;
+		default:
+			$phase2 = $phase;
+			break;
 	}
 	if($row[$phase.'_state'] == 'A') {
 		return "";
@@ -194,7 +205,7 @@ function ediff($phase, $row) {
 	$pagename = $row['pagename'];
 //	$version  = $row[$phase.'_version'];
 	return $row[$phase.'_diff']
-		? link_to_diff($projectid, $pagename, $phase, "Diff", true)
+		? link_to_diff($projectid, $pagename, $phase2, "Diff", "1", true)
 			: "";
 //    $diff = $row[rounddifffield($roundid)];
 //    return $diff ? link_to_diff($projectid, $pagename, $roundid, true) : "";
@@ -417,19 +428,19 @@ function table_sql($projectid) {
 			LEFT JOIN users u5 ON pv5.username = u5.username
 
 			LEFT JOIN total_user_round_pages urp1
-				ON urp1.round_id = 'P1' AND urp1.username = pv1.username
+				ON urp1.phase= 'P1' AND urp1.username = pv1.username
 
 			LEFT JOIN total_user_round_pages urp2
-				ON urp2.round_id = 'P2' AND urp2.username = pv2.username
+				ON urp2.phase = 'P2' AND urp2.username = pv2.username
 
 			LEFT JOIN total_user_round_pages urp3
-				ON urp3.round_id = 'P3' AND urp3.username = pv3.username
+				ON urp3.phase = 'P3' AND urp3.username = pv3.username
 
 			LEFT JOIN total_user_round_pages urp4
-				ON urp4.round_id = 'F1' AND urp4.username = pv4.username
+				ON urp4.phase = 'F1' AND urp4.username = pv4.username
 
 			LEFT JOIN total_user_round_pages urp5
-				ON urp5.round_id = 'F2' AND urp5.username = pv5.username
+				ON urp5.phase = 'F2' AND urp5.username = pv5.username
 
 		   WHERE p.projectid = '$projectid'
 		   GROUP BY p.projectid, pg.pagename

@@ -41,7 +41,7 @@ foreach($projs as $proj) {
 		$fversions = glob( $ptn );
 
 		if ( count( $fversions ) != count( $versions ) ) {
-//			echo "<br>$pagename nfiles: " . count( $fversions ) . "   nversions: " . count( $versions );
+			echo "<br>$pagename nfiles: " . count( $fversions ) . "   nversions: " . count( $versions );
 			$nmismatch++;
 		}
 		else {

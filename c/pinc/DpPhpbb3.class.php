@@ -124,7 +124,7 @@ class DpPhpbb3
         return $user->data['user_unread_privmsg'];
     }
 
-    public function CreateThread($subj, $msg, $poster_name = "") {
+    public function CreateTopic($subj, $msg, $poster_name = "") {
         global $dpdb;
 //	    global $forumdb, $forumpfx;
         global $waiting_projects_forum_idx;

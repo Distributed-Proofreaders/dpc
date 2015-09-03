@@ -199,6 +199,8 @@ if($level > 2) {
 
 	offer_post_downloads( $project, $export_roundid , $level);
 
+	show_page_summary( $project );
+
 
 }
 
@@ -211,8 +213,6 @@ if($level > 3) {
 	offer_extra_files( $project );
 
 	show_history( $project );
-
-	show_page_summary( $project );
 
 	echo "</div> <!-- divproject -->\n";
 
@@ -343,7 +343,7 @@ function project_info_table($project, $level) {
     /** @var DpProject $project */
 
     $projectid      = $project->ProjectId();
-    $postcomments   = maybe_convert($project->PostComments());
+    $postcomments   = $project->PostComments();
     $postcomments   = str_replace("\n", "<br />", h($postcomments));
 
 
@@ -372,7 +372,7 @@ function project_info_table($project, $level) {
     echo_row_left_right( _("Genre"),           $project->Genre() );
     echo_row_left_right( _("Difficulty"),      $project->Difficulty() );
     echo_row_left_right( _("Project ID"), $project->ProjectId() );
-	echo_row_left_right( _("Project Manager"), $project->PM());
+	echo_row_left_right( _("Project Manager"), $project->ProjectManager());
 	if($level > 3) {
 		if ( $project->UserIsPPVer() || $project->UserMayManage() ) {
 			echo_row_left_right( _( "Clearance line" ), h( $project->Clearance() ) );
@@ -503,7 +503,7 @@ function project_info_table($project, $level) {
 		echo "</td></tr>\n";
 	}
 
-    $comments = maybe_convert($project->Comments());
+    $comments = $project->Comments();
     echo_row_one_cell( str_replace("&", "&amp;", $comments) );
 
 	echo "</table>\n";
@@ -571,7 +571,7 @@ function echo_your_recent_pages( $project ) {
 	$sql = "
         SELECT  pv.projectid,
         		pv.pagename,
-        		DATE_FORMAT(FROM_UNIXTIME(pv.version_time), '%b-%e-%y %k:%i') version_time,
+        		DATE_FORMAT(FROM_UNIXTIME(pv.version_time), '%b-%e-%y %H:%i') version_time,
         		pp.imagefile
         FROM page_last_versions pv
         JOIN projects p
@@ -625,7 +625,7 @@ function echo_your_recent_pages( $project ) {
         $sql = "
         SELECT  pv.projectid,
         		pv.pagename,
-        		DATE_FORMAT(FROM_UNIXTIME(pv.version_time), '%b-%e-%y %k:%i') version_time,
+        		DATE_FORMAT(FROM_UNIXTIME(pv.version_time), '%b-%e-%y %H:%i') version_time,
         		pp.imagefile
 
         FROM page_last_versions pv
@@ -651,7 +651,7 @@ function echo_your_recent_pages( $project ) {
 	echo _("
 	  <tr><td colspan='5' class='center' style='background-color: $bg_color'>
 	     <p class='em110 nomargin'><b>Pages Submitted</b>
-	     and still available to edit or correct</p>
+	     but still available to edit or correct</p>
 	  </td></tr>\n");
 	// --------------------
 
@@ -724,7 +724,7 @@ function show_history($project) {
 
 
     $events = $dpdb->SqlRows("
-        SELECT DATE_FORMAT(FROM_UNIXTIME(event_time), '%b-%e-%y %k:%i') timestamp,
+        SELECT DATE_FORMAT(FROM_UNIXTIME(event_time), '%b-%e-%y %H:%i') timestamp,
             TRIM(event_type) event_type,
             TRIM(details1) details1,
             TRIM(details2) details2
@@ -783,12 +783,13 @@ function show_page_summary($project) {
 
 		echo "
 			<table id='tblpagesummary' class='noborder lfloat'>
-			<tr><td class='padded'>Available</td><td class='right padded'>{$project->AvailableCount()}</td></tr>
-			<tr><td class='padded'>Checked Out</td><td class='right padded'>{$project->CheckedOutCount()}</td></tr>
-			<tr><td class='padded'>Completed</td><td class='right padded'>{$project->CompletedCount()}</td></tr>
-			<tr><td class='padded'>Bad Pages</td><td class='right padded'>{$project->BadCount()}</td></tr>
-			<tr><td colspan='2'><hr></td></tr> <!-- 6 -->
-			<tr><td class='padded'>Total Pages</td><td class='right padded'>{$project->PageCount()}</td></tr>
+			<tr><td class='padded'>Available</td><td class='right padded'>{$project->AvailableCount()}</td><td>&nbsp;</td></tr>
+			<tr><td class='padded'>Checked Out</td><td class='right padded'>{$project->CheckedOutCount()}</td>
+			 <td class='padded'>(Reclaimable: {$project->ReclaimableCount()})</td></tr>
+			<tr><td class='padded'>Completed</td><td class='right padded'>{$project->CompletedCount()}</td><td>&nbsp;</td></tr>
+			<tr><td class='padded'>Bad Pages</td><td class='right padded'>{$project->BadCount()}</td><td>&nbsp;</td></tr>
+			<tr><td colspan='3'><hr></td></tr> <!-- 6 -->
+			<tr><td class='padded'>Total Pages</td><td class='right padded'>{$project->PageCount()}</td><td>&nbsp;</td></tr>
 			</table>\n";
 	}
 
@@ -1108,7 +1109,7 @@ function solicit_postcomments($project, $level) {
     }
 
     $projectid = $project->ProjectId();
-	$postcomments = maybe_convert($project->PostComments());
+	$postcomments = $project->PostComments();
 
 	echo "<h4>" . _("Post-Processor's Comments") . "</h4>";
 
@@ -1272,7 +1273,6 @@ function PrepActions($project) {
 }
 
 function export_project($project) {
-	global $Context;
 	/** @var DpProject $project */
 	$text = $project->ExportText();
 	send_string($project->ProjectId()."_PP.txt", $text);

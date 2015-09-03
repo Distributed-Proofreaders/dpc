@@ -18,7 +18,7 @@ if(! $page->UserMayManage()) {
 
 $text = $page->RoundText();
 
-html_start();
+html_head();
 ?>
 <body>
 <form name='txtform' id='txtform'>

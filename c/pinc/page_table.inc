@@ -160,7 +160,7 @@ function estate($state) {
 function ediff($pagename, $row) {
     $projectid = $row["projectid"];
     $phase = $row["phase"];
-    return link_to_diff($projectid, $pagename, $phase, "diff", true);
+    return link_to_diff($projectid, $pagename, $phase, "diff", "1", true);
 }
 function etime($time) {
     return $time == 0 ? "" : $time;

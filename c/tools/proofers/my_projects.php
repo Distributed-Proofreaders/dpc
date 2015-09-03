@@ -231,23 +231,16 @@ function open_page_counts($username) {
     global $dpdb;
     $sql = "
             SELECT p.nameofwork,
-                   p.phase,
-                   pe.projectid, 
+                   pv.phase,
+                   pv.projectid,
                    COUNT(1) pagecount
-            FROM  projects p
-            JOIN  page_events pe
-            ON p.projectid = pe.projectid
-            	AND p.phase = pe.phase
-            	AND pe.username = '$username'
-            LEFT JOIN page_events pe0
-                ON pe.projectid = pe0.projectid
-                    AND pe.pagename = pe0.pagename
-                    AND pe.event_id < pe0.event_id
-            WHERE pe.event_type IN ('checkout', 'reclaim', 'reopen', 'saveAsInProgress')
-                AND p.phase IN ('P1', 'P2', 'P3', 'F1', 'F2')
-                AND pe0.event_id IS NULL
-            GROUP BY pe.projectid
-            ORDER BY p.phase, p.nameofwork";
+            FROM  page_last_versions pv
+            JOIN  projects p
+            ON pv.projectid = p.projectid
+            WHERE pv.username = '$username'
+                AND pv.state = 'O'
+            GROUP BY pv.projectid
+            ORDER BY pv.phase, p.nameofwork";
 
 
 	$dpdb->SetTiming();

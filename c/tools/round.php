@@ -23,16 +23,16 @@ $rows = $dpdb->SqlRows("
                    p.n_available_pages,
                    p.n_pages,
                    DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.modifieddate)) AS days_avail,
-				   DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pe.timestamp))) AS last_save_days
+				   DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time))) AS last_save_days
         FROM projects p
-        LEFT JOIN page_events pe
-        	ON p.projectid = pe.projectid
-        	AND pe.event_type = 'saveAsDone'
-        WHERE p.phase = '$roundid'
+        LEFT JOIN page_last_versions pv
+        	ON p.projectid = pv.projectid
+	    WHERE p.phase = '$roundid'
             AND NOT p.projectid IN
                    (    SELECT projectid FROM project_holds
                         WHERE phase = p.phase
                    )
+	    GROUP BY p.projectid
         ORDER BY days_avail, p.nameofwork");
 
 

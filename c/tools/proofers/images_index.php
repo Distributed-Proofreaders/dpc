@@ -27,7 +27,8 @@ echo "<div style='padding: 3em;' class='lfloat'>\n";
 $tbl->EchoTable();
 echo "</div>\n";
 
-html_foot();
+echo html_foot();
+
 exit;
 
 function eimage($size) {

@@ -47,11 +47,15 @@ class DpPage
  					pg.pagename,
  					pg.imagefile,
  					pv.version last_version,
-					puv.version penultimate_version,
  					pv.phase,
  					pv.version_time,
  					pv.state,
- 					pv.username
+ 					pv.username,
+					puv.version penultimate_version,
+ 					puv.phase penultimate_phase,
+ 					puv.version_time penultimate_version_time,
+ 					puv.state penultimate_state,
+ 					puv.username penultimate_username
 		    FROM pages pg
 		    JOIN projects p
 		    	ON pg.projectid = p.projectid
@@ -893,10 +897,15 @@ class DpPage
 	}
 
 	public function PenultimatePhase() {
-		return $this->PenultimateVersion()->Phase();
+		return $this->_row['penultimate_phase'];
+//		return $this->PenultimateVersion()->Phase();
+	}
+	public function LastUsername() {
+		return $this->_row['username'];
 	}
 	public function PenultimateUsername() {
-		return $this->PenultimateVersion()->Username();
+		return $this->_row['penultimate_username'];
+//		return $this->PenultimateVersion()->Username();
 	}
 	public function PenultimateVersionNumber() {
 		return $this->_row['penultimate_version'];
@@ -911,13 +920,14 @@ class DpPage
     }
     
     public function Owner() {
-        switch($this->PageStatus()) {
-	        case "C":
-	        case "O":
-                return $this->ActiveRoundUser();
-            default:
-                return null;
-        }
+	    return $this->LastUsername();
+//        switch($this->PageStatus()) {
+//	        case "C":
+//	        case "O":
+//                return $this->ActiveRoundUser();
+//            default:
+//                return null;
+//        }
     }
 
     public function UserIsPM() {
@@ -970,6 +980,7 @@ class DpPage
 	    foreach($this->Versions() as $version) {
 		    $ary[] = $version->Username();
 	    }
+	    array_shift($ary);
 //        foreach(array("P1", "P2", "P3", "F1", "F2") as $rid) {
 //            $usr = $this->RoundUser($rid);
 //            if($usr != "") {
@@ -983,6 +994,11 @@ class DpPage
     // Yes, checked out by them or saved by them in the current round.
     public function MayBeSelectedByActiveUser() {
         global $User;
+	    $msgs = array();
+	    if(! $this->ActiveUserIsEditor()) {
+		    $msgs[] = "?Page is owned by " . $this->Owner() . " and you are " . $User->Username();
+		    return $msgs;
+	    }
 	    return $this->ActiveUserIsEditor() || $this->UserIsPM() || $User->IsSiteManager() ;
     }
 
@@ -997,8 +1013,9 @@ class DpPage
 
     public function ActiveUserIsEditor() {
         global $User;
-        return 
-            lower($this->RoundUser($this->RoundId())) == lower($User->Username())
+	    return lower($this->Owner()) == lower($User->Username())
+//        return
+//            lower($this->RoundUser($this->RoundId())) == lower($User->Username())
             && ($this->IsSaved() || $this->IsCheckedOut());
     }
 

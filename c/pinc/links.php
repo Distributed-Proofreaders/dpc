@@ -436,26 +436,29 @@ function link_to_download_images($projectid, $prompt="Download images", $isnew =
 
 // -- diff
 
-function url_for_version_diff($projectid, $pagename, $version) {
-	global $pm_url;
-	return "$pm_url/diff.php"
-	       ."?projectid={$projectid}"
-	       . "&amp;pagename={$pagename}"
-	       . "&amp;version={$version}";
-}
-function link_to_version_diff($projectid, $pagename, $version, $prompt = "Diff", $isnew = false) {
-	return link_to_url(url_for_version_diff($projectid, $pagename, $version), $prompt, $isnew);
-}
-function url_for_diff($projectid, $pagename, $roundid) {
+//function url_for_version_diff($projectid, $pagename, $version) {
+//	global $pm_url;
+//	return "$pm_url/diff.php"
+//	       ."?projectid={$projectid}"
+//	       . "&amp;pagename={$pagename}"
+//	       . "&amp;version={$version}";
+//}
+
+//function link_to_version_diff($projectid, $pagename, $version, $prompt = "Diff", $isnew = false) {
+//	return link_to_url(url_for_version_diff($projectid, $pagename, $version), $prompt, $isnew);
+//}
+
+function url_for_diff($projectid, $pagename, $phase, $mode = "1") {
     global $pm_url;
     return "$pm_url/diff.php"
             ."?projectid={$projectid}"
             . "&amp;pagename={$pagename}"
-            . "&amp;roundid={$roundid}";
+            . "&amp;phase={$phase}"
+	        . "&amp;mode={$mode}";
 }
 
-function link_to_diff($projectid, $pagename, $roundid, $prompt = "Diff", $isnew = false) {
-    return link_to_url(url_for_diff($projectid, $pagename, $roundid), $prompt, $isnew);
+function link_to_diff($projectid, $pagename, $phase, $prompt = "Diff", $mode = "1", $isnew = false) {
+    return link_to_url(url_for_diff($projectid, $pagename, $phase), $prompt, $isnew, $mode);
 }
 
 // -- wiki

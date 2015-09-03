@@ -127,7 +127,7 @@ function echo_pagetable($project, $is_my_pages) {
             $tbl->AddColumn("^"._("Diff"), $roundid, "ediff");
             $tbl->AddColumn("^"._("Date"), $roundid . "_version_time");
             if($project->UserMayManage()) {
-                $tbl->AddColumn("^"._("User"), "$roundid", "usrlnk", "nopad");
+                $tbl->AddColumn("<"._("User"), "$roundid", "usrlnk", "nopad");
             }
             $tbl->AddColumn(">"._("Text"), $roundid, "textlink");
             if($roundid == $project->RoundId())
@@ -364,7 +364,7 @@ function ediff($phase, $pagerow) {
 	}
 	$projectid = $pagerow['projectid'];
 	$pagename = $pagerow['pagename'];
-	return link_to_diff($projectid, $pagename, $phase, "Diff");
+	return link_to_diff($projectid, $pagename, $phase, "Diff", "1", true);
 }
 
 function pageroundid($pagerow) {

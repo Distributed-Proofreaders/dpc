@@ -134,8 +134,8 @@ function list_projects( $where, $pagenum ) {
     $counter = $minrow;
     foreach($rows as $project) {
         $counter++;
-        $title = maybe_convert($project['title']);
-        $author = maybe_convert($project['author']);
+        $title = $project['title'];
+        $author = $project['author'];
         $language = $project['language'];
         $n_pages = $project["n_pages"];
         $moddate = $project["moddate"];

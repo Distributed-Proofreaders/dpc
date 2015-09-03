@@ -2169,12 +2169,10 @@ textarea.tapage {
 }
 
 table.tbl-page-log {
-    table-layout: fixed;
-    width: 75%;
+    min-width: 75%;
 }
 
-table.tbl-page-log  th:nth-child(1) { width: 20%; }
+table.tbl-page-log  th:nth-child(1) { width: 10%; }
 table.tbl-page-log  th:nth-child(2) { width: 10%; }
-table.tbl-page-log  th:nth-child(3) { width: 25%; }
-table.tbl-page-log  th:nth-child(4) { width: 20%; }
-table.tbl-page-log  th:nth-child(5) { width: 25%; }
+table.tbl-page-log  th:nth-child(3) { width: 10%; }
+table.tbl-page-log  th:nth-child(4) { width: 35%; }

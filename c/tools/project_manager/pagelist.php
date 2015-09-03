@@ -255,11 +255,14 @@ function difflink($rindex, $pagerow) {
     if( $pagerow[$key] == 0)
         return "no diff";
 
-    $url = unamp("$pm_url/diff.php"
-            ."?projectid={$pagerow['projectid']}"
-            . "&pagename={$pagerow['pagename']}"
-            . "&roundid={$rindex}");
-    return "<a target='_blank' href='{$url}'>diff</a>";
+	return link_to_diff($pagerow['projectid'],
+						$pagerow['pagename'],
+						$rindex, "1", true);
+//    $url = unamp("$pm_url/diff.php"
+//            ."?projectid={$pagerow['projectid']}"
+//            . "&pagename={$pagerow['pagename']}"
+//            . "&roundid={$rindex}");
+//    return "<a target='_blank' href='{$url}'>diff</a>";
 }
 
 function pageroundid($pagerow) {

@@ -28,7 +28,7 @@ $proj_link = link_to_project($projectid, "Back to project page");
 
 // -­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­
 
-html_start();
+html_head();
 
 // feedback from advance
 if(count($msgs)) {
@@ -110,7 +110,7 @@ function restart_this($errmsg) {
 	global $projectid;
 
 	$msgs[] = $errmsg;
-		html_start();
+		echo_header();
 		echo "
     $errmsg
     <form name='frmflow' method='POST'>

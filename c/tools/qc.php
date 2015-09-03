@@ -197,7 +197,7 @@ function doReject($projectid) {
 }
 
 function etitle($title, $row) {
-    $title = htmlspecialchars(maybe_convert($title));
+    $title = htmlspecialchars($title);
     $projectid = $row['projectid'];
     return link_to_project($projectid, $title);
 }
@@ -211,7 +211,7 @@ function ehold($holdid) {
 }
 
 function eauthor($authorsname) {
-    return htmlspecialchars(maybe_convert($authorsname));
+    return htmlspecialchars($authorsname);
 }
 
 function epm($pm) {

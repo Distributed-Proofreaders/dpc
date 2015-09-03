@@ -667,7 +667,7 @@ class DpUser
         return $dpdb->SqlOneValue("
             SELECT SUM(page_count) FROM (
                 SELECT username, page_count FROM total_user_round_pages
-                WHERE username = '$username' AND round_id = '$roundid'
+                WHERE username = '$username' AND phase = '$roundid'
                 UNION ALL
                 SELECT username, COUNT(1) FROM page_events_save
                     WHERE username = '$username' AND phase = '$roundid'
@@ -680,7 +680,7 @@ class DpUser
         return $dpdb->SqlOneValue("
             select page_count FROM user_round_pages_today
             WHERE username = '{$this->Username()}'
-                AND round_id = '$roundid'");
+                AND phase = '$roundid'");
     }
 
     public function MayManageRoles() {
@@ -773,11 +773,16 @@ class DpUser
 
 			$users_table = forum_users_table();
 
-			if($username == "" || ! $dpdb->SqlExists("
-						SELECT 1 FROM $users_table
-						WHERE username_clean = LOWER('$username')")){
+			// A little validation
+			if($username == "")
 				return;
-			}
+//			if( ! $dpdb->SqlExists("
+//						SELECT 1 FROM $users_table
+//						WHERE username_clean = LOWER('$username')"))
+//				return;
+
+
+			// find the user in phpbb
 			$row = $dpdb->SqlOneRow("
 				SELECT  user_id,
 						username,
@@ -789,8 +794,11 @@ class DpUser
 				FROM $users_table
 				WHERE username_clean = LOWER('$username')");
 
-			assert(count($row) != 0);
+			if(count($row) == 0) {
+				die("Unable to find phpBB3 user $username in order to create DP user.");
+			}
 
+			// grab the phpbb user key (which we hopefully don't use)
 			$bbid      = $row['user_id'];
 			$lang      = $row['user_lang'];
 
@@ -802,38 +810,42 @@ class DpUser
 							t_last_activity,
 							date_created)
 					VALUES
-						(   $bbid,
-							'$username',
-							'$lang',
+						(   ?,
+							?,
+							?,
 							UNIX_TIMESTAMP(),
 							UNIX_TIMESTAMP())";
-			say(html_comment($sql));
-			assert($dpdb->SqlExecute($sql) == 1);
+
+			$args = array(&$bbid, &$username, &$lang);
+			if($dpdb->SqlExecutePS($sql, $args) != 1) {
+				die( "Create DP User Failed." );
+			}
 		}
 
     public function FirstRoundDate($round_id) {
         global $dpdb;
         return $dpdb->SqlOneValue("
-            SELECT DATE(FROM_UNIXTIME(MIN(count_time)))
-            FROM user_round_pages
+            SELECT DATE(FROM_UNIXTIME(MIN(version_time)))
+            FROM page_versions
             WHERE username = '{$this->Username()}'
-                AND round_id = '$round_id'");
+                AND phase = '$round_id'");
     }
     public function FirstRoundTime($round_id) {
         global $dpdb;
         return $dpdb->SqlOneValue("
-            SELECT MIN(count_time) FROM user_round_pages
+            SELECT FROM_UNIXTIME(MIN(version_time))
+            FROM page_versions
             WHERE username = '{$this->Username()}'
-                AND round_id = '$round_id'");
+                AND phase = '$round_id'");
     }
 
     public function FirstRoundDateDays($round_id) {
         global $dpdb;
         return $dpdb->SqlOneValue("
-             SETLECT DATEDIFF(CURRENT_DATE(), DATE(FROM_UNIXTIME(MIN(count_time)))
-            FROM user_round_pages
+             SETLECT DATEDIFF(CURRENT_DATE(), DATE(FROM_UNIXTIME(MIN(version_time)))
+            FROM page_versions
             WHERE username = '{$this->Username()}'
-                AND round_id = '$round_id'");
+                AND phase = '$round_id'");
     }
     public function FirstRoundTimeDays($round_id) {
         return $this->_DaysAgo($this->FirstRoundTime($round_id));

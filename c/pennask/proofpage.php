@@ -32,12 +32,7 @@ if($pagename != "") {
         or die("Page $pagename does not exist.");
     $page->MayBeSelectedByActiveUser()
         or die("Page unavailable to you.");
-//	if(! $page->UserIsOwner()) {
-//		$page->ResumePage();
-//	}
-//	else {
-		$page->CheckOutPage();
-//	}
+	$page->CheckOutPage();
 }
 else {
     $page = $project->CheckOutNextAvailablePage();
@@ -61,7 +56,7 @@ $lineheight   = CookieArg("lineheight", "lh10");
 $iswordcheck  = CookieArg("iswordcheck", "1");
 //$ispunc      = CookieArg("ispunc", "1");
 
-$prooftext      = h(rtrim(maybe_convert($page->ActiveText()))) . "\n";
+$prooftext      = h(rtrim($page->ActiveText())) . "\n";
 $pagename       = $page->PageName();
 $tweettext      = "";
 $imgurl         = $page->ImageUrl();
@@ -457,7 +452,10 @@ $csslink
 </div>  <!-- divcontrols -->
 <div id='divstatusbar'>
 	  <div>$page_info</div>
-		<div style='float:right'><a href='".url_for_help()."' target='_blank'> " . _("Help")."</a></div>
+		<div style='float:right'>
+		({$User->Username()})
+		<a href='".url_for_help()."' target='_blank'> " . _("Help")."</a>
+		</div>
 	" . ($page->UserMayManage()
 			? "<div><a id='linkupload' class='likealink'>". _("Replace image")."</a></div>\n"
 			: "")

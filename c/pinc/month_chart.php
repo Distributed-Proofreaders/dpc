@@ -85,14 +85,14 @@ function monthly_sql($phase) {
             , SUM(page_count) pages
         FROM
             user_round_pages
-        WHERE round_id = '$phase'
+        WHERE phase = '$phase'
             AND count_time < UNIX_TIMESTAMP(CAST(DATE_FORMAT(CURRENT_DATE() ,'%Y-%m-01') as DATE))
         GROUP BY 
-            round_id, 
+            phase,
             MONTH(FROM_UNIXTIME(count_time)), 
             YEAR(FROM_UNIXTIME(count_time))
         ORDER BY 
-            round_id,
+            phase,
             YEAR(FROM_UNIXTIME(count_time)),
             MONTH(FROM_UNIXTIME(count_time))";
     }

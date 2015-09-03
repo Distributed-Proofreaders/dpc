@@ -67,8 +67,8 @@ class DpProject
                 cp_comments,
                 modifieddate,
                 phase_change_date,
-                DATE_FORMAT(FROM_UNIXTIME(phase_change_date), '%b %e %Y %k:%i') phase_date,
-                DATE_FORMAT(FROM_UNIXTIME(t_last_edit), '%b %e %Y %k:%i') t_last_edit_str,
+                DATE_FORMAT(FROM_UNIXTIME(phase_change_date), '%b %e %Y %H:%i') phase_date,
+                DATE_FORMAT(FROM_UNIXTIME(t_last_edit), '%b %e %Y %H:%i') t_last_edit_str,
                 t_last_edit,
                 scannercredit,
                 postednum,
@@ -94,7 +94,7 @@ class DpProject
                     DATE(FROM_UNIXTIME(IFNULL(smoothread_deadline, 0))),
                     CURRENT_DATE()) AS smooth_days_left,
 				pv.state version_state,
-	            DATE_FORMAT(FROM_UNIXTIME(MAX(pv.version_time)), '%b %e %y %k:%i') last_proof_time
+	            DATE_FORMAT(FROM_UNIXTIME(MAX(pv.version_time)), '%b %e %Y %H:%i') last_proof_time
 
             FROM projects AS p
             LEFT JOIN page_last_versions pv
@@ -169,7 +169,7 @@ class DpProject
 	        return $User->IsSiteManager()
 			   || $User->IsProjectFacilitator()
 			   || $this->UserIsPM()
-               || $User->NameIs($this->PM())
+               || $User->NameIs($this->ProjectManager())
                || $User->MayWorkInRound($this->RoundId());
         }
         return false;
@@ -382,6 +382,10 @@ class DpProject
     }
 
     public function Phase() {
+	    if(! isset($this->_row['phase'])) {
+		    dump($this->_row);
+		    exit;
+	    }
         return $this->_row['phase'];
     }
 
@@ -722,7 +726,7 @@ class DpProject
         if(! isset($ahistory)) {
             $rows = $dpdb->SqlRows("
                 SELECT projectid,
-					DATE_FORMAT(FROM_UNIXTIME(event_time), '%b %e %Y %k:%i') event_time,
+					DATE_FORMAT(FROM_UNIXTIME(event_time), '%b %e %Y %H:%i') event_time,
                     username,
                     event_type,
                     phase,
@@ -1045,7 +1049,7 @@ class DpProject
         if($this->IsPPDownloadFile()) {
             unlink( $this->PPDownloadPath() );
         }
-        $Context->ZipSaveString($this->ProjectId() . ".txt", maybe_convert($text));
+        $Context->ZipSaveString($this->ProjectId() . ".txt", $text);
     }
 
     private function PPDownloadPath() {
@@ -1278,36 +1282,26 @@ class DpProject
 	}
 	*/
 
-    public function OCRText() {
-	    global $dpdb;
-	    $projectid = $this->ProjectId();
-	    $sql = "SELECT pagename
-				FROM page_versions
-				WHERE projectid = '$projectid'
-					AND version = 0
-				ORDER BY pagename";
-	    $names = $dpdb->SqlValues($sql);
-        $t = "";
-	    foreach($names as $name) {
-            $t .= PageVersionText($projectid, $name, 0);
-        }
-        return $t;
-    }
+//    public function OCRText() {
+//	    return $this->RoundText("PREP");
+//    }
 
-    public function PageOCRRows() {
-        global $dpdb;
-	    return $dpdb->SqlRows("
-	        SELECT pagename, imagefile, 0
-		    FROM pages
-		    WHERE projectid = '{this->ProjectId()}'
-		    AND version = 0");
-    }
+//    public function PageOCRRows() {
+//        global $dpdb;
+//	    return $dpdb->SqlRows("
+//	        SELECT pagename, imagefile, 0
+//		    FROM pages pp
+//		    JOIN page_versions pv
+//		    	ON pp.projectid = pv.projectid
+//		    WHERE projectid = '{$this->ProjectId()}'
+//		    AND version = 0");
+//    }
 
     public function RoundText($roundid) {
         $ary = $this->PageActiveTextArray($roundid);
         $text = "";
         foreach($ary as $pg) {
-            $text .= ("\n" . maybe_convert($pg['text']));
+            $text .= ("\n" . $pg['text']);
         }
         return $text;
     }
@@ -1527,6 +1521,16 @@ class DpProject
     public function CheckedOutCount() {
 	    return $this->StateCount("O");
     }
+
+	public function ReclaimableCount() {
+		global $dpdb;
+		$projectid = $this->ProjectId();
+		$sql = "SELECT COUNT(1) FROM page_last_versions
+				WHERE projectid = '$projectid'
+					AND state = 'O'
+					AND version_time < UNIX_TIMESTAMP() - (60 * 60 * 4)";
+		return $dpdb->SqlOneValue($sql);
+	}
 
     public function IsBad() {
         return $this->BadCount() > 0;
@@ -1875,7 +1879,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
 (This post is automatically generated.)\n";
 
-        $tid = $Context->CreateForumThread($subj, $msg, $this->PM());
+        $tid = $Context->CreateForumThread($subj, $msg, $this->ProjectManager());
         assert($tid > 0);
         $this->SetForumTopicId($tid);
         return $tid;
@@ -2007,7 +2011,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
     public function UserIsPM() {
         global $User;
-        return $User->NameIs($this->PM());
+        return $User->NameIs($this->ProjectManager());
     }
 
     public function UserMayPostProof() {
@@ -2068,7 +2072,8 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 				   AND ppv.version = pv.version - 1
 		WHERE p.projectid = '{$this->ProjectId()}'
 			AND pv.state = 'A'
-		   	AND ppv.username = '$username'
+		   	AND IFNULL(ppv.username, '') != '$username'
+		   	LIMIT 1
 			";
 
         $pagename = $dpdb->SqlOneValue($sql);
@@ -2108,19 +2113,17 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         global $User;
         $username = $User->UserName();
         return $dpdb->SqlOneValue ("
-                SELECT MAX(event_time)
-                FROM page_events
-                WHERE username = '$username'
-                    AND projectid = '{$this->ProjectId()}'");
+			SELECT MAX(version_time) FROM page_versions
+			WHERE username = '$username'
+				AND projectid = '{$this->ProjectId()}'");
     }
 
     public function MostRecentSavePageDate() {
         global $dpdb;
         return $dpdb->SqlOneValue ("
-                SELECT MAX(event_time)
-                FROM page_events
-                WHERE projectid = '{$this->ProjectId()}'
-                AND event_type = 'save_done'");
+			SELECT MAX(version_time) FROM page_versions
+			WHERE state = 'C'
+				AND projectid = '{$this->ProjectId()}'");
     }
 
 //    private function PreviousRoundId() {
@@ -2338,7 +2341,69 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         assert($n > 0);
     }
 
+	public function PageBefore($pagename, $phase) {
+		global $dpdb;
+		$projectid = $this->ProjectId();
+		$sql = "
+			SELECT MAX(pagename) FROM page_versions
+			WHERE projectid = '$projectid'
+				AND phase = '$phase'
+				AND pagename < '$pagename'
+		";
+		$pgname = $dpdb->SqlOneValue($sql);
 
+		if(! $pgname) {
+			return null;
+		}
+		return new DpPage($projectid, $pgname);
+	}
+
+	public function PageAfter($pagename, $phase) {
+		global $dpdb;
+		$projectid = $this->ProjectId();
+		$pgname = $dpdb->SqlOneValue("
+			SELECT MIN(pagename) FROM page_versions
+			WHERE projectid = '$projectid'
+				AND phase = '$phase'
+				AND pagename > '$pagename'
+		");
+		if(! $pgname) {
+			return null;
+		}
+		return new DpPage($projectid, $pgname);
+	}
+
+	public function ProoferPhasePageBefore($pagename, $phase, $proofer) {
+		global $dpdb;
+		$projectid = $this->ProjectId();
+		$pgname = $dpdb->SqlOneValue("
+			SELECT MAX(pagename) FROM page_versions
+			WHERE projectid = '$projectid'
+				AND $phase = '$phase'
+				AND username = '$proofer'
+				AND pagename < '$pagename'
+		");
+		if($pgname) {
+			return null;
+		}
+		return new DpPage($projectid, $pgname);
+	}
+
+	public function ProoferPhasePageAfter($pagename, $phase, $proofer) {
+		global $dpdb;
+		$projectid = $this->ProjectId();
+		$pgname = $dpdb->SqlOneValue("
+			SELECT MIN(pagename) FROM page_versions
+			WHERE projectid = '$projectid'
+				AND $phase = '$phase'
+				AND username = '$proofer'
+				AND pagename > '$pagename'
+		");
+		if($pgname) {
+			return null;
+		}
+		return new DpPage($projectid, $pgname);
+	}
 	/*
     public function ProoferRoundImageFileBefore($imagefile, $roundid) {
         global $dpdb;
@@ -2367,28 +2432,32 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     }
 	*/
 
-	public function ProoferRoundPageNameBefore($pagename, $phase) {
-		global $dpdb;
-		$projectid = $this->ProjectId();
-		return $dpdb->SqlOneValue("
-			SELECT MAX(pagename)
-			FROM page_versions pv
-			WHERE pv.projectid = '$projectid'
-				AND phase = '$phase'
-				AND pagename < '$pagename'");
-	}
+//	public function ProoferRoundPageNameBefore($pagename, $phase) {
+//		global $dpdb;
+//		$projectid = $this->ProjectId();
+//		return $dpdb->SqlOneValue("
+//			SELECT MAX(pagename)
+//			FROM page_versions pv
+//			WHERE pv.projectid = '$projectid'
+//				AND phase = '$phase'
+//				AND pagename < '$pagename'");
+//	}
 
-    public function ProoferRoundPageNameAfter($pagename, $phase) {
-        global $dpdb;
-	    return $dpdb->SqlOneValue("
-	        SELECT MIN(pv.pagename) pagename
-	        FROM page_versions pv
-	        WHERE pv.projectid = '{$this->ProjectId()}'
-	        	AND pv.pagename > '$pagename'
-	        	AND pv.phase = '$phase'");
-    }
-
-
+//    public function ProoferRoundPageNameAfter($pagename, $phase) {
+//        global $dpdb;
+//	    return $dpdb->SqlOneValue("
+//	        SELECT MIN(pv1.pagename) pagename
+//	        FROM page_versions pv
+//	        LEFT JOIN page_versions pv1
+//	        	ON pv.projectid = pv1.projectid
+//	        	AND pv.phase = pv1.phase
+//	        	AND pv.username = pv1.username
+//	        	AND pv.pagename < pv1.pagename
+//	        WHERE pv.projectid = '{$this->ProjectId()}'
+//	        	AND pv.phase = pv1.phase
+//    }
+//
+//
 //        $userfield = UserFieldForRoundId($roundid);
 //        $sql = "
 //            SELECT MAX(pp2.fileid)
@@ -2419,67 +2488,28 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $projectid = $this->ProjectId();
 //        $phase = $this->Phase();
 
-	    $row = $dpdb->SqlOneRow("
-			SELECT  pv.projectid,
-					pv.phase,
-					pv.state,
-					COUNT(1) n_pages,
-					SUM(pv.state = 'A') n_available_pages,
-					SUM(pv.state = 'O') n_checked_out,
-					SUM(pv.state = 'C') n_complete,
-					SUM(pv.state = 'B') n_bad_pages
-			FROM page_last_versions pv
-			WHERE pv.projectid = '$projectid'
-			GROUP BY pv.projectid, pv.phase
-	    ");
-
-	    $n_pages            = $row['n_pages'];
-	    $n_available_pages  = $row['n_pages'];
-	    $n_checked_out      = $row['n_pages'];
-	    $n_complete         = $row['n_pages'];
-	    $n_bad_pages        = $row['n_pages'];
-
-	    $sql = "
-	        UPDATE projects
-			SET n_available_pages = ?,
-				n_checked_out = ?,
-				n_complete = ?,
-				n_bad_pages = ?,
-				n_pages = ?
-		    WHERE projectid = ?
-		";
-
-	    $args = array(&$n_available_pages, &$n_checked_out, &$n_complete, &$n_bad_pages, &$n_pages, &$projectid);
-	    return $dpdb->SqLExecutePS($sql, $args);
-	    /*
 	    return $dpdb->SqlExecute("
-			UPDATE phases ph
-
-			LEFT JOIN (
-				SELECT  pv.projectid,
-						pv.phase,
-						pv.state,
-						COUNT(1) n_pages,
-						SUM(pv.state = 'A') n_available_pages,
-						SUM(pv.state = 'O') n_checked_out,
-						SUM(pv.state = 'C') n_complete,
-						SUM(pv.state = 'B') n_bad_pages
-				 FROM page_last_versions pv
-				 GROUP BY pv.projectid, pv.phase
-
-			 ) a ON ph.phase = a.phase
-
-			JOIN projects p ON a.projectid = p.projectid
-
-			SET p.n_available_pages = a.n_available_pages,
-				p.n_checked_out = a.n_checked_out,
-				p.n_complete = a.n_complete,
-				p.n_bad_pages = a.n_bad_pages,
-				p.n_pages = a.n_pages
-
-			WHERE p.projectid = '$projectid'");
-	    */
-
+			UPDATE projects p
+			JOIN (
+				SELECT projectid,
+						PHASE,
+						SUM(pv.state = 'A') n_avail,
+						SUM(pv.state = 'O') n_out,
+						SUM(pv.state = 'C') n_done,
+						SUM(pv.state = 'B') n_bad,
+						COUNT(1) n_pgs
+				FROM page_last_versions pv
+				GROUP BY projectid, PHASE
+				) a
+				ON p.projectid = a.projectid
+				AND p.phase = a.phase
+			SET n_available_pages = a.n_avail,
+				n_checked_out = a.n_out,
+				n_complete = a.n_done,
+				n_bad_pages = a.n_bad,
+				n_pages = a.n_pgs
+			WHERE p.projectid = '$projectid'
+	    ");
     }
 
     public function HoldCount() {
@@ -2511,7 +2541,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return $dpdb->SqlRows("
             SELECT  ph.hold_code,
                     ph.set_by,
-                    DATE_FORMAT(FROM_UNIXTIME(ph.set_time), '%b %e %Y %k:%i') set_time,
+                    DATE_FORMAT(FROM_UNIXTIME(ph.set_time), '%b %e %Y %H:%i') set_time,
                     ph.phase,
                     ph.note,
                     h.description hold_description

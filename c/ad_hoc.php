@@ -6,8 +6,59 @@ error_reporting(E_ALL);
 $relPath = "../c/pinc/";
 require $relPath . "dpinit.php";
 
-$projectid = "p150810001";
+$projectid = "p150825002";
+/*
+$pagename  = "006";
+//$phase = "P1";
+$page = new DpPage($projectid, $pagename);
+$v1 = $page->Version(0);
+$v2 = $page->Version(1);
+
+
+dump($v1->VersionText());
+dump($v2->VersionText());
+dump($v1->VersionText() == $v2->VersionText());
+dump(crc32($v1->VersionText()));
+dump($v1->CRC32());
+dump(crc32($v2->VersionText()));
+dump($v2->CRC32());
+exit;
+*/
+
 $project = new DpProject($projectid);
+$pgnames = $project->PageNames();
+foreach($pgnames as $pgname) {
+	say("$pgname  ");
+	$page = new DpPage($projectid, $pgname);
+	$vsns = $page->Versions();
+	/** @var DpVersion $vsn */
+	foreach($vsns as $vsn) {
+		$crc1 = $vsn->CRC32();
+		$crc2 = crc32($vsn->VersionText());
+		if($crc1 != $crc2) {
+			dump($vsn->VersionNumber() . "  $crc1  $crc2");
+			$vsn->ResetCRC();
+		}
+//		dump($vsn->Path());
+//		dump($vsn->VersionText());
+//		dump(file_get_contents($vsn->Path()));
+	}
+}
+
+$text = $page->PhaseVersion("PREP")->VersionText();
+$text2 = $page->PhaseVersion("P1")->VersionText();
+dump(crc32($text));
+dump(crc32($text2));
+
+dump($text);
+dump($text2);
+exit;
+
+
+
+
+
+
 
 $pgs = $dpdb->SqlRows("
 	SELECT pagename, version FROM page_last_versions

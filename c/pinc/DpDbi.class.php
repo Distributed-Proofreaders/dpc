@@ -92,7 +92,8 @@ class DpDb
         $result = $this->sql_select($sql);
         if($result === false) {
             echo html_comment($sql);
-            die($this->ErrorMessage());
+	        return null;
+//            die($this->ErrorMessage());
         }
         if($result === true) {
             return array();
@@ -123,7 +124,9 @@ class DpDb
         $stmt = $this->_mysqli->prepare($sql);
         if(! $stmt) {
             dump($sql); dump($args); dump("prepare failed.");
-            assert(false); die();
+            assert(false);
+//	        die();
+	        return null;
         }
 
         // make the type-string
@@ -177,7 +180,8 @@ class DpDb
         $result = $this->sql_select($sql);
         if($result === false) {
             sqldump($sql);
-            die($this->ErrorMessage());
+//            die($this->ErrorMessage());
+	        return null;
         }
         if($result === true) {
             return array();
@@ -203,7 +207,8 @@ class DpDb
         $result = $this->sql_select($sql);
         if($result === false) {
             echo html_comment($sql);
-            die($this->ErrorMessage());
+	        return null;
+//            die($this->ErrorMessage());
         }
         if($result === true) {
             return array();
@@ -219,7 +224,8 @@ class DpDb
         if($result === false) {
             say($this->ErrorMessage());
             echo html_comment($sql);
-            die($this->ErrorMessage());
+//            die($this->ErrorMessage());
+	        return null;
         }
         if($result === true) {
             return array();
@@ -238,7 +244,8 @@ class DpDb
         $result = $this->sql_select($sql);      
         if($result === false) {
             echo html_comment($sql);
-            die($this->ErrorMessage());
+	        return null;
+//            die($this->ErrorMessage());
         }
         while($row = $result->fetch_array(MYSQLI_NUM)) {
             $objects[] = $row[0];
@@ -342,7 +349,8 @@ class DpDb
             dump("prepare failed.");
             dump($this->_mysqli->error);
             assert(false);
-            die($this->_mysqli->error);
+	        return null;
+//            die($this->_mysqli->error);
         }
 
         // make the type-string

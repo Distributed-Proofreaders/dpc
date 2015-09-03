@@ -21,9 +21,9 @@ $sql = "SELECT
     FROM users";
 
 $row = $dpdb->SqlOneRow($sql);
-$msg = _("{$row['users_day']} active in the past 24 hours.<br>
-		  {$row['users_week']} active in the past week.<br>
-		  {$row['users_month']} active in the past month.");
+$msg = _("{$row['users_day']} active users in the past 24 hours.<br>
+		  {$row['users_week']} active users in the past week.<br>
+		  {$row['users_month']} active users in the past month.");
 
 echo "<p class='center italic'>$msg</p>\n";
 

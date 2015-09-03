@@ -1,7 +1,7 @@
 <?PHP
 $relPath="./../../pinc/";
 include_once $relPath.'dpinit.php';
-include_once $relPath.'Project.inc';
+//include_once $relPath.'Project.inc';
 //include_once $relPath.'slim_header.inc';
 
 $User->IsLoggedIn()

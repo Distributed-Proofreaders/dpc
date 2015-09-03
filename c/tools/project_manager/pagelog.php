@@ -1,8 +1,10 @@
 <?php
 $relPath="./../../pinc/";
 require_once $relPath."dpinit.php";
-require_once $relPath."theme.inc";
-require_once $relPath . "DpTable.class.php";
+
+/** @var $User DpThisUser */
+$User->IsLoggedIn()
+	or redirect_to_home();
 
 $projectid          = ArgProjectId();
 $projectid != ""
@@ -17,24 +19,6 @@ $rowsperpage    = Arg("rowsperpage", "100");
 $cmdPgUp        = IsArg("cmdPgUp");
 $cmdPgDn        = IsArg("cmdPgDn");
 
-//$imagefile          = ArgArray("imagefile");
-//$pagename           = Arg("pagename");
-
-//if(count($imagefile) == 0) {
-//    $pagename = Arg("pagename");
-//    $where = "AND image LIKE '{$pagename}%'\n";
-//}
-//else if(count($imagefile) > 0) {
-//    $image = key($imagefile);
-//    $where = "AND image = '$image'\n";
-//}
-//else {
-//    die("No page specified");
-//}
-
-/** @var $User DpThisUser */
-$User->IsLoggedIn()
-    or redirect_to_home();
 
 $sql = "
     SELECT
@@ -43,14 +27,15 @@ $sql = "
         FROM_UNIXTIME(pe.event_time) AS etime,
         pe.event_type	 AS etype,
         pe.projectid,
-        pe.image,
-        pe.round_id,
+        pe.pagename,
+        pe.version,
+        pe.phase,
         pe.username
     FROM page_events pe
     JOIN projects p
         ON pe.projectid = p.projectid
     WHERE pe.projectid = '$projectid'
-    ORDER BY pe.image, pe.event_time";
+    ORDER BY pe.pagename, pe.version, pe.event_time";
 
 echo "\n<!-- \n$sql\n -->\n";
 /** @var $dpdb DpDb */
@@ -72,8 +57,9 @@ $author = $rows[0]['author'];
 $tbl = new DpTable();
 $tbl->SetClass("dptable tbl-page-log");
 
-$tbl->AddColumn("^"._("Page"),  "image");
-$tbl->AddColumn("^"._("Phase"),  "round_id");
+$tbl->AddColumn("^"._("Page"),  "pagename");
+$tbl->AddColumn("^"._("Phase"),  "phase");
+$tbl->AddColumn("^"._("Version"),  "version");
 $tbl->AddColumn("^"._("Time"),  "etime");
 $tbl->AddColumn("<"._("Event"), "etype");
 $tbl->AddColumn("<"._("User"),  "username");

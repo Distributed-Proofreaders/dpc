@@ -519,7 +519,6 @@ class DpContext {
 
 	public function UpdateVersion($projectid, $pagename, $version, $state, $text) {
 		global $dpdb, $User;
-		$dpdb->SetLogging();
 		$text = norm($text);
 		$crc32 = crc32($text);
 		$username = $User->Username();
@@ -557,7 +556,7 @@ class DpContext {
     public function CreateForumThread($subject, $message, $poster_name = "") {
         $bb = $this->Bb();
         /** @var DpPhpbb3 $bb  */
-        return $bb->CreateThread($subject, $message, $poster_name);
+        return $bb->CreateTopic($subject, $message, $poster_name);
     }
 
     public function InstalledLanguages() {

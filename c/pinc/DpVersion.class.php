@@ -17,7 +17,9 @@ function Versions($projectid, $pagename) {
 				username,
 				phase,
 				task,
-				state
+				state,
+				crc32,
+				textlen
 			FROM page_versions
 			WHERE projectid = '$projectid'
 				AND pagename = '$pagename'
@@ -65,7 +67,9 @@ class DpVersion {
 						username,
 						phase,
 						task,
-						state
+						state,
+						crc32,
+						textlen
 			   FROM page_versions
 			   WHERE projectid = ?
 			   		AND pagename = ?
@@ -81,13 +85,13 @@ class DpVersion {
 	}
 
 	public function VersionNumber() {
-		return $this->_version_number;
+		return $this->_row['version'];
 	}
-	private function ProjectId() {
+	public function ProjectId() {
 		return $this->_row['projectid'];
 	}
 
-	private function PageName() {
+	public function PageName() {
 		return $this->_row['pagename'];
 	}
 
@@ -97,6 +101,30 @@ class DpVersion {
 
 	public function Username() {
 		return $this->_row['username'];
+	}
+
+	public function TextLength() {
+		return $this->_row['textlen'];
+	}
+
+	public function CRC32() {
+		return $this->_row['crc32'];
+	}
+
+	public function ResetCRC() {
+		global $dpdb;
+		$projectid = $this->ProjectId();
+		$pagename = $this->PageName();
+		$vnum = $this->VersionNumber();
+		$crc = crc32($this->VersionText());
+		assert($crc != $this->CRC32());
+		$sql = "UPDATE page_versions
+				SET crc32 = ?
+				WHERE projectid = ?
+				AND pagename = ?
+				AND version = ?";
+		$args = array(&$crc, &$projectid, &$pagename, &$vnum);
+		$dpdb->SqlExecutePS($sql, $args);
 	}
 
 	public function State() {
@@ -176,6 +204,10 @@ class DpVersion {
 //
 //	}
 
+	public function Path() {
+		return PageVersionPath($this->ProjectId(), $this->PageName(), $this->Version());
+
+	}
 //	public function UpdateText($text) {
 //		$path = PageVersionPath($this->ProjectId(), $this->PageName(), $this->Version());
 //		assert(file_exists($path));

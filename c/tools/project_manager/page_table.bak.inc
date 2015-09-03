@@ -508,10 +508,11 @@ function echo_cells_for_round( $round_num, $diff_round_num, $page_res,
 			echo _("no diff");
 		}
         else {
-			echo "<a href='$code_url/tools/project_manager/diff.php"
-                    ."?projectid=$projectid"
-                    ."&amp;pagename=$pagename"
-                    ."&amp;roundid={$round->id}'>"._("diff")."</a>";
+	        echo link_to_diff($projectid, $pagename, $round->id, true);
+//			echo "<a href='$code_url/tools/project_manager/diff.php"
+//                    ."?projectid=$projectid"
+//                    ."&amp;pagename=$pagename"
+//                    ."&amp;roundid={$round->id}'>"._("diff")."</a>";
 		}
 	}
 	echo "</td>\n";
@@ -584,7 +585,7 @@ function echo_cells_for_round( $round_num, $diff_round_num, $page_res,
 
 function page_state_is_an_avail_state($page_state) {
 	for ( $rn = 1; $rn <= MAX_NUM_PAGE_EDITING_ROUNDS; $rn++ ) {
-		$round = get_Round_for_round_number($rn);
+		$round = &nbsp;get_Round_for_round_number($rn);
 		if ( $page_state == $round->page_avail_state ) {
 			return TRUE;
 		}

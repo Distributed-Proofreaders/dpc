@@ -17,7 +17,6 @@ if($roundid == "") {
 
 $page = new DpPage($projectid, $pagename);
 $text = $page->RoundText($roundid);
-$text = maybe_convert($text);
 
 echo "<!doctype html>
 <head>

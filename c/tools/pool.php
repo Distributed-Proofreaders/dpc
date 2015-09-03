@@ -274,8 +274,8 @@ function show_projects_in_state_plus( $pool, $checkedout_or_available, $RFilter)
     foreach($rows as $book) {
         echo "<tr>\n";
 
-        $title = maybe_convert($book['nameofwork']);
-        $author = maybe_convert($book['authorsname']);
+        $title = $book['nameofwork'];
+        $author = $book['authorsname'];
 
         $bgcolor = $pool->listing_bgcolors[$rownum % 2];
         $bgcolor_attr = " bgcolor='$bgcolor'";

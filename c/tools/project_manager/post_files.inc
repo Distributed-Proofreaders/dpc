@@ -226,7 +226,6 @@ function join_proofed_text_tei ($project, $proofer_names) {
         $text_data = $row['text_data'];
         $filename = $row['image'];
 
-        $text_data = maybe_convert($text_data);
         $proofer_attributes = "";
         if ($proofer_names) {
             $proofer_names = array();
@@ -342,7 +341,6 @@ function build_page_text($pagerow, $proofer_names) {
 
     $imagefile  = $pagerow['image'];
     $pgtext     = $pagerow['pagetext'];
-    $pgtext     = maybe_convert($pgtext);
     $pgstate    = $pagerow['pagestate'];
 
     $separator = "-----File: ($imagefile) $pgstate ---";

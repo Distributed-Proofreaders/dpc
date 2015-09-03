@@ -31,8 +31,8 @@ if($pagename != "") {
     $page = new DpPage($projectid, $pagename);
     $page->Exists()
         or die("Page $pagename does not exist.");
-    $page->MayBeSelectedByActiveUser()
-        or die("Page unavailable to you.");
+    $page->UserIsOwner() || $page->UserIsPM() || $User->IsAdmin()
+        or die("Page unavailable to you - owned by {$page->Owner()}.");
 }
 else {
     $page = $project->CheckOutNextAvailablePage();

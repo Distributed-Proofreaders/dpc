@@ -29,6 +29,7 @@ else {
 
 if($projectid != "" && $todo != "" && $phase != "") {
     $project = new DpProject($projectid);
+	$project->RecalcPageCounts();
 
     switch($todo) {
         case "sethold":
@@ -71,7 +72,7 @@ $sql = "
             ORDER BY phphases.sequence, ph.hold_code
             SEPARATOR ',\\n') holdlist,
             IFNULL(SUM(p.phase = ph.phase), 0) active_hold_count,
-            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(ppe.event_time))) AS last_save_days
+            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time))) AS last_save_days
     FROM projects p
     JOIN phases ON p.phase = phases.phase
     LEFT JOIN project_holds ph
@@ -82,9 +83,9 @@ $sql = "
         AND p.phase = myph.phase
         AND myph.hold_code = 'user'
         AND myph.set_by = '$username'
-	LEFT JOIN page_events AS ppe
-	ON p.projectid = ppe.projectid
-            AND ppe.event_type = 'saveAsDone'
+	LEFT JOIN page_versions AS pv
+	ON p.projectid = pv.projectid
+            AND pv.state = 'C'
     WHERE p.username = '$username'
     " . ($is_all ? "" : "
         AND p.phase IN ('PREP', 'P1', 'P2', 'P3', 'F1', 'F2')") ."
@@ -95,9 +96,6 @@ echo(html_comment($sql));
 $rows = $dpdb->SqlRows($sql);
 $numrows = count($rows);
 $qual = $is_all ? " (All)" : " (Active)";
-
-
-
 
 
 global $no_stats;

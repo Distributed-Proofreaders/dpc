@@ -61,8 +61,8 @@ function list_projects( $metal, $limit = "20") {
     $counter = 0;
     foreach($rows as $project) {
         $counter++;
-        $title = maybe_convert($project['nameofwork']);
-        $author = maybe_convert($project['authorsname']);
+        $title = $project['nameofwork'];
+        $author = $project['authorsname'];
         $language = $project['language'];
         $n_pages = $project["n_pages"];
         $moddate = $project["moddate"];

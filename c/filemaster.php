@@ -89,13 +89,14 @@ if ( count( $chk_delete ) > 0 ) {
 // if requested to include or delete extra files, copy them over or delete them.
 if ( count( $chk_other ) > 0 ) {
 	// permit_path($project->ProjectPath());
-	foreach ( array_keys( $chk_other ) as $otherfile ) {
-		$otherpath = build_path( $truepath, $otherfile );
+	foreach ( array_keys( $chk_other ) as $otherpath ) {
+		$otherfile = basename($otherpath);
 		if ( ! file_exists( $otherpath ) ) {
+			assert(false);
 			continue;
 		}
 		if ( $submit_delete_others ) {
-			unlink( $otherpath );
+			@unlink( $otherpath );
 		}
 		else if ( $submit_load_others ) {
 			$topath = build_path( $project->ProjectPath(), $otherfile );
@@ -104,12 +105,13 @@ if ( count( $chk_other ) > 0 ) {
 			if ( file_exists( $topath ) ) {
 				unlink( $topath );
 			}
-			copy( $otherpath, $topath );
+
+			assert(copy( $otherpath, $topath ));
 
 			$archivepath = build_path(ProjectArchivePath($projectid), $otherfile);
 			copy( $otherpath, $archivepath);
 
-			unlink( $otherpath );
+			@unlink( $otherpath );
 		}
 	}
 }
@@ -178,7 +180,7 @@ function gather_page_set($project, $path) {
 				continue;
 
 			default:
-				$ary[$key]["other"] = $fpath;
+				$ary[$key]["external_other"] = $fpath;
 				continue;
 		}
 	}
@@ -392,8 +394,8 @@ function eMaybeImage($row) {
 	else if( isset( $row["external_text"] ) ) {
 		return basename( $row["external_text"] );
 	}
-	else if( isset( $row["other"])) {
-		return basename( $row["other"] );
+	else if( isset( $row["external_other"])) {
+		return basename( $row["oexternal_ther"] );
 	}
 	else {
 		return "";
@@ -501,12 +503,13 @@ function textcheck($page) {
 		: "\n";
 }
 
-function othercheck($name, $row) {
+function othercheck($name) {
 	global $protopages;
-	$name = $row['name'];
+//	$name = $row['name'];
 	$key  = "pg_" . $name;
 	$proto = $protopages[ $key ];
-	return "<input type='checkbox' name='chk_other[$key]'>";
+	$frompath = isset($proto['external_image']) ? $proto['external_image'] : $proto['external_text'];
+	return "<input type='checkbox' name='chk_other[$frompath]'>";
 }
 
 function exttxtlen($page) {

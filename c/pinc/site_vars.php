@@ -145,7 +145,7 @@ $cookie_encryption_key = 'A_LONG_STRING_OF_GIBBERISH2';
 $maintenance = 0;
 $site_supports_metadata = FALSE;
 $site_supports_corrections_after_posting = FALSE;
-$auto_post_to_project_topic = FALSE;
+//$auto_post_to_project_topic = FALSE;
 $external_catalog_locator = 'z3950.loc.gov:7090/Voyager';
 $charset = 'utf-8';
 

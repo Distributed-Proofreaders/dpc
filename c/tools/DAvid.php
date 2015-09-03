@@ -97,7 +97,6 @@ function echo_p1_unavailable_projects() {
 
 
 function etitle($title, $row) {
-    $title = maybe_convert($title);
     $projectid = $row['projectid'];
     return link_to_project($projectid, $title);
 }

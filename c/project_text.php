@@ -17,7 +17,7 @@ switch($phase) {
 		$text = $project->PrePostText();
 		break;
 	case "utf8":
-		$text = h(maybe_convert($project->ActiveText()));
+		$text = h($project->ActiveText());
 		break;
 	case "":
 		$text = $project->ActiveText();

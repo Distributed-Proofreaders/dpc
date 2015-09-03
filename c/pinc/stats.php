@@ -60,7 +60,7 @@ function PhaseCountMonth($phase) {
         FROM
         (   SELECT SUM(urp.page_count) pagecount
             FROM user_round_pages urp
-            WHERE round_id = '$phase'
+            WHERE phase = '$phase'
                 AND count_time >= UNIX_TIMESTAMP(DATE(DATE_FORMAT(NOW() ,'%Y-%m-01')))
             UNION ALL
             SELECT COUNT(1) pagecount
