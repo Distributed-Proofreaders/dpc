@@ -49,16 +49,16 @@ function html_head($title = "DP Canada") {
 </head>\n";
 }
 
-function echo_head($title = "DP Canada") {
-    echo html_head($title);
+function html_foot() {
+	return html_end();
 }
 
-function html_start($title = "DP Canada") {
+function echo_header($title = "DP Canada") {
     echo html_head($title);
 }
 
 function html_end() {
-echo "
+return "
 </body></html>";
 }
 
@@ -1213,9 +1213,9 @@ function PageVersionPath($projectid, $pagecode, $version_number) {
 }
 
 function PageVersionText($projectid, $pagename, $version_number) {
-	if(is_null($version_number)) {
-		return null;
-	}
+//	if(is_null($version_number)) {
+//		return "null";
+//	}
 	assert(file_exists(PageVersionPath($projectid, $pagename, $version_number)));
 	return file_get_contents(PageVersionPath($projectid, $pagename, $version_number));
 }
