@@ -5,7 +5,15 @@
     to make query SELECT pagename FROM pages
                   WHERE projectid ... AND pagename < or > pagename
                   (AND maybe roundn_user = joe)
+
+	"Next proofer page" means the next page for the left-hand proofer.
+	We want to show the diffs that follow.
+
+	So the reference page version is on the left,
+		which drives the next version on the right.
 */
+
+
 
 $relPath="./../../pinc/";
 require_once $relPath . "dpinit.php";
@@ -16,109 +24,169 @@ require_once '../../../Lib/php-text-difference/src/Diff/Renderer/AbstractRendere
 require_once '../../../Lib/php-text-difference/src/Diff/Renderer/Html/ArrayRenderer.php' ;
 require_once '../../../Lib/php-text-difference/src/Diff/Renderer/Html/SideBySide.php' ;
 
-/** @var $User DpThisUser */
 $User->IsLoggedIn()
 	or RedirectToLogin();
 
-if(! IsArg("phase") && IsArg("version") &&  IsArg("roundid")) {
-	die("neither phase or version provided");
-}
+$projectid              = ArgProjectId();
+$pagename               = ArgPageName();
+$phase                  = Arg("phase");
+$mode                   = Arg("mode", "1");
+$btn_nextpage           = IsArg("btn_nextpage");
+$btn_prevpage           = IsArg("btn_prevpage");
+$btn_proofer_next       = IsArg("btn_proofer_next");
+$btn_proofer_prev       = IsArg("btn_proofer_prev");
 
-$projectid       = ArgProjectId();
+
 if(! $projectid)
 	die(_("Project id not provided."));
-//$imagefile       = Arg("imagefile");
-$pagename        = ArgPageName();
+$project         = new DpProject($projectid);
 if(! $pagename)
 	die(_("Page Name not provided."));
+if(! $phase)
+	die("neither phase nor roundid provided");
 
-if(isArg("phase")) {
-	$phase = Arg( "phase", Arg( "roundid" ) );
-}
-else if(isArg("version")) {
-	$version_num     = Arg("version");
-}
-else {
-	die( _( "phase or version not provided." ) );
-}
+$page = new DpPage($projectid, $pagename);
+// get the version now in case wee need the proofer
+$version = $page->PhaseVersion($phase);
+if(! $version)
+	die(_("No text version found for $projectid $pagename $phase"));
 
-$project         = new DpProject($projectid);
+$proofer = $version ? $version->Username() : "";
 
-$btnnext         = IsArg("btnnext");
-$btnprev         = IsArg("btnprev");
-$btnprfnext      = IsArg("btnprfnext");
-$btnprfprev      = IsArg("btnprfprev");
 
 
 // determine what page is wanted
-if($btnnext) {
-	$pgname = $project->PageNameAfter($pagename);
-	if($pgname) {
-		$pagename = $pgname;
+if($btn_nextpage) {
+//	$pgname = $project->PageNameAfter($pagename);
+	$pg = $project->PageAfter($pagename, $phase);
+	if($pg) {
+		$page = $pg;
+		$pagename = $page->PageName();
+		$version = $page->PhaseVersion($phase);
+		$proofer = $version->Username();
 	}
 }
-else if($btnprev) {
-	$pgname = $project->PageNameBefore($pagename);
-	if($pgname) {
-		$pagename = $pgname;
+else if($btn_prevpage) {
+	$pg = $project->PageBefore($pagename, $phase);
+	if($pg) {
+		$page= $pg;
+		$pagename = $page->PageName();
+		$version = $page->PhaseVersion($phase);
+		$proofer = $version->Username();
 	}
 }
-else if($btnprfnext) {
-	$pgname = $project->ProoferRoundPageNameAfter($pagename, $phase);
-	if($pgname) {
-		$pagename = $pgname;
+else if($btn_proofer_next) {
+	$pg = $project->ProoferPhasePageAfter($pagename, $phase, $proofer);
+	if($pg) {
+		$page = $pg;
+		$pagename = $page->PageName();
+		$version = $page->PhaseVersion($phase);
+		$proofer = $version->Username();
 	}
 }
-else if($btnprfprev) {
-	$pgname = $project->ProoferRoundPageNameBefore($pagename, $phase);
-	if($pgname) {
-		$pagename = $pgname;
+else if($btn_proofer_prev) {
+	$pg = $project->ProoferPhasePageBefore($pagename, $phase, $proofer);
+	if($pg) {
+		$page = $pg;
+		$pagename = $page->PageName();
+		$version = $page->PhaseVersion($phase);
+		$proofer = $version->Username();
 	}
 }
 
-// if(empty($pagename)) {
-// $pagename = $imagefile;
-// }
+$problem = "";
+$isdiff = true;
 
-// get the page
-$page        = new DpPage($projectid, $pagename);
+// chosen text on right, compare back
+if($mode == "1") {
+	$label = "($phase) $proofer";
 
-if(isset($version_num)) {
-	$version = $page->Version($version_num);
+	// is there a preceding version?
+	if ( $version->VersionNumber() == 0 ) {
+		$problem = "No preceding text version to compare with";
+		$isdiff  = false;
+	}
+
+	if ( ! $problem ) {
+		$version0 = $page->Version( ( $version->VersionNumber() - 1 ) );
+		if ( $version0->State() != "C" ) {
+			$problem = "Preceding version not completed yet (???)";
+			$isdiff  = false;
+		}
+	}
+
+	if ( ! $problem ) {
+		$text0  = $version0->VersionText();
+		$lines0 = text_lines( $text0 );
+		$text1  = $version->VersionText();
+		$lines1 = text_lines( $text1 );
+
+		if ( $lines0 == $lines1 ) {
+			$problem = _( "No differences" );
+			$isdiff  = false;
+		}
+	}
+
+	if ( $version0 ) {
+		$proofer0 = $version0->Username();
+		$phase0   = $version0->Phase();
+		$label0   = "($phase0) $proofer0";
+	} else {
+		$label0 = $problem;
+	}
 }
-else if($phase) {
-	$version = $page->PhaseVersion( $phase );
+else {
+	$label = "($phase) $proofer";
+
+	// is there a preceding version?
+	if ( $version->VersionNumber() == $page->LastVersionNumber() ) {
+		$problem = "No following text version to compare with";
+		$isdiff  = false;
+	}
+
+	if ( ! $problem ) {
+		$version2 = $page->Version( ( $version->VersionNumber() + 1 ) );
+		if ( $version2->State() != "C" ) {
+			$problem = "Following version not completed yet";
+			$isdiff  = false;
+		}
+	}
+
+	if ( ! $problem ) {
+		$text2  = $version2->VersionText();
+		$lines2 = text_lines( $text2 );
+		$text1  = $version->VersionText();
+		$lines1 = text_lines( $text1 );
+
+		if ( $lines2 == $lines1 ) {
+			$problem = _( "No differences" );
+			$isdiff  = false;
+		}
+	}
+
+	if ( $version2 ) {
+		$proofer2 = $version2->Username();
+		$phase2   = $version2->Phase();
+		$label2   = "($phase2) $proofer2";
+	} else {
+		$label2 = $problem;
+	}
+
 }
-
-$version_num     = $version->VersionNumber();
-$proofername     = $version->Username();
-$text            = $version->VersionText();
-$lines           = text_lines($text);
-$label           = $version->Username();
-
-$prev_version    = $page->PenultimateVersion();
-$prevproofername = $prev_version->Username();
-$prevtext        = norm($prev_version->VersionText());
-$prevlines       = text_lines($prevtext);
-$prevlabel       = $prev_version->Username();
 
 $project_title   = $page->Title();
+
 
 
 
 // now have the image, users, labels etc all set up
 // -----------------------------------------------------------------
 
-$title      = "Page {$pagename} Diff — {$page->Title()}";
-$projlink   = link_to_project($projectid, "Go to project page");
-
-//$diffEngine = new DifferenceEngineWrapper();
+$title      = "Page {$pagename} Diff — {$project_title}";
 
 $view_image = _("view image");
-$imglink = link_to_view_image($projectid, $pagename, $view_image, true);
+$imglink    = link_to_view_image($projectid, $pagename, $view_image, true);
 
-$diff = new \Adaptive\Diff\Diff($prevtext, $text);
-$renderer = new \Adaptive\Diff\Renderer\Html\SideBySide();
 
 
 echo "<!DOCTYPE HTML>
@@ -128,9 +196,10 @@ echo "<!DOCTYPE HTML>
 <title>$title</title>
 <link type='text/css' rel='stylesheet' href='{$css_url}/dp.css'>
 <link rel='stylesheet' href='/Lib/php-text-difference/example/styles.css' type='text/css' charset='utf-8'/>
+<script type='text/javascript' src='/c/tools/project_manager/dpdiff.js'></script>
 </head>
 
-<body>
+<body onload='init()'>
 <div class='container left'>
 
 <h1>{$page->Title()}</h1>
@@ -138,16 +207,18 @@ echo "<!DOCTYPE HTML>
 
 <div id='diffbox' class='center w80'>
 $imglink
-    <form id='navform' name='navform' method='POST'
-            accept-charset='UTF-8' class='right' action='http://www.pgdpcanada.net/c/tools/project_manager/diff.php'>\n";
+    <form id='navform' name='navform' method='POST' accept-charset='UTF-8' class='right'>
+	<input type='hidden' id='projectid' name='projectid' value='$projectid'>
+	<input type='hidden' id='pagename' name='pagename' value='$pagename'>
+    <input type='hidden' name='phase' id='phase' value='$phase'>\n";
 
 echo "
-        <div class='lfloat'>
-        <input type='submit' name='btnprev' value='"
+	<div class='lfloat'>
+        <input type='submit' id='btn_prevpage' name='btn_prevpage' value='"
      ._("Previous")."'>
 
         ". _(" Selected page: ") . "
-        <select id='pagelist' onChange='eListChange()'>\n";
+        <select name='pagelist' id='pagelist' onChange='eListChange()'>\n";
 
 foreach($project->PageRows() as $row) {
 	$sel = ($row['pagename'] === $pagename
@@ -159,53 +230,50 @@ foreach($project->PageRows() as $row) {
 
 echo "
         </select>
-    <input type='submit' name='btnnext' value='"._("Next")."'>
+    <input type='submit' id='btn_nextpage' name='btn_nextpage' value='"._("Next")."'>
     </div>\n";
 
-/*
-if($phase == "P2" || $phase == "P3"
-   || $phase == "P1" || $phase == "F2" ) {
-	echo "
-        <div class='rfloat'>
-        <input type='submit' name='btnprfprev' 
-                            value='"._("$prevroundid $prevproofername Prev")."'>
-        <input type='submit' name='btnprfnext' 
-                                value='"._("$prevroundid $prevproofername Next")."'>
-        </div>\n";
-}
-*/
 
 echo "
-        <input type='hidden' 
-            id='projectid' name='projectid' value='$projectid'>
-        <input type='hidden' 
-            id='pagename' name='pagename' value='$pagename'>
-        <input type='hidden' id='roundid' name='roundid' 
-            value='$phase'>
             $imglink
     </form>
-    <p>{$projlink}</p>
     </div>\n";
 
-//$diff = new \Adaptive\Diff\Diff($prevlines, $lines);
-//$renderer = new \Adaptive\Diff\Renderer\Html\SideBySide();
-//echo $diff->render($renderer);
 
-if($prevtext == $text) {
+if($mode == "1") {
 	echo "
         <div class='center'>
             <h1>
-                <span class='pct75 nobold'> ($prevproofername)</span>"
-	     ._("&nbsp;&nbsp;No differences.&nbsp;&nbsp;")."
-                <span class='pct75 nobold'>$phase ($proofername)</span>"
-	     ."</h1>
+                <span class='pct75 nobold'> $label0 </span>"
+	     . _( "&nbsp;&nbsp; $problem &nbsp;&nbsp;" ) . "
+                <span class='pct75 nobold'> $label </span>"
+	     . "</h1>
         </div>\n";
 }
-//else {
-	$diff = new \Adaptive\Diff\Diff($prevlines, $lines);
-	$renderer = new \Adaptive\Diff\Renderer\Html\SideBySide();
-	echo $diff->render($renderer);
-//}
+else {
+	echo "
+        <div class='center'>
+            <h1>
+                <span class='pct75 nobold'> $label </span>"
+	     . _( "&nbsp;&nbsp; $problem &nbsp;&nbsp;" ) . "
+                <span class='pct75 nobold'> $label2 </span>"
+	     . "</h1>
+        </div>\n";
+
+}
+
+if($problem == "" && $isdiff == true) {
+	if($mode == "1") {
+		$diff     = new \Adaptive\Diff\Diff( $lines0, $lines1 );
+		$renderer = new \Adaptive\Diff\Renderer\Html\SideBySide();
+	}
+	else {
+		$diff     = new \Adaptive\Diff\Diff( $lines1, $lines2 );
+		$renderer = new \Adaptive\Diff\Renderer\Html\SideBySide();
+	}
+
+	echo $diff->render( $renderer );
+}
 
 echo "
 </div>
