@@ -72,11 +72,11 @@ function rowfunc() {
     $username = $User->Username();
     $rows = $dpdb->SqlRows("
           SELECT DATE(FROM_UNIXTIME(count_time)) count_date,
-            IFNULL(SUM(CASE WHEN round_id = 'P1' THEN page_count ELSE 0 END), 0) P1,
-            IFNULL(SUM(CASE WHEN round_id = 'P2' THEN page_count ELSE 0 END), 0) P2,
-            IFNULL(SUM(CASE WHEN round_id = 'P3' THEN page_count ELSE 0 END), 0) P3,
-            IFNULL(SUM(CASE WHEN round_id = 'F1' THEN page_count ELSE 0 END), 0) F1,
-            IFNULL(SUM(CASE WHEN round_id = 'F2' THEN page_count ELSE 0 END), 0) F2,
+            IFNULL(SUM(CASE WHEN phase = 'P1' THEN page_count ELSE 0 END), 0) P1,
+            IFNULL(SUM(CASE WHEN phase = 'P2' THEN page_count ELSE 0 END), 0) P2,
+            IFNULL(SUM(CASE WHEN phase = 'P3' THEN page_count ELSE 0 END), 0) P3,
+            IFNULL(SUM(CASE WHEN phase = 'F1' THEN page_count ELSE 0 END), 0) F1,
+            IFNULL(SUM(CASE WHEN phase = 'F2' THEN page_count ELSE 0 END), 0) F2,
             SUM(page_count) total
         FROM user_round_pages
         WHERE username = '$username'
@@ -85,21 +85,21 @@ function rowfunc() {
 
     $today = $dpdb->SqlOneRow("
         SELECT CURRENT_DATE() count_date,
-            IFNULL(SUM(CASE WHEN pe.round_id = 'P1' THEN 1 ELSE 0 END), 0) P1,
-            IFNULL(SUM(CASE WHEN pe.round_id = 'P2' THEN 1 ELSE 0 END), 0) P2,
-            IFNULL(SUM(CASE WHEN pe.round_id = 'P3' THEN 1 ELSE 0 END), 0) P3,
-            IFNULL(SUM(CASE WHEN pe.round_id = 'F1' THEN 1 ELSE 0 END), 0) F1,
-            IFNULL(SUM(CASE WHEN pe.round_id = 'F2' THEN 1 ELSE 0 END), 0) F2,
+            IFNULL(SUM(CASE WHEN pe.phase = 'P1' THEN 1 ELSE 0 END), 0) P1,
+            IFNULL(SUM(CASE WHEN pe.phase = 'P2' THEN 1 ELSE 0 END), 0) P2,
+            IFNULL(SUM(CASE WHEN pe.phase = 'P3' THEN 1 ELSE 0 END), 0) P3,
+            IFNULL(SUM(CASE WHEN pe.phase = 'F1' THEN 1 ELSE 0 END), 0) F1,
+            IFNULL(SUM(CASE WHEN pe.phase = 'F2' THEN 1 ELSE 0 END), 0) F2,
             SUM(1) total
         FROM page_events pe
         LEFT JOIN page_events pe0
         ON pe.projectid = pe0.projectid
-            AND pe.image = pe0.image
-            AND pe.round_id = pe0.round_id
-            AND pe.timestamp < pe0.timestamp
+            AND pe.pagename = pe0.pagename
+            AND pe.phase = pe0.phase
+            AND pe.event_time < pe0.event_time
         WHERE pe.username = '$username'
             AND pe.event_type = 'saveAsDone'
-            AND pe.timestamp > UNIX_TIMESTAMP(CURRENT_DATE())
+            AND pe.event_time > UNIX_TIMESTAMP(CURRENT_DATE())
             AND pe0.event_id IS NULL");
 
     // prepend today's count to $rows

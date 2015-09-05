@@ -353,7 +353,7 @@ class DpUser
             FROM
             (
                 SELECT username, page_count FROM total_user_round_pages
-                WHERE round_id = '$roundid'
+                WHERE phase = '$roundid'
 
                 UNION ALL
 
@@ -386,7 +386,7 @@ class DpUser
             FROM
             (
                 SELECT username, page_count FROM total_user_round_pages
-                WHERE round_id = '$roundid'
+                WHERE phase = '$roundid'
 
                 UNION ALL
 

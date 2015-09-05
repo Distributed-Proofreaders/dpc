@@ -328,19 +328,19 @@ class ForumUser
     }
 
     public function Location() {
-        return $this->_row['user_from'];
+        return isset($this->_row['user_from']) ? $this->_row['user_from'] : "";
     }
 
     public function WebSiteUrl() {
-        return $this->_row['user_website'];
+        return isset($this->_row['user_website']) ? $this->_row['user_website'] : "";
     }
 
     public function Occupation() {
-        return $this->_row['user_occ'];
+        return isset($this->_row['user_occ']) ? $this->_row['user_occ'] : "";
     }
 
     public function Interests() {
-        return $this->_row['user_interests'];
+        return isset($this->_row['user_interests']) ? $this->_row['user_interests'] : "";
     }
 }
 
