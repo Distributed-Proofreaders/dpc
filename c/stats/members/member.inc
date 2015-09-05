@@ -1,4 +1,4 @@
-<?PHP
+<?php
 //A file full of member statistic functions
 
 global $relPath;

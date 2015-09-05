@@ -40,17 +40,17 @@ function PhaseCountToday($phase) {
     global $dpdb;
     return $dpdb->SqlOneValue("
             SELECT COUNT(1) FROM page_events_save
-            WHERE round_id = '$phase'
-                AND timestamp >= UNIX_TIMESTAMP(CURRENT_DATE())");
+            WHERE phase = '$phase'
+                AND event_time >= UNIX_TIMESTAMP(CURRENT_DATE())");
 }
 
 function PhaseCountYesterday($phase) {
     global $dpdb;
     return $dpdb->SqlOneValue("
         SELECT COUNT(1) FROM page_events_save
-        WHERE round_id = '$phase'
-            AND timestamp >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 1 day))
-            AND timestamp < UNIX_TIMESTAMP(CURRENT_DATE())");
+        WHERE phase = '$phase'
+            AND event_time >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 1 day))
+            AND event_time < UNIX_TIMESTAMP(CURRENT_DATE())");
 }
 
 function PhaseCountMonth($phase) {
@@ -65,8 +65,8 @@ function PhaseCountMonth($phase) {
             UNION ALL
             SELECT COUNT(1) pagecount
             FROM page_events_save
-            WHERE round_id = '$phase'
-                AND TIMESTAMP > UNIX_TIMESTAMP(CURRENT_DATE())
+            WHERE phase = '$phase'
+                AND event_time > UNIX_TIMESTAMP(CURRENT_DATE())
         ) a");
 }
 
