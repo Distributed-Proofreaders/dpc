@@ -664,7 +664,7 @@ function link_to_page_detail( $projectid, $prompt, $is_new_tab = false) {
 
 function url_for_page_detail_mine($projectid) {
     global $code_url;
-    return "$code_url/tools/project_manager/pagedetail.php"
+    return "$code_url/tools/project_manager/page_detail.php"
         ."?projectid={$projectid}"
         ."&amp;select_by_user=1";
 }
