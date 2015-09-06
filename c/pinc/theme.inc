@@ -211,8 +211,8 @@ function html_logobar() {
 
 	$divider        = " · ";
 
+	// Since everything goes through dpinit, and dpinit handles logins, no action is specified
 	echo "
-
 	<form id='frmlogin' name='frmlogin' method='post'>
 	<table id='tblnav'>
 
