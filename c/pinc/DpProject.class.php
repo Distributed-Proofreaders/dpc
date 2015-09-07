@@ -107,7 +107,7 @@ class DpProject
     }
 
 	/* rewrite */
-    private function init_text() {
+    public function init_text() {
         global $dpdb;
         $projectid = $this->ProjectId();
 
@@ -2933,9 +2933,13 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
     public function PageByteOffsetArray() {
         $ary = array();
-        foreach($this->_page_byte_offset_array as $pg => $os) {
-            $ary[] = array("page" => $pg, "offset" => $os);
-        }
+	    if(! $ary) {
+		    $netos = 0;
+		    foreach ( $this->_page_byte_offset_array as $pg => $os ) {
+			    $netos += $os;
+			    $ary[] = array( "page" => $pg, "offset" => $netos );
+		    }
+	    }
         return $ary;
     }
 
@@ -2972,6 +2976,11 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
      */
     public function ContextForOffset($word, $offset) {
         $pg = $this->PageForByteOffset($offset);
+	    if(! $pg) {
+		    assert(false);
+		    dump($this->ProjectId());
+		    dump(" |$word|$offset");
+	    }
         $pagename = $pg->PageName();
         $pgtext = $pg->ActiveText();
         $pgoffset = $this->ByteOffsetForPageName($pagename);
