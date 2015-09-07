@@ -193,7 +193,7 @@ function econfirm() {
 }
 
 function parent(path) {
-    return path.substring(0, path.lastIndexOf('/') + 1);
+    return path.replace(/\/+[^\/]+$/, "");
 }
 
 // get value of hidden form variable
