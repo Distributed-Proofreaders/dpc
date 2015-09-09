@@ -44,18 +44,18 @@ class DpPhpbb3
         return $user && $user->data;
     }
 
-    public function UserData() {
-        global $user;
-        return $user->data;
-    }
+//    public function UserData() {
+//        global $user;
+//        return $user->data;
+//    }
 
     public function __destruct() {
     }
     
-    public function IsRegistered() {
-        global $user;
-        return $user->data['is_registered'];
-    }
+//    public function IsRegistered() {
+//        global $user;
+//        return $user->data['is_registered'];
+//    }
 
     public function IsLoggedIn() {
         return $this->_username != "" && strtolower($this->_username) != "anonymous";
@@ -82,20 +82,20 @@ class DpPhpbb3
         return true;
     }
 
-    public function UserId() {
-        return empty($this->_user_row) || empty($this->_user_row['user_id'])
-            ? null
-            : $this->_user_row['user_id'];
-    }
+//    public function UserId() {
+//        return empty($this->_user_row) || empty($this->_user_row['user_id'])
+//            ? null
+//            : $this->_user_row['user_id'];
+//    }
 
-    public function LoginAttempts() {
-        global $user;
-        return $user['user_login_attempts'];
-    }
+//    public function LoginAttempts() {
+//        global $user;
+//        return $user['user_login_attempts'];
+//    }
 
-    public function bb_user() {
-        return $this->_user_row;
-    }
+//    public function bb_user() {
+//        return $this->_user_row;
+//    }
 
     public function Email() {
         return empty($this->_user_row)
@@ -171,22 +171,22 @@ class DpPhpbb3
         $post_id = $data['post_id'];
         $topic_id = $data['topic_id'];
 	    $pname = lower($poster_name);
-	    $users_table = forum_users_table();
+	    $bb_users_table = build_forum_users_table();
         $pm_id = $dpdb->SqlOneValue("
-                SELECT user_id FROM $users_table
+                SELECT user_id FROM $bb_users_table
                 WHERE username_clean = '$pname'");
             
         if($poster_name != "") {
             // dump($data);
             $sql = "
-                UPDATE $users_table
+                UPDATE $bb_users_table
                 SET poster_id = $pm_id
                 WHERE post_id = $post_id";
             // dump($sql);
             // die();
             $dpdb->SqlExecute($sql);
             $dpdb->SqlExecute("
-                UPDATE $users_table
+                UPDATE $bb_users_table
                 SET topic_poster = $pm_id,
                     topic_first_poster_name = '$poster_name',
                     topic_last_poster_name = '$poster_name',
@@ -238,9 +238,9 @@ class DpPhpbb3
     public function LatestTopicPostTime($topic_id) {
         global $dpdb;
 //	    global $forumdb, $forumpfx;
-	    $topics_table = forum_topics_table();
+	    $topics_table = build_forum_topics_table();
         $sql = "SELECT
-                    DATE_FORMAT(FROM_UNIXTIME(topic_last_post_time), '%b %e %Y %k:%i') AS post_time
+                    DATE_FORMAT(FROM_UNIXTIME(topic_last_post_time), '%b %e %Y %H:%i') AS post_time
                 FROM $topics_table
                 WHERE topic_id = $topic_id";
         return $dpdb->SqlOneValue($sql);
@@ -249,7 +249,7 @@ class DpPhpbb3
     public function TopicExists($topic_id) {
         global $dpdb;
 //	    global $forumdb, $forumpfx;
-	    $topics_table = forum_topics_table();
+	    $topics_table = build_forum_topics_table();
         $sql = "SELECT 1
                 FROM $topics_table
                 WHERE topic_id = $topic_id";
@@ -259,7 +259,7 @@ class DpPhpbb3
     public function TopicReplyCount($topic_id) {
         global $dpdb;
 //	    global $forumdb, $forumpfx;
-	    $topics_table = forum_topics_table();
+	    $topics_table = build_forum_topics_table();
         $sql = "SELECT COUNT(1)
                 FROM $topics_table
                 WHERE topic_id = $topic_id";
@@ -269,7 +269,7 @@ class DpPhpbb3
     public function SetTopicForumId($topic_id, $forum_id) {
         global $dpdb;
 //	    global $forumdb, $forumpfx;
-	    $topics_table = forum_topics_table();
+	    $topics_table = build_forum_topics_table();
         $sql = "UPDATE $topics_table
                 SET forum_id = {$forum_id}
                 WHERE topic_id = {$topic_id}";
@@ -277,22 +277,22 @@ class DpPhpbb3
     }
 }
 
-function ForumUserIdForUsername($username) {
-    return forum_user_id_for_username($username) ;
-}
+//function ForumUserIdForUsername($username) {
+//    return forum_user_id_for_username($username) ;
+//}
 
+// for addressing a PM based on username
 function forum_user_id_for_username($username) {
     global $dpdb;
-//	global $forumdb, $forumpfx;
 	$username = lower($username);
-	$users_table = forum_users_table();
+	$bb_users_table = build_forum_users_table();
     return $dpdb->SqlOneValue("
-            SELECT user_id FROM $users_table
+            SELECT user_id FROM $bb_users_table
             WHERE username_clean = '$username'");
 }
 
 
-$avatar_path = "http://www.pgdpcanada.net/forumdpc/download/file.php?avatar=";
+$avatar_path = build_path($site_url,  "forumdpc/download/file.php?avatar=");
 
 class ForumUser
 {
@@ -300,17 +300,16 @@ class ForumUser
 
     public function __construct($username = "") {
         global $dpdb;
-//	    global $forumdb, $forumpfx;
 
         if($username == "") {
             global $User;
             $username = $User->Username();
         }
 	    $username = lower($username);
-	    $users_table = forum_users_table();
+	    $bb_users_table = build_forum_users_table();
 
         $this->_row = $dpdb->SqlOneRow(
-            "SELECT * FROM $users_table
+            "SELECT * FROM $bb_users_table
              WHERE username_clean = '$username'");
     }
 
@@ -344,15 +343,15 @@ class ForumUser
     }
 }
 
-function forum_table($stub) {
+function build_forum_table($stub) {
 	global $forumdb, $forumpfx;
 	return $forumdb . '.' . $forumpfx . $stub;
 }
 
-function forum_users_table() {
-	return forum_table("users");
+function build_forum_users_table() {
+	return build_forum_table("users");
 }
 
-function forum_topics_table() {
-	return forum_table("topics");
+function build_forum_topics_table() {
+	return build_forum_table("topics");
 }
