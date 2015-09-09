@@ -1,4 +1,4 @@
-<?PHP
+<?php
 /*
  * Args are username
  */
@@ -11,6 +11,7 @@ global $User;
 $roundid = Arg('round_id', Arg('roundid'));
 $usrname = Arg ('username', $User->Username());
 $usr = new DpUser($usrname);
+$usr->FetchUser();
 if($usr->Privacy() != 0 && $usr->Username() != $User->Username()) {
 	die("No such user, or user is Private.");
 }
@@ -34,7 +35,7 @@ if ( $roundid ) {
 	EchoMemberTeams($usr, $roundid);
 	EchoMemberNeighbors($usr, $roundid);
 	if($usr->AgeDays() > 1 ) {
-		EchoMemberHistory($usr, $roundid);
+		EchoMemberHistory($usrname, $roundid);
 	}
 }
 else {
