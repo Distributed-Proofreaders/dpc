@@ -901,13 +901,14 @@ function offer_extra_files($project) {
     <div class='w90 left'>
     <ul class='clean'>\n";
 
-    foreach ($filenames as $filename) {
-        $filename = basename($filename);
-        if ( !in_array( $filename, $notfiles ) ) {
-            $url = build_path($project->ProjectUrl(), $filename);
-            echo "<li>" . link_to_url($url, $filename) . "</li>\n";
-        }
-    }
+		foreach ($filenames as $filename) {
+			$filename = basename($filename);
+			if ( !in_array( $filename, $notfiles ) ) {
+				$url = build_path($project->ProjectUrl(), $filename);
+				echo "<li>" . link_to_url($url, $filename) . "</li>\n";
+			}
+		}
+
     echo "</ul>
     </div>
 	<p>".link_to_url($project->ProjectUrl(), "Browse the project directory")."</p>
@@ -924,30 +925,39 @@ function offer_post_downloads($project, $export_roundid, $level) {
 
     if($User->MayWorkInRound("PP") || $User->MayWorkInRound("PPV")) {
         echo "
-        <div class='bordered margined padded'>
+	<div class='bordered margined padded'>
         <h4 class='clear'>". _("Post Downloads") . "</h4>
+
+
         <ul class='clean'>\n";
 
-        echo_download_image_zip($project, _("Download Zipped Images"));
-        if ($project->Phase() == "PP") {
-//            if(! $project->IsPPDownloadFile()) {
-			// export_round($project, $export_roundid, TRUE, FALSE);
-//			$project->SavePPDownloadFile();
-			echo_download_pp_zip($project, _("Download Zipped Text"), '' );
-//	        $project->ExportText();
 
-            echo "<li>";
-            echo_uploaded_zips($project, '_first_in_prog_', _('partially post-processed'));
-            echo "</li>";
-        }
-        else if ($project->Phase() == "PPV") {
-            echo_download_ppv_zip($project, _("Download Zipped PP Text"), '_second' );
-            echo "<li>";
-            echo_uploaded_zips($project, '_second_in_prog_', _('partially verified'));
-            echo "</li>";
-        }
-	    echo "</ul>
-	        </div>\n";
+			echo_download_image_zip($project, _("Download Zipped Images"));
+			if ($project->Phase() == "PP") {
+	//            if(! $project->IsPPDownloadFile()) {
+				// export_round($project, $export_roundid, TRUE, FALSE);
+	//			$project->SavePPDownloadFile();
+				echo_download_pp_zip($project, _("Download Zipped Text"), '' );
+	//	        $project->ExportText();
+
+				echo "<li>";
+					echo_uploaded_zips($project, '_first_in_prog_', _('partially post-processed'));
+				echo "</li>";
+			}
+
+			else if ($project->Phase() == "PPV") {
+				echo_download_ppv_zip($project, _("Download Zipped PP Text"), '_second' );
+				echo "<li>";
+				echo_uploaded_zips($project, '_second_in_prog_', _('partially verified'));
+				echo "</li>";
+			}
+	    echo "
+
+
+	    </ul>
+
+
+	</div>\n";
     }
     else {
         // phase != PP
@@ -957,31 +967,42 @@ function offer_post_downloads($project, $export_roundid, $level) {
     }
 	echo "
 	<div class='bordered margined padded'>
-        <h4 class='clear'>". _("Concatenated Text Files")."</h4>
-        <ul class='clean'>\n";
+		<h4 class='clear'>". _("Concatenated Text Files")."</h4>
+
+
+		<ul class='clean'>\n";
+
+
     echo "
-    <li>
-    <form name='frmdownload' method='post'>
-        <input type='hidden' name='projectid' value='$projectid'>
-		<input type='hidden' name='detail_level' value='$level'>
-      <br>
-      <ul>
-        <li>Download concatenated text from
-        <input type='radio' name='export_roundid' value='OCR'>OCR: ";
+		<li>
+			<form name='frmdownload' method='post'>
+			<input type='hidden' name='projectid' value='$projectid'>
+			<input type='hidden' name='detail_level' value='$level'>
+			<br>
+		    <ul>
+
+			    <li>Download concatenated text from
+					<input type='radio' name='export_roundid' value='OCR'>OCR: ";
 
 	/** @var Round $round */
-	foreach ( $Context->Rounds() as $round ) {
-		$roundid = $round->RoundId();
-        echo "<input type='radio'  name='export_roundid' value='{$roundid}'>{$roundid}&nbsp;\n";
-        if ( $roundid == $export_roundid )  {
-            break;
-        }
-    }
-    echo "
-    <input type='radio' name='export_roundid' value='newest' checked>Newest&nbsp;
-    </li>\n";
+			foreach ( $Context->Rounds() as $round ) {
+				$roundid = $round->RoundId();
+				echo "
+				<input type='radio'  name='export_roundid' value='{$roundid}'>{$roundid}&nbsp;\n";
+				if ( $roundid == $export_roundid )  {
+					break;
+				}
+			}
+			echo "
+				<input type='radio' name='export_roundid' value='newest' checked>Newest&nbsp;
+				</li>\n";
+
 	echo "
-        <ul class='clean'>\n";
+
+			</ul>
+			<ul class='clean'>\n";
+
+
     if ( $project->UserMaySeeNames() ) {
         echo "<li><input type='checkbox' name='proofers' id='proofers' />
         Include usernames? </li>\n";
@@ -994,10 +1015,16 @@ function offer_post_downloads($project, $export_roundid, $level) {
 	$prompt = _("Download Round Text");
     echo "
     <li><input type='submit' id='submit_export' name='submit_export' value='$prompt'></li>
-    </ul>
+
+
+				</ul>
+
+
     </form>
     </li>
-    </ul>
+
+			</ul>
+
     </div>\n";
 }
 
