@@ -25,6 +25,14 @@ function link_to_url( $url, $prompt, $is_new_tab = false ) {
         : "<a href='$url'>".h(_($prompt))."</a>\n";
 }
 
+function red_link_to_url( $url, $prompt, $is_new_tab = false ) {
+	$prompt = left($prompt, 1) == "\\" ? mid($prompt, 2) : _($prompt);
+	$prompt = _($prompt);
+	return $is_new_tab
+		? "<a class='red' href='$url' target='_blank'>".h(_($prompt))."</a>\n"
+		: "<a class='red' href='$url'>".h(_($prompt))."</a>\n";
+}
+
 // -- site
 
 function url_for_logout() {
@@ -458,7 +466,7 @@ function url_for_diff($projectid, $pagename, $phase, $mode = "1") {
 }
 
 function link_to_diff($projectid, $pagename, $phase, $prompt = "Diff", $mode = "1", $isnew = false) {
-    return link_to_url(url_for_diff($projectid, $pagename, $phase), $prompt, $isnew, $mode);
+    return link_to_url(url_for_diff($projectid, $pagename, $phase, $mode), $prompt, $isnew);
 }
 
 // -- wiki
@@ -529,6 +537,14 @@ function url_for_private_message($username) {
             ."&amp;mode=compose&amp;u={$user_id}");
 }
 
+function red_link_to_pm($username, $prompt = null, $is_new_tab = false) {
+	if($prompt == null) {
+		$prompt = $username;
+	}
+	return red_link_to_url(url_for_private_message($username), $prompt, $is_new_tab);
+
+
+}
 function link_to_pm($username, $prompt = null, $is_new_tab = false) {
     if($prompt == null) {
         $prompt = $username;
@@ -653,7 +669,7 @@ function link_to_preferences($prompt = "My Preferences", $is_new_tab = false) {
 
 function url_for_page_detail($projectid) {
     global $code_url;
-    return "$code_url/tools/project_manager/pagedetail.php"
+    return "$code_url/tools/project_manager/page_detail.php"
         ."?projectid={$projectid}";
 }
 
@@ -669,9 +685,9 @@ function url_for_page_detail_mine($projectid) {
         ."&amp;select_by_user=1";
 }
 
-function link_to_page_detail_mine($projectid, $prompt) {
+function link_to_page_detail_mine($projectid, $prompt, $is_new_tab = false) {
     return link_to_url(
-        url_for_page_detail_mine($projectid), $prompt);
+        url_for_page_detail_mine($projectid), $prompt, $is_new_tab);
 }
 
 // -------------------------------------------------------------------
