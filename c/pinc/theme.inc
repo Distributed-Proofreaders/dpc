@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 global $relPath;
 $mtime = explode(" ", microtime());
 $starttime = $mtime[1] + $mtime[0];
@@ -11,6 +13,7 @@ $time_comment = array();
 //$username = $User->Username();
 
 include_once($relPath.'gettext_setup.inc');
+include_once($relPath.'stats.php');
 //include_once($relPath."templates/theme.tpl");
 
 function theme($nameofpage, $location, $extra_args = array()) {
@@ -178,6 +181,7 @@ function html_logobar() {
     global $code_url;
     global $dpdb;
     global $User;
+    global $completed_books_offset;
 
 //    $username = $User->Username();
     $numproj = $dpdb->SqlOneValue("
@@ -198,7 +202,7 @@ function html_logobar() {
 
     <td class='w50 center middle logobar'>
         <span class='logobar'>
-        " . sprintf( _('%s titles preserved for the world!'), number_format($numproj)) ."
+        " . sprintf( _('%s titles preserved for the world!'), number_format(($numproj + $completed_books_offset))) ."
         </span>
     </td>
     </tr>
@@ -211,7 +215,7 @@ function html_logobar() {
 
 	$divider        = " · ";
 
-	// Since everything goes through dpinit, and dpinit handles logins, no action is specified
+	// form has no action because all pages start with dpinit.php, which handles the form variables
 	echo "
 	<form id='frmlogin' name='frmlogin' method='post'>
 	<table id='tblnav'>
@@ -312,7 +316,8 @@ function html_statsbar() {
     if(isset($pagename) && $pagename == "activityhub") {
         // show_backlogs();
     }
-    $round_id = Arg('round_id', Arg('tally_name'));
+    //$round_id = Arg('round_id', Arg('tally_name'));
+    $round_id = Arg('roundid', Arg('round_id', Arg('tally_name')));
 
     if($round_id == "") {
         show_completed_projects();
@@ -471,7 +476,7 @@ function show_round_specific_stats( $round_id ) {
 
     $num_pagers = $dpdb->SqlOneValue("
         SELECT COUNT(DISTINCT username) npagers FROM user_round_pages
-        WHERE round_id = '$round_id'");
+        WHERE phase = '$round_id'");
 
     echo sprintf( _("<p>%s registered users</p>\n"), number_format($num_users) );
     echo sprintf( _("<p>%s users with one page or more</p>\n"), number_format($num_pagers));
