@@ -679,20 +679,22 @@ class DpUser
                 SELECT username, page_count FROM total_user_round_pages
                 WHERE username = '$username' AND phase = '$roundid'
                 UNION ALL
-                SELECT username, COUNT(1) FROM page_events_save
-                    WHERE username = '$username' AND phase = '$roundid'
-                    AND event_time >= UNIX_TIMESTAMP(CURRENT_DATE())
+                SELECT username, COUNT(1) FROM page_versions
+                    WHERE username = '$username'
+                    	AND phase = '$roundid'
+						AND state = 'C'
+						AND version_time >= UNIX_TIMESTAMP(CURRENT_DATE())
             ) a");
     }
 
     public function RoundTodayCount($roundid) {
         global $dpdb;
         return $dpdb->SqlOneValue("
-            select count(1) FROM page_events
+            select count(1) FROM page_versions
             WHERE username = '{$this->Username()}'
-				AND event_type='saveAsDone'
+				AND state = 'C'
                 AND phase = '$roundid'
-				AND event_time >= UNIX_TIMESTAMP(CURRENT_DATE())");
+				AND version_time >= UNIX_TIMESTAMP(CURRENT_DATE())");
 //        return $dpdb->SqlOneValue("
 //            select page_count FROM user_round_pages_today
 //            WHERE username = '{$this->Username()}'
