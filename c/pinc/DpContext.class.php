@@ -103,7 +103,7 @@ class DpContext {
 	public function PhaseBefore( $code ) {
 		/** @var Phase $p */
 		$idx = $this->PhaseIndex($code);
-		if($idx <= 0) {
+		if($idx <= 1) {
 			return null;
 		}
 		$p = $this->_iphases[$idx-1];
@@ -118,6 +118,43 @@ class DpContext {
 		}
 		$p = $this->_iphases[$idx+1];
 		return $p->Code();
+	}
+
+	/*
+	 *  Problem: idempotency of page request. Disallow resubmission of
+	 *          a form requesting a page. So form requires a nonce variable.
+	 *  Maybe provide a uuid with each project.php. When the request is submitted,
+	 *      we only need to record it to detect duplicates. Don't save at creation.
+	 *  Then when rececived associate the page/version.
+	 *  User can only have one active nnnce? OK - if nonce received and page sent
+	 *  then user state has changed for any other nonce received.
+	 *  Goal: Request for a page should be accompanied by a nonce value
+	 *  indicating
+	 */
+
+	public function Nonce() {
+		global $dpdb;
+
+		return $dpdb->SqlOneValue( "SELECT UUID()" );
+	}
+
+	public function SetUserNonce($nonce) {
+		global $dpdb, $User;
+		$username = $User->Username();
+		$sql = "
+			SELECT id FROM nonces
+			WHERE username = ? AND uuid = ?";
+		$args = array(&$username, &$nonce);
+		$is_dup = $dpdb->SqlOneValuePS($sql, $args);
+		if($is_dup) {
+			return false;
+		}
+
+		$sql = "REPLACE INTO nonces
+				SET uuid = ?, username = ? nonce_time = UNIX_TIMESTAMP()";
+		$args = array(&$nonce, &$username);
+		return $dpdb->SqlExecutePS($sql, $args);
+
 	}
 
 	public function init_holds() {
@@ -294,7 +331,7 @@ class DpContext {
 		return $a;
 	}
 
-	public function UserExists( $username ) {
+	public static function UserExists( $username ) {
 		global $dpdb;
 		if ( empty( $username ) ) {
 			return false;
