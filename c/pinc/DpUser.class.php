@@ -631,6 +631,7 @@ class DpUser
         global $dpdb;
         $username = $this->Username();
         $count = $this->RoundPageCount($roundid);
+		if (true) return 0;
         return $dpdb->SqlOneValue("
             SELECT COUNT(1) + 1 FROM
             (
@@ -686,9 +687,15 @@ class DpUser
     public function RoundTodayCount($roundid) {
         global $dpdb;
         return $dpdb->SqlOneValue("
-            select page_count FROM user_round_pages_today
+            select count(1) FROM page_events
             WHERE username = '{$this->Username()}'
-                AND phase = '$roundid'");
+				AND event_type='saveAsDone'
+                AND phase = '$roundid'
+				AND event_time >= UNIX_TIMESTAMP(CURRENT_DATE())");
+//        return $dpdb->SqlOneValue("
+//            select page_count FROM user_round_pages_today
+//            WHERE username = '{$this->Username()}'
+//                AND phase = '$roundid'");
     }
 
     public function MayManageRoles() {
