@@ -1298,14 +1298,9 @@ class DpProject
 //    }
 
 	public function OCRText() {
-		$ary = $this->ActivePageArray();
-		$text = "";
-		foreach($ary as $pg) {
-			$pgtext = PageVersionText( $this->ProjectId(), $pg['pagename'], 0);
-			$text .= ("\n" . $pgtext);
-		}
-		return $text;
+		return $this->RoundText("PREP");
 	}
+
     public function RoundText($phase) {
 	    global $dpdb;
 	    $projectid = $this->ProjectId();
