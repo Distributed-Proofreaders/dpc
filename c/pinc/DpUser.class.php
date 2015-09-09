@@ -664,8 +664,9 @@ class DpUser
                 SELECT page_count FROM total_user_round_pages
                 WHERE username = '$username'
                 UNION ALL
-                SELECT COUNT(1) FROM page_events_save
+                SELECT COUNT(1) FROM page_versions
                     WHERE username = '$username'
+                    AND state = 'C'
                     AND event_time >= UNIX_TIMESTAMP(CURRENT_DATE())
             ) a");
     }
