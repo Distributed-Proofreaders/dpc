@@ -836,14 +836,16 @@ function url_for_member_list() {
 }
 
 
-function link_to_member_stats($username, $prompt = "") {
-    return link_to_url(url_for_member_stats($username), $prompt);
+function link_to_member_stats($username, $roundid, $prompt = "") {
+    return link_to_url(url_for_member_stats($username, $roundid), $prompt);
 }
 
-function url_for_member_stats($username) {
+function url_for_member_stats($username, $roundid) {
     global $code_url;
-    return "$code_url/stats/members/member_stats.php"
-                        . "?username=$username";
+    return 
+	"$code_url/stats/members/member_stats.php"
+                        . "?username=$username"
+			. ($roundid ? "&amp;roundid=$roundid" : "");
 }
 
 function url_for_team_stats($tid, $roundid = "") {
