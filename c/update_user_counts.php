@@ -36,17 +36,31 @@ say("User activity log updated (return: $n)");
 */
 
 $n = $dpdb->SqlExecute("
+		REPLACE INTO user_round_pages
+				( username, PHASE, count_time, page_count )
+
+		SELECT  username,
+				PHASE,
+				UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(version_time))),
+				COUNT(1)
+		FROM page_versions
+		WHERE version_time >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 10 DAY))
+			AND state = 'C'
+			AND PHASE IN ('P1', 'P2', 'P3', 'F1', 'F2')
+    	GROUP BY username, PHASE, UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(version_time)))
+    	");
+
+/*
 	REPLACE INTO user_round_pages
 		( username, round_id, count_time, page_count )
 	SELECT  username,
-            	round_id,
-            	UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(TIMESTAMP))),
-            	COUNT(1)
+            round_id,
+            UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(TIMESTAMP))),
+            COUNT(1)
     	FROM page_events_save pe
 	WHERE timestamp >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY))
     	GROUP BY username, round_id, UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(TIMESTAMP)))");
-
-dump("$n user round counts inserted/updated over two days.");
+*/
 
 $dpdb->SqlExecute("TRUNCATE TABLE total_user_round_pages");
 
