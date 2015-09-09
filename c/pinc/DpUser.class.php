@@ -4,6 +4,8 @@ error_reporting(E_ALL);
 
 global $relPath;
 
+require_once $relPath . "DpContext.class.php";
+
 define("VERTICAL_LAYOUT_INDEX", 1);
 define("HORIZONTAL_LAYOUT_INDEX", 0);
 
@@ -11,7 +13,7 @@ class DpUser
 {
     protected $_bb;
 	/** @var  ForumUser $_forum_user */
-	protected $_forum_user;
+//	protected $_forum_user;
     protected $_username;
     protected $_row;
     protected $_settings;
@@ -24,64 +26,70 @@ class DpUser
         $this->init($this->_username);
     }
 
+	// init() is called from DpUeer constructor
+	// and twice from DpThisUser
+		// -- when in a session,
+		// -- after submitting name and password
+
     protected function init($username) {
         global $dpdb;
 
-        if(! $username) {
-            die("Attempting to init null username.");
-        }
 	    if(! $this->_bb->Exists()) {
 		    die( "Cannot find user $username in phpBB." );
 	    }
         $this->_username = $username;
-	    $users_table = forum_users_table();
+//	    $bb_users_table = build_forum_users_table();
+
+	    $is_dp_user = DpContext::UserExists($username);
+
+//	        SELECT COUNT(1) FROM users
+//	        WHERE username = '$username'");
 
 	    // if not in our database
-        if( ! $dpdb->SqlExists("
-                SELECT COUNT(1) FROM users WHERE username = '$username'")) {
-
+        if( ! $is_dp_user ) {
 	        // assert it's in the phpbb database
-	        assert(! $dpdb->SqlExists("
-						SELECT COUNT(1) FROM $users_table
-						WHERE username_clean = LOWER('$username')"));
-
+//	        assert(! $dpdb->SqlExists("
+//						SELECT COUNT(1) FROM $bb_users_table
+//						WHERE username_clean = LOWER('$username')"));
+//
 	        // query for what we need from the phpbb database
-	        $sql = "
-				SELECT  user_id,
-						username,
-						user_email,
-						user_login_attempts,
-						user_lang,
-						user_new_privmsg,
-						user_unread_privmsg
-				FROM $users_table
-				WHERE username_clean = LOWER('$username')";
+//	        $sql = "
+//				SELECT  user_id,
+//						username,
+//						user_email,
+//						user_login_attempts,
+//						user_lang,
+//						user_new_privmsg,
+//						user_unread_privmsg
+//				FROM $bb_users_table
+//				WHERE username_clean = LOWER('$username')";
 
-	        $row = $dpdb->SqlOneRow($sql);
-	        $bbid      = $row['user_id'];
-	        $lang      = $row['user_lang'];
+//	        $row = $dpdb->SqlOneRow($sql);
+	        $lang      = $this->_bb->Language();
 
 	        $sql = "
 					INSERT INTO users
-						(   bb_id,
+						(
 							username,
 							u_intlang,
 							t_last_activity,
 							date_created)
 					VALUES
-						(   $bbid,
-							'$username',
-							'$lang',
+						(
+							?,
+							?,
 							UNIX_TIMESTAMP(),
 							UNIX_TIMESTAMP())";
-	        say(html_comment($sql));
-	        assert($dpdb->SqlExecute($sql) == 1);
+	        $args = array(&$username, &$lang);
+//	        say(html_comment($sql));
+	        if($dpdb->SqlExecutePS($sql, $args) != 1) {
+		        die( "Create DP User Failed." );
+	        }
 //            $this->create_dp_user($username);
-            assert($dpdb->SqlExists("
-                SELECT 1 FROM users WHERE username = '$username'"));
+            assert(DpContext::UserExists($this->Username()));
         }
 
-	    $this->_forum_user = new ForumUser($username);
+//	    $this->_forum_user = new ForumUser($username);
     }
 
     public function FetchUser() {
@@ -353,7 +361,7 @@ class DpUser
             FROM
             (
                 SELECT username, page_count FROM total_user_round_pages
-                WHERE round_id = '$roundid'
+                WHERE phase = '$roundid'
 
                 UNION ALL
 
@@ -386,7 +394,7 @@ class DpUser
             FROM
             (
                 SELECT username, page_count FROM total_user_round_pages
-                WHERE round_id = '$roundid'
+                WHERE phase = '$roundid'
 
                 UNION ALL
 
@@ -546,12 +554,12 @@ class DpUser
     }
 
     public function InterfaceLanguage() {
-        return $this->_row['u_intlang'];
+	    return $this->_bb->Language();
     }
 
-    public function Language() {
-        return $this->_row['u_lang'];
-    }
+//    public function Language() {
+//        return $this->_row['u_lang'];
+//    }
 
     protected function _daysBetween($earlierdate, $laterdate) {
         return ($laterdate - $earlierdate) / 24 / 60 / 60 ;
@@ -632,7 +640,7 @@ class DpUser
                        SUM(a.page_count) pagecount 
                 FROM (
                     SELECT username, page_count FROM total_user_round_pages
-                    WHERE round_id = '$roundid'
+                    WHERE phase = '$roundid'
                     UNION ALL
                     SELECT username, COUNT(1) FROM page_events_save
                     WHERE phase = '$roundid'
@@ -687,9 +695,9 @@ class DpUser
         return $this->IsSiteManager();
     }
 
-    public function ForumUserId() {
-        return $this->_bb->UserId();
-    }
+//    public function ForumUserId() {
+//        return $this->_bb->UserId();
+//    }
 
     public function IsPostedNotice($projectid) {
         global $dpdb;
@@ -741,9 +749,9 @@ class DpUser
     }
 
 
-	public function Location() {
-		return $this->_forum_user->Location();
-	}
+//	public function Location() {
+//		return $this->_forum_user->Location();
+//	}
     public function IsEmailUpdates() {
         return $this->_row['emailupdates'];
     }
@@ -752,26 +760,27 @@ class DpUser
 			return $this->_bb;
 		}
 
-		public function BbUser() {
-			return $this->_bb->bb_user();
-		}
+//		public function BbUser() {
+//			return $this->_bb->bb_user();
+//		}
 
-		public function UserData() {
-			return $this->_bb->UserData();
-		}
+//		public function UserData() {
+//			return $this->_bb->UserData();
+//		}
 
-		public function LoginAttempts() {
-			return $this->_bb->LoginAttempts();
-		}
+//		public function LoginAttempts() {
+//			return $this->_bb->LoginAttempts();
+//		}
 
-		public function Phpbb3UserData() {
-			return $this->_bb->UserData();
-		}
+//		public function Phpbb3UserData() {
+//			return $this->_bb->UserData();
+//		}
 
+	/*
 		protected function create_dp_user($username) {
 			global $dpdb;
 
-			$users_table = forum_users_table();
+//			$bb_users_table = build_forum_users_table();
 
 			// A little validation
 			if($username == "")
@@ -783,6 +792,7 @@ class DpUser
 
 
 			// find the user in phpbb
+
 			$row = $dpdb->SqlOneRow("
 				SELECT  user_id,
 						username,
@@ -791,7 +801,7 @@ class DpUser
 						user_lang,
 						user_new_privmsg,
 						user_unread_privmsg
-				FROM $users_table
+				FROM $bb_users_table
 				WHERE username_clean = LOWER('$username')");
 
 			if(count($row) == 0) {
@@ -802,25 +812,28 @@ class DpUser
 			$bbid      = $row['user_id'];
 			$lang      = $row['user_lang'];
 
+			$lang = $this->_bb->Language();
+
 			$sql = "
 					INSERT INTO users
-						(   bb_id,
+						(
 							username,
 							u_intlang,
 							t_last_activity,
 							date_created)
 					VALUES
-						(   ?,
+						(
 							?,
 							?,
 							UNIX_TIMESTAMP(),
 							UNIX_TIMESTAMP())";
 
-			$args = array(&$bbid, &$username, &$lang);
+			$args = array( &$username, &$lang);
 			if($dpdb->SqlExecutePS($sql, $args) != 1) {
 				die( "Create DP User Failed." );
 			}
 		}
+	*/
 
     public function FirstRoundDate($round_id) {
         global $dpdb;
@@ -958,9 +971,12 @@ class DpThisUser extends DpUser
                     // if both args are missing, try for a session
                     function __construct($username = "", $password = "") {
                         $this->_bb = new DpPhpbb3();
-                        if($this->_bb->IsLoggedIn() && $username == "" && $password == "") {
+
+	                    // Is the user in a session?
+                        if($this->_bb->IsLoggedIn()) {
+	                        //	If so, phpbb should give us a username
                             $username = $this->_bb->Username();
-                            assert($username != "");
+
                             $this->init($username);
                             $this->SetLatestVisit();
                             return;
