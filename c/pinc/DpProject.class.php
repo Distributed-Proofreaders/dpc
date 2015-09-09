@@ -1297,13 +1297,34 @@ class DpProject
 //		    AND version = 0");
 //    }
 
-    public function RoundText($roundid) {
-        $ary = $this->PageActiveTextArray($roundid);
-        $text = "";
-        foreach($ary as $pg) {
-            $text .= ("\n" . $pg['text']);
-        }
-        return $text;
+	public function OCRText() {
+		$ary = $this->ActivePageArray();
+		$text = "";
+		foreach($ary as $pg) {
+			$pgtext = PageVersionText( $this->ProjectId(), $pg['pagename'], 0);
+			$text .= ("\n" . $pgtext);
+		}
+		return $text;
+	}
+    public function RoundText($phase) {
+	    global $dpdb;
+	    $projectid = $this->ProjectId();
+	    $sql = "SELECT pagename, IFNULL(pv.version, plv.version)
+	            FROM page_versions pv
+	            JOIN page_last_versions plv
+		    	ON pv.projectid = plv.projectid
+		    		AND pv.pagename = plv.pagename
+	            WHERE projectid = ?
+	            	AND phase = ?";
+	    $args = array(&$projectid, &$phase);
+	    $rows = $dpdb->SqlRowsPS($sql, $args);
+
+	    $text = "";
+	    foreach($rows as $row) {
+		    $pgtext = PageVersionText( $this->ProjectId(), $row['pagename'], $row['version']);
+		    $text .= ("\n" . $pgtext);
+	    }
+	    return $text;
     }
 
     public function ActiveText() {
@@ -2493,12 +2514,13 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 			JOIN (
 				SELECT projectid,
 						PHASE,
-						SUM(pv.state = 'A') n_avail,
-						SUM(pv.state = 'O') n_out,
-						SUM(pv.state = 'C') n_done,
-						SUM(pv.state = 'B') n_bad,
+						COUNT(pv.state = 'A') n_avail,
+						COUNT(pv.state = 'O') n_out,
+						COUNT(pv.state = 'C') n_done,
+						COUNT(pv.state = 'B') n_bad,
 						COUNT(1) n_pgs
 				FROM page_last_versions pv
+				WHERE projectid = '$projectid'
 				GROUP BY projectid, PHASE
 				) a
 				ON p.projectid = a.projectid
