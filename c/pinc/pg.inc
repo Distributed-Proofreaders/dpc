@@ -10,10 +10,9 @@ $PG_faq_url             = "http://www.fadedpage.com/";
 $PG_html_faq_url        = "http://www.fadedpage.com/";
 $PG_donation_url        = "http://www.fadedpage.com/";
 $PG_copyright_howto_url = "http://www.fadedpage.com/";
-$PG_greek_howto_url     = "http://www.pgdp.net/wiki/Transliterating_Greek/";
+$PG_greek_howto_url     = $wiki_url . "/Transliterating_Greek/";
 $PG_mailing_lists_url   = "http://www.fadedpage.com/";
 $PG_in_progress_url     = "http://www.fadedpage.com/"; 
-$PG_paypal_business_id  = "donate@pgdpcanada.net";
 
 // -----------------------------------------------------------------------------
 

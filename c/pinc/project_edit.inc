@@ -1,4 +1,4 @@
-<?PHP
+<?php
 global $relPath;
 include_once($relPath.'user_is.inc');
 include_once($relPath.'project_states.inc');
@@ -12,12 +12,12 @@ define('USER_CAN_EDIT_PROJECT',   3);
 // is allowed to edit the specified project
 // (i.e., is either the project's manager or a site manager).
 function user_can_edit_project( $projectid ) {
-    global $User;
+    global $pguser;
     global $dpdb;
 
     $project_manager = $dpdb->SqlOneValue("
         SELECT username FROM projects WHERE projectid = '$projectid'");
-    if ($User->IsProjectManager()) {
+    if ($pguser == $project_manager) {
         // The current user is the project manager for the project.
         return USER_CAN_EDIT_PROJECT;
     }

@@ -352,7 +352,8 @@ function status($row) {
 }
 
 
-function array_to_options($optarray, $is_blank = true,  $selected = null) {
+function array_to_options($optarray, $is_blank = true, 
+                            $selected = null) {
     $ret = $is_blank
         ? "<option value=''> </option>\n"
         : "";

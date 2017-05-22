@@ -1,8 +1,8 @@
 <?PHP
 $relPath="./../../pinc/";
 include($relPath.'dpinit.php');
-include_once($relPath.'theme.inc');
-include_once($relPath.'user_is.inc');
+//include_once($relPath.'theme.inc');
+//include_once($relPath.'user_is.inc');
 include_once($relPath.'site_news.inc');
 
 $news_page_id = Arg('news_page_id'); 
@@ -343,4 +343,3 @@ function move_news_item ($news_page_id, $id_of_item_to_move, $direction) {
 }
 
 // vim: sw=4 ts=4 expandtab
-?>

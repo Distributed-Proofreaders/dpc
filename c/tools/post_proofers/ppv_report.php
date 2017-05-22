@@ -1,4 +1,4 @@
-<?PHP
+<?
 $relPath="../../pinc/";
 include_once($relPath.'dpinit.php');
 include_once($relPath.'theme.inc');

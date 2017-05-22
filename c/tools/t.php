@@ -1,4 +1,4 @@
-<?PHP
+<?
 
 ini_set("display_errors", true);
 error_reporting(E_ALL);
@@ -341,7 +341,6 @@ function html_end() {
 <?PHP
 }
 
-/** @var DpProject $project */
 function EchoPageStateIssues($project) {
     /** @nfer
     var DpProject $project */

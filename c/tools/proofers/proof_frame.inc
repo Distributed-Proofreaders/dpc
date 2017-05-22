@@ -8,18 +8,10 @@ switch ($interface_type) {
         include('proof_frame_std.inc');
         break;
 
-    case 1:
-        // enhanced interface
+    default:
         include('proof_frame_enh.inc');
         break;
 
-    case 2:
-        // super interface
-        include('proof_frame_super.inc');
-        break;
-
-    default:
-        die( "unknown i_type: '$interface_type'" );
 }
 
 // vim: sw=4 ts=4 expandtab

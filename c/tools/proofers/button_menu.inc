@@ -1,4 +1,4 @@
-<?PHP
+<?
 global $relPath;
 include_once($relPath.'dpinit.php');
 include_once($relPath.'prefs_options.inc');

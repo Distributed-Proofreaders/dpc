@@ -1,0 +1,27 @@
+# This file contains your saved settings for guiprep.pl. It is automatically generated when you save your settings.
+# If you delete it, all the settings will revert to defaults. You shouldn't ever have to edit this file manually.
+
+$zerobytetext = '[Blank Page]';
+$italicsopen  = '<i>';
+$italicsclose = '</i>';
+$boldopen     = '<b>';
+$boldclose    = '</b>';
+
+$supopen     = '^{';
+$supclose    = '}';
+
+@opt = (1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,1,0,1,);
+
+$lastrundir   = 'C:\dp\vol23\g';
+$palette      = 'grey80';
+$editstart    = '';
+$viewerstart  = '';
+$geometry     = '640x677+176+192';
+$ftphostname  = 'pgdp.net';
+$ftpusername  = '';
+$ftppassword  = '';
+$ftphome  = '';
+$crushoptions = '-bit_depth 1 -reduce ';
+$imagesdir    = 'pngs';
+$ftpdownloaddir = '';
+$ftpaccount{'pgdp.net'} = ['','',''];

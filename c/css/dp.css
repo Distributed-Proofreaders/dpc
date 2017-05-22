@@ -11,6 +11,7 @@ a { text-decoration: none; }
 a:link { color: #0000ff; }
 a:visited { color: #990099; }
 a:active { color: #ff0000; }
+a.red { color: red}
 
 div#home_main {
     padding: 0 3%;
@@ -20,19 +21,24 @@ input[type=button],
 input[type=submit],
 table.sortable th { cursor: pointer; } 
 
-body { margin: 0; }
+body {
+    margin: 0;
+    font-size: 15px;
+}
+
 
 pre { font: inherit; }
 
 table.dptable.logobar,
+div#logobox,
 div#logobar {
     background-color: #e7efde;
 }
 
-table.dptable tr.colhead {
+table.dptable tr.colheadings {
     background-color: lightgreen;
 }
-table.dptable.no_tr_for_th tr.colhead {
+table.dptable.no_tr_for_th tr.colheadings {
     display: none;
 }
 
@@ -49,11 +55,21 @@ table.dptable td div {
 }
 
 table.dptable.minitab {
+    background-color: #e7efde;
 }
 
 table.dptable.minitab th ,
 table.dptable.minitab td {
     padding: .3em 2em .3em 3em ;
+}
+
+table.dptable.minitab tr th {
+    background-color: darkgreen;
+    color: white;
+}
+
+table.dptable.minitab td:first-of-type {
+    background-color: lightgreen;
 }
 
 div#logobar div.left {
@@ -168,7 +184,7 @@ div.returnto {
     margin-left: 2em;
 }
 
-div.overflow {
+div.overflow, .overflow {
     overflow: hidden;
 }
 
@@ -345,6 +361,12 @@ table td.left {
 
 div.center div {
     text-align: center;
+}
+div.center div.right {
+    text-align: right;
+}
+div.center div.left {
+    text-align: left;
 }
 
 td.reqd {
@@ -573,7 +595,7 @@ tr.headerbar {
 .mainbody {
     background-color: white;
     color: #333333;
-    font-family: verdana, helvetica, sans-serif;
+<!--    font-family: verdana, helvetica, sans-serif; -->
 }
 
 td, th {
@@ -599,6 +621,7 @@ table.dptable {
     border-collapse: collapse;
     margin: .5em auto;
     background-color: #e7efde;
+    border: 1px solid black;   /* No effect on cells */
 }
 
 table.dptable th,
@@ -609,7 +632,13 @@ table.dptable td {
     overflow: hidden;
 }
 
-table.dptable td.noborder {
+table.dptable.form th,
+table.dptable.form td {
+    border: none;
+}
+
+
+table.noborder td, table.noborder th {
     border-width: 0;
 }
 
@@ -625,7 +654,6 @@ input {
     font-size: 1em;
 }
 table.dptable input[type=submit] {
-    min-width: 90%;
     height: 1.9em;
 }
 
@@ -728,6 +756,12 @@ div.recent {
     float: left;
     margin: 0;
     padding: 0;
+}
+
+
+.shrink-to-fit {
+    padding: .5em 2.5em;
+    display: inline-block;
 }
 
 .pg_saved,
@@ -955,7 +989,7 @@ table#tblnav * {
 }
 
 table#tblnav input {
-    font-size: 80%;
+    font-size: 70%;
     color: black;
 }
 
@@ -966,10 +1000,6 @@ table#tblnav {
     font-family: verdana, helvetica, sans-serif;
     font-weight: normal;
     font-size: 14px;
-}
-
-table#tblpages {
-    margin: auto;
 }
 
 table#tblpages input {
@@ -1047,9 +1077,7 @@ textarea.editarea {
     vertical-align: middle;
 }
 
-.sidebar,
 div.logobar {
-    width: 100%;
     border: 0;
     background-color: #E7EFDE;
     overflow: auto;
@@ -1141,81 +1169,72 @@ div.logobar {
     width: 49%;
 }
 
-.w05 { width:  5%; overflow: auto; }
-.w10 { width: 10%; overflow: auto; }
+.w05 { width:  5%; }
+.w10 { width: 10%; }
 
-.w15 { width: 15%; overflow: auto; }
-.w20 { width: 20%; overflow: auto; }
+.w15 { width: 15%; }
+.w20 { width: 20%; }
 
 .w25 {
     width: 25%;
     margin: auto;
-    overflow: auto;
     text-align: center;
 }
-.w30 { width: 30%; overflow: auto; }
+.w30 { width: 30%; }
 
 .w33 {
     width: 35%;
     margin: .5em auto;
     border: 1px black solid;
-    overflow: auto;
 }
 
 .w35 {
     width: 35%;
     margin: .5em auto;
-    overflow: auto;
 }
 
 .w40 {
     width: 40%;
-    overflow: auto;
     padding: .2em;
 }
 .w45 {
     width: 45%;
-    overflow: auto;
     padding: .2em;
 }
 .w50 {
     width: 50%;
     margin: .5em auto;
-    overflow: auto;
 }
 
-.w55 { width: 55%; overflow: auto; }
+.w55 { width: 55%; }
 
 .w60 {
     width: 60%;
     margin: .5em auto;
-    overflow: auto;
 }
 
-.w65 { width: 65%; overflow: auto; }
+.w65 { width: 65%; }
 
 .w70 {
     width: 70%;
     margin: .5em auto;
-    overflow: auto;
 }
 
-.w75 { width: 75%; overflow: auto; }
-.w80 { width: 80%; overflow: auto; margin: .5em auto; }
-.w85 { width: 85%; overflow: auto; margin: .5em auto; }
+.w75 { width: 75%; }
+.w80 { width: 80%; margin: .5em auto; }
+.w85 { width: 85%; margin: .5em auto; }
 
 .w90 {
     width: 90%;
     margin: .5em auto;
-    overflow: auto;
 }
 
-.w95 { width: 95%; overflow: auto; }
-.w98 { width: 98%; overflow: auto; }
-.w99 { width: 99%; overflow: auto; }
+.w95 { width: 95%; }
+.w98 { width: 98%; }
+.w99 { width: 99%; }
 
-.w100 { width: 100%; margin: 0 auto; overflow: auto; }
-.wh100 { width: 100%; height: 100%; margin: 0 auto; overflow: auto; }
+.w100 { width: 100%; margin: 0 auto; }
+.wh100 { width: 100%; height: 100%; margin: 0 auto; }
 
 .px1000 {
     width: 1000px;
@@ -1241,7 +1260,7 @@ div.logobar {
     font-size: .8em;
     width: 100%;
     color: white;
-    background-color: #336633;
+    bacground-color: darkgreen;
     text-align: center;
     padding: 3px 0;
 }
@@ -1287,7 +1306,7 @@ div#div_upload {
     color: #DDDDDD;
 }
 
-.div_project_info {
+#divproject div.status_box {
     background-color: #F0F0F0;
     width: 95%;
     border: 1px solid #808080;
@@ -1297,27 +1316,61 @@ div#div_upload {
     text-align: center;
 }
 
-#project_info_table {
+.project_table {
     border: 1px solid grey;
-    clear: both;
-    width: 95%;
     border-collapse: separate;
     /* margin: .5em auto; */
     margin: .5em;
     overflow: auto;
 }
 
-#project_info_table tr {
+.project_table tr {
     margin: .2em;
 }
 
-#project_info_table td {
-    border: .5px solid #cccccc;
+.project_table td {
+    border: 1px solid #cccccc;
     text-align: left;
     padding-left: 1em;
+    padding-right: .5em;
 }
 
-#project_info_table tr td.center {
+.project_table tr td.center {
+    text-align: center;
+}
+
+.table_sidebar {
+    margin: auto;
+}
+
+div.sidebar {
+    border: 1px solid #cccccc;
+    margin: .5em;
+    padding: .5em;
+}
+
+table#project_info_table {
+    margin: .5em;
+}
+.table_sidebar tr td:first-child
+{
+    background-color: #EEEEEE;
+}
+
+div.sidebar #checked_out {
+    border: 1px solid green;
+    background-color: lightgreen;
+}
+div.sidebar #your_saved {
+    /*
+    border: 1px solid red;
+    background-color: lightpink;
+    */
+}
+
+div.liner{
+    width: 100%;
+    height: 100%;
     text-align: center;
 }
 
@@ -1654,7 +1707,7 @@ td.searchright {
 }
 
 #dosearch {
-    display: block; float: left; margin-left: 1em; font-size: 1.1em;
+    display: block; float: right; margin-left: 1em; font-size: 1.1em;
 }
 
 .selsearch {
@@ -1666,7 +1719,7 @@ input.horizontal {
     display: inline;
 }
 
-td.right_cell {
+table td.right_cell {
     text-align: right;
     /* border-bottom: #DDD solid 1px; */
 }
@@ -1727,7 +1780,7 @@ td.tabsbar {
 }
 
 ul.bare {
-    list-style:none;
+    list-style: none;
     padding: .5em;
     text-align: left;
 }
@@ -1739,11 +1792,12 @@ ul.bare li {
 ul.clean,
 ul.clean ul {
     list-style: none;
-    padding: 0;
+    padding: auto;
     margin: 0;
 }
-ul.clean li {
-    padding: 0;
+
+ul.center li {
+    text-align: left;
 }
 
 table.mini td {
@@ -1815,6 +1869,7 @@ div.emptycell {
 }
 
 a.likealink,
+input.likealink,
 span.likealink,
 th.likealink,
 td.likealink {
@@ -2075,6 +2130,10 @@ table#tbl_proj_list select {
     /* width: 8em; */
 }
 
+div.sidebar li {
+    margin-bottom: .4em ;
+}
+div.sidebar li,
 table.sidebar div,
 table.sidebar td {
     color: #333333;
@@ -2095,9 +2154,9 @@ table.neighborhood td {
     padding: 0 .4em;
 }
 
-.pct75 {
-    font-size: 75%;
-}
+.pct75 { font-size: 75%; }
+.pct80 { font-size: 80%; }
+.pct90 { font-size: 90%; }
 
 #tbl_d_and_f th,
 #tbl_d_and_f td {
@@ -2176,3 +2235,60 @@ table.tbl-page-log  th:nth-child(1) { width: 10%; }
 table.tbl-page-log  th:nth-child(2) { width: 10%; }
 table.tbl-page-log  th:nth-child(3) { width: 10%; }
 table.tbl-page-log  th:nth-child(4) { width: 35%; }
+
+div#logobox {
+    width: 100%;
+    height: 75px;
+    font-family: verdana, helvetica, sans-serif;
+    font-weight: bold;
+}
+
+div#logobox div#logoleft, div#logobox div#logoright {
+    width: 50%;
+    float: left;
+    height: 75px;
+    margin: auto;
+    overflow: hidden;
+}
+
+div#navbox {
+    width: 100%;
+    color: white;
+    background-color: red;
+    text-decoration: inherit;
+    font-family: verdana, helvetica, sans-serif;
+    font-size: 14px;
+    padding-left: 0.8em;
+    padding-right: 0.8em;
+}
+
+div#navbox a.nav {
+    color: white;
+}
+
+div#navbox input {
+    font-size: 70%;
+}
+
+/* project page */
+
+div.projbox {
+    padding: .2em .5em;
+    margin: .3em auto;
+    border: solid black 1px;
+    clear: both;
+}
+
+div#divupload input {
+    width: 10em;
+    margin: .3em;
+}
+
+table.dptablette {
+    background-color: #e7efde;
+}
+
+table.dptable tr.table_title {
+    background-color: lightgreen;
+}
+

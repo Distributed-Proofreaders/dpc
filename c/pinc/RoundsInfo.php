@@ -5,25 +5,25 @@
 $DpRounds = array();
 
 $DpRounds["PREP"] = array( "name" => _('Preparation'),
-        "description" => _("PREP - Check the text and images for completeness and quality.") );
+        "description" => _("Check the text and images for completeness and quality.") );
 
 $DpRounds["P1"] = array( "name" => _('Proofreading Round 1'),
-        "description" => _("P1 - Examine the text and make it match the image (without formatting).") );
+        "description" => _("Examine the text and make it match the image (without formatting).") );
 
 $DpRounds["P2"] = array( "name" => _('Proofreading Round 2'),
-        "description" => _("P2 - The text has been proofread once. Ensure the text matches the image.") );
+        "description" => _("The text has been proofread once. Ensure the text matches the image.") );
 
 $DpRounds["P3"] = array( "name" => _('Proofreading Round 3'),
-        "description" => _("P3 - Match the text to the image.") );
+        "description" => _("Match the text to the image.") );
 
 $DpRounds["F1"] = array( "name" => _('Formatting Round 1'),
-        "description" => _("F1 - Add formatting markup.") );
+        "description" => _("Add formatting markup.") );
 
 $DpRounds["F2"] = array( "name" => _('Formatting Round 2'),
-        "description" => _("F2 - Check formatting markup.") );
+        "description" => _("Check formatting markup.") );
 
 $DpRounds["PP"] = array( "name" => _('Post Processing'),
-        "description" => _("PP - Post Processing.") );
+        "description" => _("Post Processing.") );
 
 $DpRounds["PPV"] = array( "name" => _('PP Verifying'),
      "description" => _("Confirm the project meets DPC and FadedPage standards."));

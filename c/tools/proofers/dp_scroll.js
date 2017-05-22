@@ -1,8 +1,67 @@
-var imgblock     = null;
+// var imgblock     = null;
 var scrollTime   = 0;
-var interface;
+// var interface;
 
-frameRef     = null; // used by dp_proof.js
+var frameRef     = null; // used by dp_proof.js
+var scanimage;
+var textdata;
+
+function initializeStuff(wFace) {
+
+    // interface = wFace;
+
+    frameRef = top.frames[0].document;
+    isLded = 1;
+    inProof = 1;
+    cRef = top.menuframe.document.markform;
+
+
+    // if(wFace == 1) {
+            // enhanced interface, non-spellcheck
+            // docRef = top.frames[0].document;
+            // doBU();
+    // }
+    // else if (wFace == 0) {
+        // standard interface, non-spellcheck
+        // docRef = top.frames[0].textframe.document;
+    // }
+    if(proofframe && proofframe.imageframe 
+                  && proofframe.imageframe.document
+                  && proofframe.imageframe.document.getElementById) {
+        scanimage = proofframe.imageframe.document.getElementById("scanimage");
+    }
+    else {
+        scanimage = proofframe.document.getElementById("scanimage");
+    }
+
+    initZoom();
+
+    // scanimage.style.width = 10 * ZoomValue() + 'px'
+
+    if (scanimage.addEventListener) {
+        scanimage.addEventListener ("mousewheel", eScroll, false);
+        scanimage.addEventListener ("DOMMouseScroll", eScroll, false);
+    }
+    else {
+        scanimage.attachEvent ("onmousewheel", eScroll);
+    }
+
+    if ( docRef().editform.text_data ) {
+        textdata = docRef().editform.text_data;
+        if (textdata.addEventListener) {
+            textdata.addEventListener ("mousewheel", eScroll, false);
+            textdata.addEventListener ("DOMMouseScroll", eScroll, false);
+        }
+        else {
+            textdata.attachEvent ("onmousewheel", eScroll);
+        }
+    }
+
+    if(! docRef().selection) {
+        docRef().editform.text_data.style.whiteSpace = 'pre-line';
+    }
+    textdata.focus();
+}
 
 
 // ------------------------------------------------
@@ -22,16 +81,23 @@ function SetZoomCookieValue(value) {
     setnamevalue("zoom", value);
 }
 
-function ZoomInputValue() {
+function ZoomValue() {
     return parseInt(docRef().editform.imgzoom.value);
 }
 
-function SetZoomInputValue(val) {
+// the textbox value has changed - deal with the consequences
+function ChangeZoomValue() {
+    SetZoomCookieValue(ZoomValue());
+    ApplyZoomValue();
+    return false;
+}
+
+function SetZoomValue(val) {
     docRef().editform.imgzoom.value = val.toString();
 }
 
-function SetImageWidth() {
-    frameRef.scanimage.style.width = (10 * ZoomInputValue()).toString() +'px';
+function ApplyZoomValue() {
+    scanimage.style.width = (10 * ZoomValue()).toString() +'px';
 }
 
 function focusText() {
@@ -64,7 +130,7 @@ function eScroll (event) {
     }
 
     if(t.id == "scanimage") {
-        return imageSize(rolled);
+        return scrollImageSize(rolled);
     }
     else if(t.id == "text_data") {
         return textSize(rolled);
@@ -90,94 +156,35 @@ function textSize(amt) {
 
 function initZoom() {
     var zoom = ZoomCookieValue();
-    SetZoomInputValue(zoom);
-    SetImageWidth(zoom);
-}
-
-function initializeStuff(wFace) {
-    var textdata;
-
-    initZoom();
-
-    interface = wFace;
-
-    frameRef = top.frames[0].document;
-    isLded = 1;
-    inProof = 1;
-    cRef = top.menuframe.document.markform;
-
-
-    // if(wFace == 1) {
-            // enhanced interface, non-spellcheck
-            // docRef = top.frames[0].document;
-            // doBU();
-    // }
-    // else if (wFace == 0) {
-        // standard interface, non-spellcheck
-        // docRef = top.frames[0].textframe.document;
-    // }
-    if(proofframe && proofframe.imageframe 
-                  && proofframe.imageframe.document
-                  && proofframe.imageframe.document.getElementById) {
-        scanimage = proofframe.imageframe.document.getElementById("scanimage");
-    }
-    else {
-        scanimage = proofframe.document.getElementById("scanimage");
-    }
-
-    scanimage.style.width = 10 * ZoomInputValue() + 'px'
-
-    if (scanimage.addEventListener) {
-        scanimage.addEventListener ("mousewheel", eScroll, false);
-        scanimage.addEventListener ("DOMMouseScroll", eScroll, false);
-    }
-    else {
-        scanimage.attachEvent ("onmousewheel", eScroll);
-    }
-
-    if ( docRef.editform.text_data ) {
-        textdata = docRef.editform.text_data;
-    }
-    if (textdata.addEventListener) {
-        textdata.addEventListener ("mousewheel", eScroll, false);
-        textdata.addEventListener ("DOMMouseScroll", eScroll, false);
-    }
-    else {
-        textdata.attachEvent ("onmousewheel", eScroll);
-    }
-    if(! docRef.selection ) {
-        docRef.editform.text_data.style.whiteSpace = 'pre-line';
-    }
+    SetZoomValue(zoom);
+    ApplyZoomValue();
 }
 
 function ImgBigger() {
-    SetZoomInputValue(ZoomInputValue() * 1.2);
-    SetImageWidth();
+    SetZoomValue(ZoomValue() * 1.1);
+    ApplyZoomValue();
 }
 
 function ImgSmaller() {
-    SetZoomInputValue(ZoomInputValue() / 1.2);
-    SetImageWidth();
+    SetZoomValue(ZoomValue() / 1.1);
+    ApplyZoomValue();
 }
 
-function ResetImageSize() {
-    SetZoomInputValue(100);
-    SetImageWidth();
+function ResetZoomValue() {
+    SetZoomValue(100);
+    ApplyZoomValue();
 }
 
-function imageSize(amt) {
-    var zoom = ZoomInputValue();
-    if(amt > 0) {
-        zoom += 5;
-        if(zoom > 150) {
-            zoom = 150;
-        }
+function scrollImageSize(delta) {
+    var zoom = ZoomValue();
+    if(delta > 0) {
+        zoom = Math.min(zoom + 5, 150);
     }
-    else if(amt < 0) {
-        zoom = min(zoom = 5, 20);
+    else if(delta < 0) {
+        zoom = Math.max(zoom - 5, 20);
     }
-    SetZoomInputValue(zoom);
-    scanimage.style.width = (zoom * 10).toString() + 'px';
+    SetZoomValue(zoom);
+    ApplyZoomValue();
     return false;
 }
 

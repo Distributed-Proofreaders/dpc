@@ -29,6 +29,7 @@ FROM days d
 JOIN user_round_pages urp
     ON urp.count_time BETWEEN d.min_unixtime AND d.max_unixtime
 WHERE d.dateval > DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)
+    AND d.dateval < DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
 GROUP BY d.dateval
 ORDER BY d.dateval");
 
@@ -100,7 +101,7 @@ echo "
 
 if($User->IsSiteManager() || $User->IsProjectFacilitator() || $User->IsProjectManager()) {
     echo "
-    <div id='admin_links' class='lfloat w50'>
+    <div id='admin_links' class='lfloat w40'>
       <h5>Admin Links</h5>
       <pre>
         <a href='http://www.pgdpcanada.net/c/tools/prep.php'>Projects Before P1</a>
@@ -112,9 +113,11 @@ if($User->IsSiteManager() || $User->IsProjectFacilitator() || $User->IsProjectMa
       </pre>
     </div>
 
-    <div id='chart_div' style='width: 700px; height: 200px; margin: 0; padding: 0;
-                position: relative;'>
-    </div>
+
+    <iframe src='backlog.php' 
+        id='chart_div' style='width: 400px; height: 250px; margin: 2em 3em 0 0; padding: 0;
+                border: none; overflow: hidden; float: right;'>
+    </iframe>
     <hr class='left clear hidden' />\n";
 }
 
@@ -190,7 +193,7 @@ echo "
 
 if ( user_is_PM() ) {
     echo "
-    <li>" . link_to_project_manager("Manage My Projects") . "</li>\n";
+    <li>" . link_to_projectmgr("Manage My Projects") . "</li>\n";
 }
 
 // ----------------------------------

@@ -12,7 +12,7 @@ include_once $relPath . "dpctls.php";
 $User->IsLoggedIn()
     or RedirectToLogin();
 
-$projectid  = ArgProjectId()
+$projectid  = ArgProjectid()
     or UnauthorizedDeath("no projectid");
 $project = new DpProject($projectid);
 
@@ -33,7 +33,6 @@ $txtrepl        = Arg("txtrepl");
 $isregex        = IsArg("chkregex");
 $isignorecase   = IsArg("chkignorecase");
 $btnadhoc       = IsArg("btnadhoc");
-$btnfind        = IsArg("btnfind");
 
 
 switch($mode) {
@@ -47,7 +46,7 @@ switch($mode) {
         break;
 
     case "suggested":
-        $awords = $project->SuggestedWordsByCountAlpha($langcode);
+        $awords = $project->AcceptedWordsByCountAlpha($langcode);
         break;
 
     case "adhoc":
@@ -141,16 +140,30 @@ echo "
         ".WordlistPicker("mode", $mode, "", "document.formcontext.submit()")."
         </div>   <!-- command-3 -->\n";
 
+/*
+    Disposition buttons - good, bad, remove, refresh,
+            replace     (replacement)
+*/
 	if ($project->UserMayManage()) {
 		echo "
-		<div id='buttonbox'>
+		<div id='buttonbox' class='block'>
 		  <input type='button' name='btngood'  id='btngood'  value='Good'>
 		  <input type='button' name='btnbad'   id='btnbad'   value='Bad'>
 		  <input type='button' name='btnremove' id='btnremove'  value='Remove'>
-		  <input type='submit' name='btnrefresh' id='btnrefresh'  value='Refresh'>
-
-	      <input type='button' name='btnreplace'  //calling bogus eReplaceWordClick()
-										id='btnreplace'  value='Replace'>
+		  <input type='button' name='btnrefresh' id='btnrefresh'  value='Refresh'>
+	      <input type='button' name='btnreplace'  id='btnreplace'  value='Replace'>
+		</div>   <!-- buttonbox -->
+        <div id='replacebox' class='none'>
+		  Replace <input type='text'   name='txtreplace'  id='txtreplace'  size='20'>
+		  <br>
+		  With  <input type='text'   name='txtwith'  id='txtwith'  size='20'>
+		  <br>
+		  <input type='button' name='doreplace'   id='doreplace'   value='Replace'>
+		  <input type='button' name='donext' id='donext'  value='Skip/Next'>
+		  <input type='button' name='doreplnext' id='doreplnext'  value='Repl/Next'>
+		  <input type='button' name='donereplace' id='donereplace'  value='Done Repl'>
+		  <br>
+		  <input type='button' name='doreplaceall'   id='doreplaceall'   value='Replace All'>
 		</div>   <!-- buttonbox -->\n";
 	}
 
@@ -187,17 +200,15 @@ echo
         <input type='checkbox' name='chkignorecase' id='chkignorecase'
             ".($isignorecase ? " checked=checked'" : "").">
         ignore case <br>
-            <input type='submit' name='btnfind' 
-                id='btnfind' value='"._("Find")."'>
+            <input type='button' name='btnadhocfind'
+                id='btnadhocnd' value='"._("Find")."'>
       </div> <!-- findreplace -->\n";
   }
 
   $asize = min(count($awords), 100);
   echo "
       <div id='divtblcontext'>
-        <select name='tblcontext' id='tblcontext'
-                      size='$asize'
-                      onchange='eTblContextChange(event)'>\n";
+        <select name='tblcontext' id='tblcontext' size='$asize'>\n";
   if($mode == "regex") {
 	  if ( $txtfind != "" ) {
 		  $flags = ( $isignorecase ? "ui" : "u" );
@@ -231,7 +242,7 @@ echo
 echo "
     <div id='divright'>
       <div id='div_context_image'>
-        <img id='imgcontext' src='' alt='' onload='eContextImgLoad()'>
+        <img id='imgcontext' src='' alt=''>
       </div> <!--  div_context_image   -->
       <div id='div_context_list'>
       </div> <!--  div_context_list   -->
@@ -241,4 +252,3 @@ echo "
 </html>";
 
 // vim: sw=4 ts=4 expandtab
-?>

@@ -5,7 +5,7 @@ include($relPath.'pg.inc');
 echo $docType. "\r\n";
 ?>
 <html>
-<?PHP
+<?
 	$greek_contents = @$_GET['textbox'];
 ?>
 
@@ -46,7 +46,7 @@ p.info {
 
 <img name="greekimg" 
 
-<?PHP
+<?
 // Use the form x/y coords for image button to see which one was pressed.
 // Later, we can add other glyphsets and image maps, for alternate glyphs.
 
@@ -119,7 +119,7 @@ Greek HOWTO</a> for more information.
 <area shape="rect" coords=" 59,8, 76,25" href="javascript:addChar('D')" title="Delta">
 <area shape="rect" coords=" 76,8, 92,25" href="javascript:addChar('E')" title="Epsilon">
 <area shape="rect" coords=" 93,8,110,25" href="javascript:addChar('Z')" title="Zeta">
-<area shape="rect" coords="111,8,130,25" href="javascript:addChar('ï¿½')" title="Eta">
+<area shape="rect" coords="111,8,130,25" href="javascript:addChar('Ê')" title="Eta">
 <area shape="rect" coords="131,8,158,25" href="javascript:addChar('Th')" title="Theta">
 <area shape="rect" coords="159,8,170,25" href="javascript:addChar('I')" title="Iota">
 <area shape="rect" coords="171,8,188,25" href="javascript:addChar('K')" title="Kappa">
@@ -136,7 +136,7 @@ Greek HOWTO</a> for more information.
 <area shape="rect" coords="394,8,421,25" href="javascript:addChar('Ph')" title="Phi">
 <area shape="rect" coords="422,8,442,25" href="javascript:addChar('Ch')" title="Chi">
 <area shape="rect" coords="443,8,462,25" href="javascript:addChar('Ps')" title="Psi">
-<area shape="rect" coords="463,8,480,25" href="javascript:addChar('ï¿½')" title="Omega">
+<area shape="rect" coords="463,8,480,25" href="javascript:addChar('Ô')" title="Omega">
 
 <!-- Lowercase -->
 <area shape="rect" coords="  5,27, 21,48" href="javascript:addChar('a')" title="alpha">
@@ -145,7 +145,7 @@ Greek HOWTO</a> for more information.
 <area shape="rect" coords=" 59,27, 76,48" href="javascript:addChar('d')" title="delta">
 <area shape="rect" coords=" 76,27, 92,48" href="javascript:addChar('e')" title="epsilon">
 <area shape="rect" coords=" 93,27,110,48" href="javascript:addChar('z')" title="zeta">
-<area shape="rect" coords="111,27,130,48" href="javascript:addChar('ï¿½')" title="eta">
+<area shape="rect" coords="111,27,130,48" href="javascript:addChar('ê')" title="eta">
 <area shape="rect" coords="131,27,158,48" href="javascript:addChar('th')" title="theta">
 <area shape="rect" coords="159,27,170,48" href="javascript:addChar('i')" title="iota">
 <area shape="rect" coords="171,27,188,48" href="javascript:addChar('k')" title="kappa">
@@ -162,7 +162,7 @@ Greek HOWTO</a> for more information.
 <area shape="rect" coords="394,27,421,48" href="javascript:addChar('ph')" title="phi">
 <area shape="rect" coords="422,27,442,48" href="javascript:addChar('ch')" title="chi">
 <area shape="rect" coords="443,27,462,48" href="javascript:addChar('ps')" title="psi">
-<area shape="rect" coords="463,27,480,48" href="javascript:addChar('ï¿½')" title="omega">
+<area shape="rect" coords="463,27,480,48" href="javascript:addChar('ô')" title="omega">
 
 <!-- Gamma exceptions -->
 <area shape="rect" coords="488,27,511,48" href="javascript:addChar('ng')" title="gamma gamma">

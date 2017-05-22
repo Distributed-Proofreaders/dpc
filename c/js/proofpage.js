@@ -238,7 +238,7 @@ function applylayout() {
     }
     tatext_match_divpreview();
     divleft.style.visibility        = "visible";
-    divcontrols.style.visibility    = "visible";
+    divcontrols.style.visibility  = "visible";
     divright.style.visibility       = "visible";
     divsplitter.style.visibility    = "visible";
 

@@ -37,7 +37,7 @@ define_pit_popup_link( 'table_maker',
 // greek translit
 define_pit_popup_link( 'greek_transliterator',
     _('Greek Transliterator'),
-    'greek2ascii.php',
+    'greek2ascii.html',
     'gkasciiWin',
     640, 210
 );
@@ -226,7 +226,7 @@ define_pit_tool_link(
     'blank_page',
     '[Blank Page]',
     '[Blank Page]',
-    "top.iBlankPage()"
+    "top.iMUO(6)"
 );
 
 // -----------------------------------------------------------------------------
@@ -355,7 +355,7 @@ function echo_character_selectors_block() {
             '--',
             array( 209, 241, 285, 293, 309 ),
             '--',
-            array( 166, 167, 168, 170, 172, 173, 175, 176, 177, 178, 179, 180, 182, 183, 184, 185, 186, 188, 189, 190, 215, 247, 153, 547, 442 ),
+            array( 166, 167, 168, 170, 172, 173, 175, 176, 177, 178, 179, 180, 182, 183, 184, 185, 186, 188, 189, 190, 215, 247, 547, 442 ),
         )
     );
 
@@ -369,11 +369,8 @@ function echo_character_selectors_block() {
     <?
 
     echo "</tr>\n";
-    // END OF ROW 1
 
-    if ($utf8_site) {
-        // START OF ROW 2
-        echo "<tr>\n";
+    echo "<tr>\n";
 
         echo_character_selector(
             'C',
@@ -435,9 +432,7 @@ function echo_character_selectors_block() {
             )
         );
 
-        echo "</tr>";
-        // END OF ROW 2
-    }
+    echo "</tr>";
 
     echo "</table>\n";
 }

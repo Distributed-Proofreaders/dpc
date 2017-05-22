@@ -1,10 +1,10 @@
 <?PHP
-//include_once($relPath.'resolution.inc');
+include_once($relPath.'resolution.inc');
 
-//$i_r = $i_resolutions;
-//$wSize = explode("x", $i_r[$userP['i_res']*1]);
-//$window_width  = $wSize[0] - 20;
-//$window_height = $wSize[1] - 80;
+$i_r = $i_resolutions;
+$wSize = explode("x", $i_r[$userP['i_res']*1]);
+$window_width  = $wSize[0] - 20;
+$window_height = $wSize[1] - 80;
 
 $window_name_base = 
     preg_replace(

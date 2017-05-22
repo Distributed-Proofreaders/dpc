@@ -60,8 +60,12 @@ $sql = "
             p.nameofwork,
             p.authorsname,
             p.difficulty,
-            p.n_available_pages,
-            p.n_pages,
+            CASE WHEN p.phase = 'POSTED' THEN ''
+            ELSE p.n_available_pages
+            END n_available_pages,
+            CASE WHEN p.phase = 'POSTED' THEN ''
+            ELSE p.n_pages
+            END n_pages,
             p.username,
             p.postproofer,
             p.ppverifier,
@@ -72,7 +76,9 @@ $sql = "
             ORDER BY phphases.sequence, ph.hold_code
             SEPARATOR ',\\n') holdlist,
             IFNULL(SUM(p.phase = ph.phase), 0) active_hold_count,
-            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time))) AS last_save_days
+            CASE WHEN p.phase = 'POSTED' THEN ''
+            ELSE DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time)))
+            END AS last_save_days
     FROM projects p
     JOIN phases ON p.phase = phases.phase
     LEFT JOIN project_holds ph

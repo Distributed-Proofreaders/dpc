@@ -13,7 +13,7 @@ function EchoMemberDpProfile( $muser ) {
     global $User;
     /** @var DpUser $muser */
 
-    $m = new ForumUser($muser->Username());
+    $m = new DpForumUser($muser->Username());
 	$age_days = number_format($muser->AgeDays())._(" days ago"); // '1,234 days'
 	$daysSinceLastSeen = ($muser->LastSeenDays() >= 1
                             ? number_format($muser->LastSeenDays()) . _(" days ago")

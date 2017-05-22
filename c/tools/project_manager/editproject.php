@@ -6,11 +6,10 @@ $relPath = "./../../pinc/";
 include_once($relPath.'dpinit.php');
 include_once($relPath.'comment_inclusions.inc');
 include_once('edit_common.inc');
-include_once($relPath.'project_edit.inc');
-include_once($relPath.'project_events.inc');
+//include_once($relPath.'project_edit.inc');
 
 $projectid      = Arg("projectid");
-$saveAndQuit    = IsArg("saveAndQuit");
+//$saveAndQuit    = IsArg("saveAndQuit");
 $saveAndProject = IsArg("saveAndProject");
 $isdelete       = IsArg("Delete");
 
@@ -26,18 +25,20 @@ if($isdelete) {
 $page_title = _("Edit a Project");
 
 $pih = new ProjectInfoHolder($projectid);
-if ( $saveAndQuit || $saveAndProject ) {
+//if ( $saveAndQuit || $saveAndProject )
+if( $saveAndProject ) {
 
     $errors = $pih->set_from_post();
     if (! $errors) {
         $pih->save_to_db();
 
-        if( $saveAndQuit) {
-            divert("projectmgr.php");
-            exit;
-        }
+//        if( $saveAndQuit) {
+//            divert("projectmgr.php");
+//            exit;
+//        }
         if( $saveAndProject) {
-            divert("$code_url/project.php?projectid=$pih->projectid");
+            divert(url_for_project($projectid));
+//            divert("$code_url/project.php?projectid=$pih->projectid");
             exit;
         }
     }
@@ -61,13 +62,13 @@ else {
     if ($fatal_error != '') {
         $fatal_error = _('site error') . ': ' . $fatal_error;
         echo "<br><h3>$fatal_error</h3>\n";
-        theme('', 'footer');
-        exit;
     }
-
-    $pih->show_form($project);
+    else {
+        $pih->show_form($project);
+    }
 }
 theme("", "footer");
+exit;
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
@@ -143,21 +144,21 @@ class ProjectInfoHolder
 
     public function set_from_post() {
         global $Context;
-        $errors = '';
+        $errors = [];
 
         if( $this->projectid == '') {
-            $errors .= "Project ID is required..<br>"; 
+            $errors[] = "Project ID is required..<br>";
         }
         $this->nameofwork = Arg('nameofwork');
         if ( $this->nameofwork == '' ) {
-            $errors .= "Name of work is required.<br>"; 
+            $errors[] = "Name of work is required.<br>";
         }
 
         $this->authorsname = Arg('authorsname');
-        if ( $this->authorsname == '' ) { $errors .= "Author is required.<br>"; }
+        if ( $this->authorsname == '' ) { $errors[] = "Author is required.<br>"; }
 
         $languagecode = Arg('pri_language');
-        if ( $languagecode == '' ) { $errors .= "Language is required.<br>"; }
+        if ( $languagecode == '' ) { $errors[] = "Language is required.<br>"; }
 
 //        $sec_language = Arg('sec_language');
 
@@ -167,15 +168,15 @@ class ProjectInfoHolder
 //            ? "$language with $sec_language"
 //            : $language );
 	    $projectmgr = Arg('projectmgr');
-	    if ( $this->projectmgr == '' ) { $errors .= "Project Manager is required.<br>"; }
+	    if ( $this->projectmgr == '' ) { $errors[] = "Project Manager is required.<br>"; }
 
 	    $this->projectmgr = $projectmgr;
         $this->genre = Arg('genre');
-        if ( $this->genre == '' ) { $errors .= "Genre is required.<br>"; }
+        if ( $this->genre == '' ) { $errors[] = "Genre is required.<br>"; }
 
         $this->image_source = Arg('image_source');
         if ($this->image_source == '') {
-            $errors .= "Image Source is required. If the one you want isn't in list, you can propose to add it.<br>";
+            $errors[] = "Image Source is required. If the one you want isn't in list, you can propose to add it.<br>";
             $this->image_source = '_internal';
         }
 
@@ -183,7 +184,7 @@ class ProjectInfoHolder
         if($this->pper != "") {
             /** @var DpContext $Context */
             if(! $Context->UserExists($this->pper)) {
-                $errors .= "PPer must be an existing user - check case
+                $errors[] = "PPer must be an existing user - check case
                 and spelling of username.<br>"; 
             }
         }
@@ -191,7 +192,7 @@ class ProjectInfoHolder
         if ($this->ppverifier != '') {
             /** @var DpContext $Context */
             if(! $Context->UserExists($this->ppverifier)) {
-                $errors .= "PPVer must be an existing user - check case
+                $errors[] = "PPVer must be an existing user - check case
                 and spelling of username.<br>"; 
             }
         }
@@ -199,7 +200,7 @@ class ProjectInfoHolder
         $this->image_preparer = Arg('image_preparer');
         if ($this->image_preparer != '') {
             if(! $Context->UserExists($this->image_preparer)) {
-                $errors .= "Image Preparer must be an existing user - check
+                $errors[] = "Image Preparer must be an existing user - check
                 case and spelling of username.<br>";
             }
         }
@@ -207,7 +208,7 @@ class ProjectInfoHolder
         $this->text_preparer = Arg('text_preparer');
         if ($this->text_preparer != '') {
             if(! $Context->UserExists($this->text_preparer)) {
-                $errors .= "Text Preparer must be an existing user - check case
+                $errors[] = "Text Preparer must be an existing user - check case
                 and spelling of username.<br>";
             }
         }
@@ -216,7 +217,7 @@ class ProjectInfoHolder
         if ( $this->isposted ) {
             // We are in the process of marking this project as posted.
             if ( $this->postednum == 0 ) {
-                $errors .= "Posted Number is required.<br>";
+                $errors[] = "Posted Number is required.<br>";
             }
         }
 
@@ -229,7 +230,7 @@ class ProjectInfoHolder
         // $this->original_marc_array_encd = Arg('rec');
         $this->extra_credits    = Arg('extra_credits');
 
-        return $errors;
+        return implode("<br\>", $errors);
     }
 
     // -------------------------------------------------------------------------
@@ -250,7 +251,7 @@ class ProjectInfoHolder
                     genre          = ?,
                     language       = ?,
                     difficulty     = ?,
-                    clearance      = ?,
+                    clearance      = NULLIF(?, ''),
                     comments       = ?,
                     image_source   = ?,
                     image_link     = ?,
@@ -263,13 +264,13 @@ class ProjectInfoHolder
                     extra_credits  = ?
                 WHERE projectid='{$this->projectid}'";
 
-        $args = array( &$this->nameofwork, &$this->authorsname, &$this->projectmgr,
+        $args = [&$this->nameofwork, &$this->authorsname, &$this->projectmgr,
                     &$this->genre, &$this->languagecode, &$this->difficulty,
                     &$this->clearance, &$this->comments, &$this->image_source,
                     &$this->image_link,
                     &$this->scannercredit, &$this->pper, &$this->ppverifier,
                     &$postednum_str, &$this->image_preparer, &$this->text_preparer,
-                    &$this->extra_credits);
+                    &$this->extra_credits];
 
         $dpdb->SqlExecutePS($sql, $args);
     }
@@ -279,6 +280,9 @@ class ProjectInfoHolder
 
     // =========================================================================
 
+    /**
+     * @param DpProject $project
+     */
     public function show_form($project) {
         global $User;
         /** @var DpProject $project */
@@ -307,7 +311,7 @@ class ProjectInfoHolder
         $this->row( _("Difficulty Level"),            'difficulty_list',     $this->difficulty);
         $this->row( _("Post Processor"),      'DP_user_field',       $this->pper,    'pper' );
         $this->row( _("PP Verifier"),  'DP_user_field', $this->ppverifier, 'ppverifier');
-        $this->row( _("Original Image Source"),       'image_source_list',   $this->image_source     );
+        $this->row( _("Images Source"),       'image_source_list',   $this->image_source     );
         $this->row( _("URL for Source Images"),       'text_field',          $this->image_link);
         $this->row( _("Image Preparer"),              'DP_user_field',       $this->image_preparer,  'image_preparer', _("DP user who scanned or harvested the images."));
         $this->row( _("Text Preparer"),               'DP_user_field',       $this->text_preparer,   'text_preparer', _("DP user who prepared the text files.") );
@@ -320,12 +324,13 @@ class ProjectInfoHolder
         $this->row( _("Posted Number"),               'text_field',          $this->postednum,       'postednum' );
         $this->row( _("Project Comments"),            'proj_comments_field', $this->comments         );
 
+        // <input type='submit' name='saveAndQuit' value='"._("Save and Quit")."'>
+        $quiturl = url_for_project($this->projectid);
         echo "
         <tr><td class='CCC center' colspan='2'>
-        <input type='submit' name='saveAndQuit' value='"._("Save and Quit")."'>
         <input type='submit' name='saveAndProject' value='"._("Save and Go To Project")."'>
         <input type='button' value='"._("Quit Without Saving")."' 
-                onclick='javascript:location.href=\"projectmgr.php\";'>\n";
+                onclick='javascript:location.href=\"{$quiturl}\";'>\n";
         if($project->Phase() == "PREP" || $User->IsSiteManager()) {
             echo "<input type='submit' name='Delete' value='"._("Delete Project")."'>\n";
         }

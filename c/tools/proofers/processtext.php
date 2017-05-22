@@ -108,7 +108,7 @@ if ($tbutton == B_QUIT) {
 
 switch( $tbutton ) {
     case B_TEMPSAVE:
-        $page->SaveText($text_data);
+        $page->SaveOpenText($text_data);
         include('proof_frame.inc');
         break;
 
@@ -163,11 +163,11 @@ switch( $tbutton ) {
         leave_proofing_interface($projectid,  _("Mark Bad"), _("Page Bad.") );
         break;
 
-    case B_RUN_SPELL_CHECK:
-        if ( ! is_dir($aspell_temp_dir) )
-            { mkdir($aspell_temp_dir); }
-        include('spellcheck.inc');
-        break;
+//    case B_RUN_SPELL_CHECK:
+//        if ( ! is_dir($aspell_temp_dir) )
+//            { mkdir($aspell_temp_dir); }
+//        include('spellcheck.inc');
+//        break;
 
     case B_ZOOM:
         include('proof_frame.inc');
@@ -180,7 +180,7 @@ switch( $tbutton ) {
 
     case 102:
         $correct_text = spellcheck_quit();
-        $page->SaveText($text_data);
+        $page->SaveOpenText($text_data);
         include('proof_frame.inc');
         break;
 

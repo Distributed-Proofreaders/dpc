@@ -7,7 +7,7 @@
     but text from tatext is sent). Tag classes are 
         "wc"  - spell-check fail, 
         "wcb" - bad word list, 
-        "wcs" - spell-check fail, suggested, not resolved by PM
+        "wcs" - spell-check fail, accepted, not resolved by PM
         "accepted" - this page this user this position
     (1st three from host, 4th from local list)
     If on accepted list, wc -> accepted, wcb -> accepted, wcs -> wcs.
@@ -55,6 +55,8 @@ var imgpage;
 var divcontrols;
 var ctlpanel;
 var divFandR;
+var divtweet;
+var imgtweet;
 var divGear;
 var imggear;
 var tatext;
@@ -69,13 +71,14 @@ var regex;
 var chkIsWC;
 var chkIsPunc;
 var lineheight;
+var tweet;
 
 var formedit;
-//var formcontext;
 
 var _text;
 
 var _is_wordchecking = false;
+var _is_previewing = false;
 var _active_scroll_element = null;
 var _is_tail_space;
 
@@ -254,6 +257,7 @@ function removeEvent(obj, evType, fn) {
     }
 }
 
+//noinspection FunctionTooLongJS
 function eInit() {
     formedit        = $("formedit");
     divleft         = $("divleft");
@@ -265,6 +269,9 @@ function eInit() {
     divsplitter     = $("divsplitter");
     divcontrols     = $("divcontrols");
     ctlpanel        = $("ctlpanel");
+    divtweet        = $("divtweet");
+    imgtweet        = $("imgtweet");
+    tweet           = $("tweet");
     divFandR        = $("divFandR");
     tatext          = $("tatext");
     imgpage         = $("imgpage");
@@ -293,8 +300,9 @@ function eInit() {
     addEvent(divimage,      "click",     eClickImage);
     addEvent(divprevimage,  "click",     eTogglePrevImage);
     addEvent(divnextimage,  "click",     eToggleNextImage);
-    addEvent(seltodo,       "select",    eTodo);
+    //addEvent(seltodo,       "select",    eTodo);
     addEvent(divGear,       "click",     eGearClick);   // click on any gear control
+    addEvent(imgtweet,      "click",     eToggleTweet);
     addEvent(imggear,       "click",     eToggleGear);
     addEvent($('btnCloseGear'), "click",     eToggleGear);
 
@@ -347,13 +355,13 @@ function eCtlInit() {
 
     tatext.className = prepreview.className = getLineHeight();
 
-    if(getEditorStyle() == "ahmic") {
-        $("rdoahmic").checked = "checked";
+    if(getEditorStyle() == "menu") {
+        $("rdomenu").checked = "checked";
         $("divmenu").className = "block";
         $("divicons").className = "hide";
     }
     else {
-        $("rdopennask").checked = "checked";
+        $("rdoicons").checked = "checked";
         $("divmenu").className = "hide";
         $("divicons").className = "block";
     }
@@ -386,16 +394,15 @@ function applylayout() {
     requestAnimationFrame(_applylayout);
 }
 
+//noinspection FunctionTooLongJS
 function _applylayout() {
     var barpct = GetBarPct();   // get value stored in cookie
 
     divleft.style.visibility        = "hidden";
-    //divcontrols.style.visibility    = "hidden";
     divright.style.visibility       = "hidden";
     divsplitter.style.visibility    = "hidden";
-    ctlpanel.style.visibility         = "hidden";
+    ctlpanel.style.visibility       = "hidden";
 
-    //divcontrols.style.display       = IsCtls() ? "block" : "none";
     divcontrols.className           = IsCtls() ? "block" : "hide";
     $("imghidectls").style.display  = IsCtls() ? "block" : "none";
     $("imgshowctls").style.display  = IsCtls() ? "none" : "block";
@@ -413,10 +420,9 @@ function _applylayout() {
                                         - divstatusbar.offsetHeight
                                         - (IsCtls() ? divcontrols.offsetHeight : 0)
                                         - ctlpanel.offsetHeight;
-    console.debug("boxheight = " + boxheight.toString());
     boxwidth                        = doc.body.offsetWidth
                                         - (Layout() == "vertical" ? 4 : 0);
-    ctlpanel.style.top              = px(boxheight);
+    ctlpanel.style.top              = px(boxheight + 1);
 
     if(Layout() == 'horizontal') {
         // splitter height already accounted for
@@ -440,6 +446,7 @@ function _applylayout() {
         divright.style.height       = px(bottomheight);
         divright.style.width        = "100%";
 
+        divtweet.style.top          =
         divFandR.style.top          = divright.offsetTop;
     }
 
@@ -461,6 +468,7 @@ function _applylayout() {
         divright.style.height       = px(boxheight);
         divright.style.width        = px(rightwidth);
 
+        divtweet.style.top          =
         divFandR.style.top          = "0";
     }
     divtext_match_tatext();
@@ -473,7 +481,6 @@ function _applylayout() {
     divimage.scrollLeft             = parseInt(getnamevalue("imgscroll"), 10);
 
     setLayoutIcon();
-    //ePanelResize();
 }
 
 // still leaves a problem if the font is resized
@@ -519,6 +526,7 @@ function char_selectors() {
     return s;
 }
 
+//noinspection OverlyComplexFunctionJS,FunctionTooLongJS
 function char_pickers(cgroup) {
     var s = "<table class='tblpicker'>\n";
 
@@ -553,10 +561,6 @@ function char_pickers(cgroup) {
         s += char_row('$¢£‰¤¥¡¿©® «»„“” ÐðÞþßǶƕÑñĝĥĵ†‡™•⁂');
         s += char_row('′″‴¦§¨ªº¯° ‹›‚‘’ ±¹²³´¶·¸¼½¾×÷ȣƺ‿−');
         break;
-
-        //    case 'Y':
-        //        s += char_row('Ýý&#255;');	// (ATB) NOW SUBSUMED ABOVE
-        //        break;
 
     case 'CD':
         s += char_row('ÇĆĈĊČƆƇÐĎĐƉƊĜĤĴ');
@@ -653,16 +657,17 @@ function InsertChar(c) {
 function eCharClick(e) {
     if(!e) { e = window.event; }
     var t = e.target || e.srcElement;
-    var c = t.value || t.innerHTML;
+    var val = t.value || t.textContent;
 
     if(t.className == "selector") {
         if(_active_charselector) {
             _active_charselector.style.border = "0";
         }
         _active_charselector = t;
+        //noinspection JSPrimitiveTypeWrapperUsage
         _active_charselector.style.border = "2px solid red";
-        $('pickers').innerHTML = char_pickers(c);
-        $('divcharshow').style.visibility = (c == "❦" ? "hidden" : "visible");
+        $('pickers').innerHTML = char_pickers(val);
+        $('divcharshow').style.visibility = (val == "❦" ? "hidden" : "visible");
         return true;
     }
 
@@ -671,8 +676,9 @@ function eCharClick(e) {
             _active_char.style.border = "0";
         }
         _active_char = t;
+        //noinspection JSPrimitiveTypeWrapperUsage
         t.style.border = "2px solid red";
-        InsertChar(c);
+        InsertChar(val);
     }
     return true;
 }
@@ -698,6 +704,9 @@ function ePickerOver(e) {
     }
 }
 
+/*
+    Replace SelectedText with argument
+ */
 function ReplaceText(str) {
     if(_is_tail_space) {
         str += ' ';
@@ -746,24 +755,11 @@ function eKeyUp() {
     // need to reset prepreview.innerHTML and derive divtext dimensions
     // (or else tatext bottom line becomes invisible).
     // Textarea change won't work because it only fires when textarea loses focus.
-    //var tHeight = 0;
 
     if(tatext.value != _text) {
         set_text_size();
-        /*
-        if(tatext.scrollHeight != tHeight) {
-            divtext_match_tatext();
-            //tHeight = tatext.scrollHeight;
-        }
-        */
         consider_wordchecking();
         _text = tatext.value;
-    }
-}
-
-function dbg(arg) {
-    if(console && console.debug) {
-        console.debug(arg);
     }
 }
 
@@ -778,6 +774,7 @@ function eKeyDown(e) {
 
     switch(kCode) {
         case  8:  // backspace
+            //noinspection IfStatementWithTooManyBranchesJS,IfStatementWithTooManyBranchesJS
             if(_keystack.length == 0) {
             }
             else if(_keystack.length == 1) {
@@ -816,11 +813,15 @@ function eAltKeyPress(kCode) {
         case "2":
             eLineHeight("lh20");
             break;
+        case "j":
+            eDeHyphen();
+            break;
         default:
             break;
     }
 }
 
+//noinspection FunctionWithMoreThanThreeNegationsJS,OverlyComplexFunctionJS,FunctionTooLongJS,FunctionTooLongJS
 function eKeyPress(e) {
     if(!e) { e = window.event; }
     var kCode = (e.which && typeof e.which == "number")
@@ -844,6 +845,7 @@ function eKeyPress(e) {
 
     // remember - \b is filtered out
     default:
+        //noinspection NestedSwitchStatementJS
         switch (_keystack.length) {
             case 0:
             case 1:
@@ -915,6 +917,7 @@ function eKeyPress(e) {
         start++;
 
         // Move the cursor
+        //noinspection ReuseOfLocalVariableJS,ReuseOfLocalVariableJS
         textInputRange      = tatext.createTextRange();
         textInputRange.collapse(true);
         textInputRange.move("character", start - (tatext.value.slice(0, start).split(/\r\n/).length - 1));
@@ -976,6 +979,14 @@ function Ask(question) {
 }
 
 /**
+ * @return {boolean}
+ * @return {boolean}
+ */
+function IsSelectedText() {
+    return tatext.selectionEnd > tatext.selectionStart;
+}
+//noinspection FunctionWithMoreThanThreeNegationsJS
+/**
  * @return {string}
  */
 function SelectedText() {
@@ -997,6 +1008,9 @@ function SelectedText() {
         seltext = ierange.text;
     }
     else if(tatext.selectionEnd) {
+        if(tatext.selectionStart == tatext.selectionEnd) {
+            return '';
+        }
         seltext = tatext.value.substring(
                 tatext.selectionStart, tatext.selectionEnd);
     }
@@ -1074,6 +1088,7 @@ function eSetSmallCaps() {
     return false;
 }
 
+//noinspection FunctionWithMoreThanThreeNegationsJS,FunctionWithMoreThanThreeNegationsJS,OverlyComplexFunctionJS,FunctionWithMultipleLoopsJS,FunctionTooLongJS,FunctionTooLongJS
 function eSetTitleCase() {
     var i, c;
     var j, d;
@@ -1286,9 +1301,33 @@ function eSetBlockQuote() {
     return false;
 }
 
+function eToggleTweet() {
+    var _div = $("divtweet");
+    if(_div.style.display == "block") {
+        _div.style.display = "none";
+        putTweet();
+    }
+    else {
+        getTweet();
+        _div.style.display = "block";
+        _div.style.top = px(divcontrols.offsetTop);
+        _div.style.height = px(divcontrols.offsetHeight);
+    }
+}
+
+function eCloseTweet() {
+    var _div = $('divtweet');
+    if(_div.style.display == "block") {
+        _div.style.display = "none";
+    }
+}
+
 function eToggleFandR() {
     var _div = $('divFandR');
-    if(_div.style.display == "none" || _div.style.display == "") {
+    if(_div.style.display == "block") {
+        _div.style.display = "none";
+    }
+    else {
         _div.style.display = "block";
         _div.style.top = px(divcontrols.offsetTop);
         _div.style.height = px(divcontrols.offsetHeight);
@@ -1296,9 +1335,6 @@ function eToggleFandR() {
             $("txtfind").value = SelectedText();
             $("txtrepl").value = "";
         }
-    }
-    else {
-        _div.style.display = "none";
     }
 }
 
@@ -1311,9 +1347,7 @@ function eCloseFandR() {
 
 function eToggleGear() {
     if(divGear.className == "hide") {
-        //divGear.style.top = px(ctlpanel.offsetTop);
         divGear.style.bottom = px(divstatusbar.offsetHeight);
-        //divGear.style.height = px(divcontrols.offsetHeight+ctlpanel.offsetHeight);
         divGear.className = "block";
     }
     else {
@@ -1326,11 +1360,11 @@ function eGearClick(e) {
     switch(e.target.name) {
         case "rdoEditor":
             setEditorStyle(e.target.value);
-            if(e.target.value = "pennask") {
+            if(e.target.value == "icons") {
                 $("divicons").className = "block";
                 $("divmenu").className = "hide";
             }
-            else if(e.target.value = "ahmic") {
+            else if(e.target.value == "menu") {
                 $("divicons").className = "hide";
                 $("divmenu").className = "block";
             }
@@ -1351,8 +1385,7 @@ function eGearClick(e) {
     }
 }
 
-function set_regex() {
-    var key = $('txtfind').value;
+function set_regex(key) {
     // if it's not regex, escape and act as if it were
     if(! $('chkr')) {
         key = key.replace('([[.\+*?[^]$(){}=!<>|:-])', '\\\1');
@@ -1364,7 +1397,7 @@ function set_regex() {
     return new RegExp(key, flags);
 }
 
-function scroll_to_find() {
+function scroll_to_selection() {
     var p1 = tatext.value;
     var p2 = p1;
 
@@ -1379,18 +1412,68 @@ function scroll_to_find() {
     spanpreview.innerHTML = p2;
 }
 
-function eHiliteQuotes() {
+function eDeHyphen() {
+    /*
+
+    /(\B)-\n(\B+\S*)\b/
+    The target is EOL hyphen preceded by a word character (\B)
+        followed by \B after EOL
+    if there is no selection
+        search the whole text past cursor
+        highlight the first eol hypoen
+        return
+    there is a selection
+    is there  no eol hyphen preceded by \B
+        return
+    locate l1 = "\B-\n" (between selectionStart and selectionEnd)
+    locate first l2 = whitespace following EOL
+    no whitespace?
+        return
+    whitespace is newline?
+        replace $0 with $1 + $2
+    else
+        replace whitespace with newline
+     */
+    // var re = /(\B)-\n(\B\S*)/g;
+    var re = /(\w+)-\n(\w+)\b(\S*)(\s?)/;
+    var rslt, repl = "$1$2$3\n";
+    var s1, s2;
+    if(IsSelectedText()) {
+        s1 = tatext.value.substring(0, tatext.selectionStart);
+        s2 = tatext.value.substring(tatext.selectionStart);
+        s2 = s2.replace(re, repl);
+        tatext.value = s1 + s2;
+        //str = SelectedText().replace(re, repl);
+        //ReplaceText(str);
+        //SetSelection(re.lastIndex, re.lastIndex);
+    }
+
+    re.lastIndex = tatext.selectionStart;
+    rslt = re.exec(tatext.value);
+    if(! rslt) {
+        rslt = re.exec(tatext.value);
+    }
+    if(! rslt) {
+        return false;
+    }
+
+    SetSelection(rslt.index, rslt.index + rslt[0].length - 1);
+    scroll_to_selection();
+    tatext.focus();
+
+    return false;
+}
+
+//function eHiliteQuotes() {
     //var pvw = $("spanpreview").innerHTML;
     //var re = /([\s\S]*?)"(?!\n\n)([\s\S]*?)"/g;
     //var pvw2 = pvw.replace(re, '$1<span class="blue">"$2"</span>)');
-}
+//}
 
 function eFind() {
-    var rslt, t, pos;
-    var istart, iend, fword;
 
     // if target null, return
-    if($('txtfind').value.length == 0) {
+    if ($('txtfind').value.length == 0) {
         // if something currently selected, use that for the target
         if (SelectedText().length > 0) {
             $('txtfind').value = SelectedText();
@@ -1399,14 +1482,29 @@ function eFind() {
             return false;
         }
     }
-    regex   = set_regex();
-    t       = tatext.value;
-    pos     = SelectionBounds();
+
+    var key = $('txtfind').value;
+    if (!$('chkr')) {
+        key = key.replace('([[.\+*?[^]$(){}=!<>|:-])', '\\\1');
+    }
+    if ($('chkm')) {
+        key = key.replace(/\./, "[\s\S]");
+    }
+    var flags = 'g' + ($('chki').checked ? 'i' : '');
+    var regex = new RegExp(key, flags);
+    var pos = SelectionBounds();
     regex.lastIndex = pos.start + 1;
-    rslt    = regex.exec(t);
+
+    return find_regex(regex, pos);
+}
+
+function find_regex(regex, bounds) {
+    var istart;
+    var t       = tatext.value;
+    var rslt    = regex.exec(t);
 
     // if searching from interior and nothing found, search from the beginning
-    if(! rslt && pos.start > 0) {
+    if(! rslt && bounds.start > 0) {
         regex.lastIndex = 0;
         rslt = regex.exec(t);
     }
@@ -1414,21 +1512,22 @@ function eFind() {
         return false;
     }
 
-    fword = rslt[0];
+    var fword = rslt[0];
     istart = rslt.index;
-    iend = istart + fword.length;
+    var iend = istart + fword.length;
     SetSelection(istart, iend);
     
-    scroll_to_find();
+    scroll_to_selection();
     tatext.focus();
     return true;
 }
 
 function eReplace() {
-    if($('txtrepl').value.length == 0)
+    if($('txtrepl').value.length == 0) {
         return;
+    }
     var istart = SelectionBounds().start;
-    var rstr = SelectedText().replace(regex, $('txtrepl').value);
+    var rstr = SelectedText().replace($('txtfind').value, $('txtrepl').value);
     ReplaceText(rstr);
     SetCursor(istart + 1);
 }
@@ -1439,7 +1538,7 @@ function eReplaceNext() {
 }
 
 function eReplaceAll() {
-    for( ; ; ) {
+    while (true) {
         if (!eFind()) {
             return;
         }
@@ -1475,24 +1574,22 @@ function eSetFontSize() {
     return false;
 }
 
+// when the preview button is clicked
 function ePreviewFormat() {
-    prepreview.style.color = "blue";
-    if(tatext.style.visibility == "hidden") {
-        tatext.style.visibility = "visible";
-        prepreview.style.visibility = "hidden";
+    // if preview visible, display text (wc should be hidden)
+    if(_is_previewing) {
+        hide_preview();
+        show_text();
+        _is_previewing = false;
     }
     else {
+        // preview is hidden, it was clicked, show it, hide others
         setPreviewText(tatext.value.replace('<tb>', '<hr>'));
-        tatext.style.visibility = "hidden";
-        prepreview.style.visibility = "visible";
+        hide_wordchecking();
+        hide_text();
+        show_preview();
+        _is_previewing = true;
     }
-    //var d = NewBlankWindow().document;
-    //d.write("<style type='text/css'> i { color: red; } </style>\n");
-    //    d.write("<pre>"
-    //        + h(tatext.value)
-    //    + "</pre>");
-    //d.close();
-    //return false;
 }
 
 function h(str) {
@@ -1541,10 +1638,23 @@ function applyLineHeight(lhclass) {
     tatext.className        = lhclass;
 }
 
+// seltodo.select()
+//function eTodo() {
+//    switch(seltodo.value) {
+//        case "opt_test":
+//            break;
+//        default:
+//            this.form.submit();
+//    }
+//}
+
+// any opt image.click()
+// input type=image implicitly submits
 function eOptToDo() {
     accepts_to_form();
 }
 
+// seltodo.change()
 function eSelToDo() {
     accepts_to_form();
     formedit.submit();
@@ -1556,7 +1666,9 @@ function eToggleBad() {
         answer = 
             Ask("Page will be unavailable until fixed by PM.\nReason?");
         if(answer == null || answer == "")
-            return;
+            {
+                return;
+            }
         $("badreason").value = answer;
         $("todo").value = "badpage";
         formedit.submit();
@@ -1581,15 +1693,6 @@ function point_in_obj(obj, ptX, ptY) {
     y2 = y1 + obj.offsetHeight;
     return ptX >= x1 && ptX <= x2
         && ptY >= y1 && ptY <= y2;
-}
-
-function eTodo() {
-    switch(seltodo.value) {
-        case "opt_test":
-            break;
-        default:
-            this.form.submit();
-    }
 }
 
 function eClickImage(e) {
@@ -1661,6 +1764,7 @@ function eTextClick(e) {
         sp = spans[i];
         if(point_in_obj(sp, eX, eY)) {
             ispan = sp;
+            //noinspection BreakStatementJS
             break;
         }
     }
@@ -1677,7 +1781,7 @@ function eTextClick(e) {
             decr_wc_count();
             break;
 
-        // suggested - noop
+        // accepted - noop
         case "wcs":
             break;
 
@@ -1761,6 +1865,7 @@ function eScroll(e) {
         }
     }
     else if(tgt.id == "divimage") {
+        setlocalvalue("imgscroll", divimage.scrollLeft.toString());
         setnamevalue("imgscroll", divimage.scrollLeft.toString());
         if(_active_scroll_element == "divimage") {
             apply_scroll_pct();
@@ -1811,15 +1916,14 @@ function eSplitterUp(e) {
     // adjust panels to match splitter
     if(Layout() == "horizontal") {
         divleft.style.height        = px(e.clientY - 1);
+        divtweet.style.top          =
         divFandR.style.top          =
         divGear.style.top           =
         divright.style.top          = px(e.clientY + divsplitter.offsetHeight);
-        //pct = 100 * e.clientY / doc.body.offsetHeight;
     }
     else {
         divleft.style.width         = px(e.clientX-1);
         divright.style.left         = px(e.clientX) + divsplitter.offsetWidth;
-        //pct = 100 * e.clientX / doc.body.offsetWidth;
     }
     applylayout();
 }
@@ -1832,7 +1936,6 @@ function eSplitterMove(e) {
     else {
         divsplitter.style.left = px(e.clientX);
     }
-    //ePanelResize();
 }
 
 // resize body
@@ -1840,31 +1943,62 @@ function eResize() {
     applylayout();
 }
 
-//function ePanelResize() {
-    //ctlpanel.style.height = "auto";
-    //divfratext.style.bottom = px(ctlpanel.offsetHeight);
-//}
+function show_text() {
+    tatext.style.visibility = "visible";
+}
+
+function hide_text() {
+    tatext.style.visibility = "hidden";
+}
+
+function show_wordchecking() {
+    show_text();
+    // wordcheck uses prepreview to overlay the text
+    //prepreview.style.visibility     = "visible";
+    $("span_wccount").style.visibility = "visible";
+    $("imgwordcheck").src            = "gfx/wchk-on.png";
+}
+
+function hide_wordchecking(){
+    prepreview.style.visibility     = "hidden";
+    $("span_wccount").style.visibility = "hidden";
+    $("imgwordcheck").src            = "gfx/wchk-off.png";
+}
+
+function show_preview() {
+    if(! $("imgpvw")) {
+        return;
+    }
+    $("imgpvw").src                 = "/graphics/preview_on.png";
+    prepreview.style.visibility     = "visible";
+}
+
+function hide_preview(){
+    if(! $("imgpvw")) {
+        return;
+    }
+    $("imgpvw").src                 = "/graphics/preview_off.png";
+    prepreview.style.visibility     = "hidden";
+}
 
 function set_wordchecking() {
-    divctlwc.style.display          = "inline";
-    $("imgwordcheck").src         = "gfx/wchk-on.png";
+    hide_preview();
+    show_text();        // it overlays, show both
+    show_wordchecking();
     _is_wordchecking = true;
     _wc_wakeup = 0;
 }
 
-function text_has_changed() {
-    return (tatext.value !== _text);
-}
-
 function consider_wordchecking() {
-    if(! text_has_changed()) {
+    if (tatext.value === _text) {
         return;
     }
     _text = tatext.value;
     if(! _is_wordchecking) {
         return;
     }
-    prepreview.style.visibility     = "hidden";
+    hide_preview();
+    hide_wordchecking();
     // advance the token in case a wordcheck is running--
     // response will be ignored if the token has advanced.
     _wc_token++;
@@ -1916,11 +2050,9 @@ function display_ping() {
 function clear_wordchecking() {
     if(_is_wordchecking) {
         _is_wordchecking                = false;
-        //eNoIsPunc();
         _wc_wakeup                      = 0;
-        prepreview.style.visibility     = "hidden";
-        $("imgwordcheck").src         = "gfx/wchk-off.png";
-        $("span_wccount").style.visibility = "hidden";
+        hide_wordchecking();
+        // don't mess with preview or text - hopefully one is set
     }
 }
 
@@ -1934,7 +2066,7 @@ function eLangcode(e) {
 function requestWordcheck() {
     // construct an array to transmit of words accepted
     _accept_tags = accept_tags();
-    awcWordcheck();
+    ajxWordcheck();
 }
 
 function accept_tags() {
@@ -1984,7 +2116,7 @@ function accepts_to_form() {
 }
 
 // initiate wordcheck transaction
-function awcWordcheck() {
+function ajxWordcheck() {
     var qry = {};
     _text = tatext.value;
 
@@ -2000,6 +2132,7 @@ function awcWordcheck() {
 }
 
 function SaveBarPct(pct) {
+    setlocalvalue(hv() + "_barpct", pct.toString());
     setnamevalue(hv() + "_barpct", pct.toString());
 }
 
@@ -2036,7 +2169,7 @@ function GetBarPct() {
  * @return {boolean}
  */
 function IsCtls() {
-    return GetIsCtls() == 1;
+    return GetIsCtls() ;
 }
 
 /**
@@ -2052,6 +2185,7 @@ function GetIsCtls() {
 }
 
 function SaveIsCtls(val) {
+    setlocalvalue("isctls", val ? "1" : "0");
     setnamevalue("isctls", val ? "1" : "0");
 }
 
@@ -2067,10 +2201,12 @@ function GetFontSize() {
 }
 
 function SaveFontFace() {
+    setlocalvalue(hv() + "_fontface", $('selfontface').value);
     setnamevalue(hv() + "_fontface", $('selfontface').value);
 }
 
 function SaveFontSize() {
+    setlocalvalue(hv() + "_fontsize", $('selfontsize').value);
     setnamevalue(hv() + "_fontsize", $('selfontsize').value);
 }
 
@@ -2078,6 +2214,7 @@ function GetZoom() {
     var strval = getnamevalue(hv() + "_zoom").toString();
     var val;
     if(strval == "" || isNaN(strval)) {
+        setlocalvalue(hv() + "_zoom", "100");
         setnamevalue(hv() + "_zoom", "100");
         val = 100;
     }
@@ -2089,16 +2226,14 @@ function GetZoom() {
         else if(val > 1000) {
             val = 1000;
         }
+        setlocalvalue(hv() + "_zoom", val.toString());
         setnamevalue(hv() + "_zoom", val.toString());
     }
     return val;
 }
 
-function saveLineHeight(val) {
-    setnamevalue("lineheight", val.toString());
-}
-
 function SaveZoom(val) {
+    setlocalvalue(hv() + "_zoom", val.toString());
     setnamevalue(hv() + "_zoom", val.toString());
 }
 
@@ -2120,9 +2255,11 @@ function GetLayout() {
 function SaveLayout(val) {
     switch(val.toString()) {
         case "vertical":
+            setlocalvalue("layout", "vertical");
             setnamevalue("layout", "vertical");
             break;
         default:
+            setlocalvalue("layout", "horizontal");
             setnamevalue("layout", "horizontal");
             break;
     }
@@ -2183,7 +2320,9 @@ function show_wordcheck() {
 
     // var accepts = spanpreview.getElementsByTagName("accepted");
     var str = _rsp.pvwtext.replace('~~', '&')
-        .replace(/\s"\s/g, "<span class='spacey'>$&</span>");
+        .replace(/\s"\s/g, "<span class='spacey'>$&</span>")
+        .replace(/\s'\s/g, "<span class='spacey'>$&</span>")
+        .replace(/\s[,;:?!]/g, "<span class='spacey'>$&</span>");
 
     if(getIsPunc()) {
         str = applyIsPunc(str);
@@ -2208,10 +2347,33 @@ function show_wordcheck() {
         }
     }
 
-    $("span_wccount").innerHTML = (wc_count() + bw_count());
-    $("span_wccount").style.visibility = "visible";
+    $("span_wccount").innerHTML         = (wc_count() + bw_count());
+    $("span_wccount").style.visibility  = "visible";
+    prepreview.style.visibility         = "visible";
 
-    prepreview.style.visibility = "visible";
+    show_preview();
+}
+
+function putTweet() {
+    var qry = {};
+
+    // save accepted words
+    qry['querycode']    = "puttweet";
+    qry['token']        = ++_wc_token;
+    qry['projectid']    = formedit.projectid.value;
+    qry['pagename']     = formedit.pagename.value;
+    qry['tweet']        = tweet.value;
+    writeAjax(qry);
+}
+
+function getTweet() {
+    var qry = {};
+
+    qry['querycode']    = "gettweet";
+    qry['token']        = ++_wc_token;
+    qry['projectid']    = formedit.projectid.value;
+    qry['pagename']     = formedit.pagename.value;
+    writeAjax(qry);
 }
 
 function eWCMonitor(msg) {
@@ -2236,18 +2398,12 @@ function eWCMonitor(msg) {
     case 'ping':
         display_ping();
         break;
-//    case 'wccontext':
-//        ajxDisplayContextWords(_rsp.wordarray);
-//        break;
-//
-//    case 'wordcontext':
-//        ajxDisplayWordContextList(_rsp);
-//        break;
-//
-//    case 'regexcontext':
-//        ajxDisplayRegexContextList(_rsp);
-//        break;
 
+    case 'gettweet':
+        display_tweet(msg);
+        break;
+
+    case 'puttweet':
     case 'acceptwords':
     case 'addgoodword':
     case 'addbadword':
@@ -2264,6 +2420,10 @@ function eWCMonitor(msg) {
                     + _rsp.querycode + "/" + _rsp.response);
         break;
     }
+}
+
+function display_tweet(msg) {
+   tweet.value = msg.tweet;
 }
 
 function SetFontSizeSelector(size) {
@@ -2310,6 +2470,7 @@ function writeAjax(a_args) {
     // php end will rawurldecode this to recover it
     initAjax();
     var jq = 'jsonqry=' + encodeURIComponent(JSON.stringify(a_args));
+    console.debug(jq);
     _ajax.open("POST", AJAX_URL, true);     // no return value
     _ajax.setRequestHeader("Content-type",
         "application/x-www-form-urlencoded");     // no return value
@@ -2319,7 +2480,7 @@ function writeAjax(a_args) {
 // callback function for onreadystatechange
 function readAjax() {
     var msg;
-    var errstr, jsonrsp;
+    var errstr;
     if(_ajax.readyState == 4) {
         msg = _ajax.responseText;
         if(_ajax.status != 200) {
@@ -2331,9 +2492,10 @@ function readAjax() {
             errstr = "err decodeURI";
             msg = decodeURIComponent(msg);
             if(errstr)
-                errstr = "err parse";
+                {
+                    errstr = "err parse";
+                }
             // exec parse to exercise try
-            //jsonrsp = JSON.parse(msg);
             JSON.parse(msg);
             // erase err msg if JSON.parse succeeded
             if(errstr != "") {
@@ -2450,6 +2612,7 @@ function eToggleSync() {
 }
 
 function setsync(val) {
+    setlocalvalue("sync", val ? "1" : "0");
     setnamevalue("sync", val ? "1" : "0");
 }
 
@@ -2466,6 +2629,7 @@ function getIsWC() {
 }
 
 function setIsWC() {
+    setlocalvalue("iswc", chkIsWC.checked ? "1" : "0");
     setnamevalue("iswc", chkIsWC.checked ? "1" : "0");
     if($("divctlwc")) {
         $("divctlwc").className = (getIsWC() ? "block" : "hide");
@@ -2476,6 +2640,7 @@ function setIsWC() {
 function getIsPunc() {
     var ispunc = getnamevalue("ispunc");
     if(! ispunc) {
+        setlocalvalue("ispunc", chkIsPunc.checked ? "1" : "0");
         setnamevalue("ispunc", chkIsPunc.checked ? "1" : "0");
         return true;
     }
@@ -2483,19 +2648,21 @@ function getIsPunc() {
 }
 
 function SaveIsPunc() {
+    setlocalvalue("ispunc", chkIsPunc.checked ? "1" : "0");
     setnamevalue("ispunc", chkIsPunc.checked ? "1" : "0");
 }
 
 function getEditorStyle() {
     var cstyle = getnamevalue("editorstyle");
     if(! cstyle) {
-        setEditorStyle("ahmic");
-        return "ahmic";
+        setEditorStyle("menu");
+        return "menu";
     }
     return cstyle;
 }
 
 function setEditorStyle(value) {
+    setlocalvalue("editorstyle", value);
     setnamevalue("editorstyle", value);
 }
 
@@ -2512,13 +2679,21 @@ function getLineHeight() {
     }
 }
 
-function saveLineHeight(value) {
-    setnamevalue("lineheight", value);
+function saveLineHeight(val) {
+    setlocalvalue("lineheight", val.toString());
+    setnamevalue("lineheight", val.toString());
+}
+
+function setlocalvalue(name, value) {
+    localStorage.setItem(name, value);
+}
+function getlocalvalue(name) {
+    return localStorage.getItem(name);
 }
 
 function setnamevalue(name, value) {
     var date = new Date();
-    date.setTime(date.getTime() + 365*24*60*60*1000);
+    date.setDate(date.getDate() + 365 * 5);
     document.cookie = name + '='
             + value + ';'
             + ' expires=' + date.toUTCString()

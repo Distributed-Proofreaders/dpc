@@ -51,43 +51,19 @@ function showTeamMembers($team, $roundid) {
     /** @var DpTeam $team */
 
     $sql = "
-   SELECT username, page_count, joined
-    FROM (
-    SELECT u.username,
+    SELECT
+        ut.username,
         SUM(urp.page_count) page_count,
-        DATE_FORMAT(FROM_UNIXTIME(u.date_created), '%b %d %Y') joined
-    FROM user_teams t
-    JOIN users u ON u.team_1 = t.id
-    JOIN user_round_pages urp ON u.username = urp.username
-    WHERE t.id = {$team->Id()}
-      AND urp.round_id = '$roundid'
-    GROUP BY u.username
+        ut.joined_time
+    FROM user_team ut
 
-    UNION ALL
+    JOIN users u ON ut.username = u.username
 
-    SELECT u.username,
-        SUM(urp.page_count) page_count,
-        DATE_FORMAT(FROM_UNIXTIME(u.date_created), '%b %d %Y') joined
-    FROM user_teams t
-    JOIN users u  ON u.team_2 = t.id
-    JOIN user_round_pages AS urp ON u.username = urp.username
-    WHERE t.id = {$team->Id()}
-      AND urp.round_id = '$roundid'
-    GROUP BY u.username
+    JOIN user_round_pages urp ON ut.username = urp.username AND urp.phase = '$roundid'
 
-    UNION ALL
-
-    SELECT u.username,
-        SUM(urp.page_count) page_count,
-        DATE_FORMAT(FROM_UNIXTIME(u.date_created), '%b %d %Y') joined
-    FROM user_teams t
-    JOIN users AS u  ON u.team_3 = t.id
-    JOIN user_round_pages AS urp ON u.username = urp.username
-    WHERE t.id = {$team->Id()}
-        AND urp.round_id = '$roundid'
-    GROUP BY u.username
-    ) a
-     ORDER BY page_count DESC";
+    WHERE ut.team_id = {$team->Id()}
+    GROUP BY ut.username
+    ORDER BY page_count DESC";
 
     $rows = $dpdb->SqlRows($sql);
 
@@ -167,7 +143,7 @@ function TeamPagesNDays($teamid, $roundid, $range) {
         FROM days d
         LEFT JOIN team_round_pages trp
         ON d.min_unixtime = trp.count_time
-        WHERE trp.round_id = '$roundid'
+        WHERE trp.phase = '$roundid'
             AND team_id = $teamid
             AND d.dateval >=  DATE_SUB(CURRENT_DATE(), INTERVAL {$range} DAY)
         GROUP BY d.dateval
@@ -185,41 +161,41 @@ function showTeamProfile($team) {
     /** @var DpTeam $team */
     global $code_url;
 
-    $creator_url    = "$code_url/stats/members/member_stats.php?id=" . $team->CreatorId();
+    $creator_url    = "$code_url/stats/members/member_stats.php?username=" . $team->CreatedBy();
     $creator_link   = link_to_url($creator_url, $team->CreatedBy());
-    $topic_url      = "$code_url/stats/teams/team_topic.php?team={$team->Id()}";
-    $topic_link     = link_to_url($topic_url, _("Team Discussion"));
+//    $topic_id          = $team->TopicId();
 
-    $links_to_stats = link_to_team_stats($team->Id(), "P1 ")
-                        . link_to_team_stats($team->Id(), "P2")
-                        . link_to_team_stats($team->Id(), "P3")
-                        . link_to_team_stats($team->Id(), "F1")
-                        . link_to_team_stats($team->Id(), "F2");
+//    if(! $topic_id) {
+//        $team->CreateTeamTopic();
+//    }
+
+    $link_to_topic     = $team->TopicLink("Forum Discussion");
+
+    $links_to_stats = $team->StatsLink("P1")
+                        . $team->StatsLink( "P2")
+                        . $team->StatsLink( "P3")
+                        . $team->StatsLink( "F1")
+                        . $team->StatsLink( "F2");
 
     $tbl = new DpTable("tblteam", "dptable center minitab w75");
     $tbl->NoColumnHeadings();
     $tbl->SetTitle($team->TeamName());
     $rows = array();
-    $rows[] = array( _("Created"), $team->CreatedStr() . _(" ({$team->CreatedDaysAgo()} days ago)"));
-    $rows[] = array( _("Created by"), $team->CreatedBy());
+    $rows[] = array( _("Created"), $team->CreatedDate() . _(" ({$team->CreatedDaysAgo()} days ago)"));
     $rows[] = array( _("Leader"), $creator_link);
     $rows[] = array( _("Description"), $team->Info());
-    $rows[] = array(  _("Website"), "<a href='{$team->WebPage()}' target='_blank'></a>");
-    $rows[] = array( _("Forums"), $topic_link);
-    $rows[] = array( _("Members") . " <i>("._("Rank").")</i>",
-        number_format($team->MemberCount()) . "&nbsp;<i>(#{$team->MemberRank()})</i>" );
-    $rows[] = array( _("Current Members"), number_format($team->ActiveMembers()));
-    $rows[] = array( _("Retired Members"), number_format($team->RetiredMembers()));
+    $rows[] = array( _("Forum"), $link_to_topic);
+    // $rows[] = array( _("Members") . " <i>("._("Rank").")</i>",
+        // number_format($team->MemberCount()) . "&nbsp;<i>(#{$team->MemberRank()})</i>" );
+    $rows[] = array( _("Current Members"), number_format(count($team->MemberCount())));
+//    $rows[] = array( _("Retired Members"), number_format($team->RetiredMembers()));
 
-    $tbl->AddColumn("<", 0);
-    $tbl->AddColumn("<", 1);
+    $tbl->AddColumn("<", 0);    // caption
+    $tbl->AddColumn("<", 1);    // data
     $tbl->SetRows($rows);
 
 
     echo "
-	    <div class='center lfloat w25'>
-            <img src='{$team->AvatarUrl()}' alt=''>
-        </div>
         <div class='center w75'>\n";
 
     $tbl->EchoTable();

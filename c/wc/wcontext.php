@@ -31,7 +31,7 @@ switch($mode) {
         break;
 
     case "suggested":
-        $awords = $project->SuggestedWordsByCountAlpha($langcode);
+        $awords = $project->AcceptedWordsByCountAlpha($langcode);
         break;
 
     case "adhoc":

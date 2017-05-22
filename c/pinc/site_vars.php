@@ -5,19 +5,20 @@
 // During site configuration, identifiers delimited by double angle-brackets
 // are replaced by the corresponding values in SETUP/configuration.sh.
 
-$site_version = "0.9.2.1";
+$code_version = "0.9.2.1";
 $reldate = "24-Jul-2015";
 
 define("DPC_PATH", "/home/pgdpcanada/public_html/");
 define("DPC_URL", "http://www.pgdpcanada.net");
-define("TEMP_DIR", build_path(DPC_PATH, "d/temp"));
-define("TEMP_URL", build_path(DPC_URL, "d/temp"));
+define("TEMP_DIR", DPC_PATH . "d/temp");
+define("TEMP_URL", DPC_URL . "/d/temp");
 
 $site_url = DPC_URL;
 $logo_url = DPC_URL . "c/graphics/dpclogo.png";
 $ajax_url = DPC_URL . "/c/wc.php";
 
 $code_url = DPC_URL . '/c';
+$stats_url = DPC_URL . '/c/stats';
 $pm_url   = $code_url . "/tools/project_manager";
 $wc_url   = DPC_URL . "/c/wc";
 
@@ -40,30 +41,26 @@ $projects_archive_url = $site_url . '/archive';
 $dyn_dir = DPC_PATH . 'd';
 $dyn_url = DPC_URL . '/d';
 
-$dynstats_dir = "$dyn_dir/stats";
-$dynstats_url = "$dyn_url/stats";
+//$dynstats_dir = "$dyn_dir/stats";
+//$dynstats_url = "$dyn_url/stats";
 
 $transient_root = $dyn_dir;
-$transient_url = $dyn_url;
+//$transient_url = $dyn_url;
 
 $site_log_path      = $transient_root . "/log/dpc.log";
+$ajax_log_path      = $transient_root . "/log/ajax.log";
 $wordcheck_dir = $transient_root . "/wordcheck";
 
-$dyn_locales_dir = "$dyn_dir/locale";
+//$dyn_locales_dir = "$dyn_dir/locale";
 
-$xmlfeeds_dir = "$dyn_dir/xmlfeeds";
+//$xmlfeeds_dir = "$dyn_dir/xmlfeeds";
 
-$jpgraph_dir = DPC_PATH . 'jpgraph';
+//$jpgraph_dir = DPC_PATH . 'jpgraph';
 
 $wiki_url = DPC_URL . '/wiki/index.php';
 
-$wikihiero_dir = DPC_PATH . 'wikihiero';
-$wikihiero_url = DPC_URL . '/wikihiero';
-
-
-
-
-
+//$wikihiero_dir = DPC_PATH . 'wikihiero';
+//$wikihiero_url = DPC_URL . '/wikihiero';
 
 $site_name = "Distributed Proofreaders of Canada";
 $site_abbreviation = "DPC";
@@ -73,6 +70,7 @@ $phpbb_root_path = '/home/pgdpcanada/public_html/forumdpc/';
 $phpbb_database_name = "newDPCForum";
 $forumdb        = "newDPCForum";
 $forumpfx       = "new_";
+$forum_users_table = "new_users";
 
 $sftp_path      = "/var/sftp";
 $dpscans_path   = "/var/sftp/dpscans";
@@ -139,6 +137,7 @@ $image_sources_manager_addr = 'ism@pgdpcanada.net';
 
 // -----------------------------------------------------------------------------
 
+$completed_books_offset = 2185;
 $testing = FALSE;
 $use_php_sessions = TRUE;
 $cookie_encryption_key = 'A_LONG_STRING_OF_GIBBERISH2';

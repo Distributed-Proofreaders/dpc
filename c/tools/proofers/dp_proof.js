@@ -2,7 +2,6 @@
 // start of code by Carel
 
 // These four variables set from initializeStuff() in dp_scroll.js
-var frameRef    = null;
 var cRef        = null;
 
 // function showIZ() {
@@ -12,8 +11,8 @@ var cRef        = null;
 // }
 
 function showActual() {
-    SetImageZoomValue(100);
-    SetImageWidth();
+    SetZoomValue(100);
+    SetZoomValue();
 }
 
 /*
@@ -92,31 +91,33 @@ var ieSt = 0;
 
 function setText() {
     if (! ieSt) {
-        ieW = docRef().editform.text_data.style.width;
-        ieH = docRef().editform.text_data.style.height;
+        ieW = textdata.style.width;
+        ieH = textdata.style.height;
         ieSt = 1;
 	}
 }
 
 function fixText() {
-    docRef().editform.text_data.style.width = ieW;
-    docRef().editform.text_data.style.height = ieH;
+    textdata.style.width = ieW;
+    textdata.style.height = ieH;
 }
 
 function chFFace(fF) {
     if(parseInt(fF)){
         setText();
-        docRef().editform.text_data.style.fontFamily = aFnt[fF];
+        textdata.style.fontFamily = aFnt[fF];
         fixText();
     }
+    return false;
 }
 
 function chFSize(fS) {
     if(parseInt(fS)){
         setText();
-        docRef().editform.text_data.style.fontSize = bFnt[fS] + 'pt';
+        textdata.style.fontSize = bFnt[fS] + 'pt';
         fixText();
     }
+    return false;
 }
 
 function showNW() {
@@ -125,8 +126,9 @@ function showNW() {
     // SENDING PAGE-TEXT TO USER
     // We're sending it in a HTML document,
     // so we entity-encode its HTML-special characters.
-    nW.document.write('<PRE>' + showNW_safe(docRef().editform.text_data.value) + '</PRE>');
+    nW.document.write('<PRE>' + showNW_safe(textdata.value) + '</PRE>');
     nW.document.close();
+    return false;
 }
 
 // Entity-encode str's HTML-special characters,
@@ -158,7 +160,7 @@ function html_safe(str) {
 // standard tag selection
 function iMUO(wM) {
 	// no longer used for anything but [Blank Page]
-	docRef().editform.text_data.value = '[Blank Page]';
+	textdata.value = '[Blank Page]';
 }
 
 // Following is taken from Wikipedia's wikibits.js:
@@ -174,7 +176,6 @@ var is_safari = ((clientPC.indexOf('AppleWebKit') != -1)
 // apply tagOpen/tagClose to selection in textarea,
 // use sampleText instead of selection if there is none
 function insertTags(tagOpen, tagClose, sampleText, replace) {
-	var txtarea = docRef().editform.text_data;
 	// IE
 	if(docRef().selection  && ! is_gecko) {
 		var theSelection = docRef().selection.createRange().text;
@@ -188,7 +189,7 @@ function insertTags(tagOpen, tagClose, sampleText, replace) {
 		tagOpen = proc[0];
 		tagClose = proc[1];
 		theSelection = proc[2];
-		txtarea.focus();
+		textdata.focus();
         // exclude ending space char, if any
 		if(theSelection.charAt(theSelection.length - 1) == " ") {
 			theSelection = theSelection.substring(0, theSelection.length - 1);
@@ -200,11 +201,11 @@ function insertTags(tagOpen, tagClose, sampleText, replace) {
 
 	// Mozilla
 	}
-    else if(txtarea.selectionStart || txtarea.selectionStart == '0') {
- 		var startPos = txtarea.selectionStart;
-		var endPos = txtarea.selectionEnd;
-		var scrollTop = txtarea.scrollTop;
-		var myText = (txtarea.value).substring(startPos, endPos);
+    else if(textdata.selectionStart || textdata.selectionStart == '0') {
+ 		var startPos = textdata.selectionStart;
+		var endPos = textdata.selectionEnd;
+		var scrollTop = textdata.scrollTop;
+		var myText = (textdata.value).substring(startPos, endPos);
 		if(! myText) {
             myText = sampleText;
         }
@@ -222,14 +223,14 @@ function insertTags(tagOpen, tagClose, sampleText, replace) {
         else {
 			subst = tagOpen + myText + tagClose;
 		}
-		txtarea.value = txtarea.value.substring(0, startPos) + subst +
-		  txtarea.value.substring(endPos, txtarea.value.length);
-		txtarea.focus();
+		textdata.value = textdata.value.substring(0, startPos) + subst +
+		  textdata.value.substring(endPos, textdata.value.length);
+		textdata.focus();
 
 		var cPos = startPos + (tagOpen.length + myText.length + tagClose.length);
-		txtarea.selectionStart = cPos;
-		txtarea.selectionEnd = cPos;
-		txtarea.scrollTop = scrollTop;
+		textdata.selectionStart = cPos;
+		textdata.selectionEnd = cPos;
+		textdata.scrollTop = scrollTop;
 
 	// All others
 	}
@@ -260,13 +261,13 @@ function insertTags(tagOpen, tagClose, sampleText, replace) {
 		docRef().infoform.infobox.value = text;
 		// in Safari this causes scrolling
 		if(! is_safari) {
-			txtarea.focus();
+			textdata.focus();
 		}
 		noOverwrite = true;
 	}
 	// reposition cursor if possible
-	if (txtarea.createTextRange)
-        txtarea.caretPos = docRef().selection.createRange().duplicate();
+	if (textdata.createTextRange)
+        textdata.caretPos = docRef().selection.createRange().duplicate();
 }
 
 // ----------
@@ -313,7 +314,6 @@ function processText(tagOpen, tagClose, innerText) {
 // ----------
 
 function transformText(transformType) {
-	var txtarea = docRef().editform.text_data;
   var tagOpen = '';
   var tagClose = '';
 	// IE
@@ -334,7 +334,7 @@ function transformText(transformType) {
         if(transformType == 'remove_markup') { 
             theSelection = theSelection.replace(/<\/?([ibfg]|sc)>/gi, '');
         }
-		txtarea.focus();
+		textdata.focus();
         // exclude ending space char, if any
 		if(theSelection.charAt(theSelection.length - 1) == " ") {
 			theSelection = theSelection.substring(0, theSelection.length - 1);
@@ -346,11 +346,11 @@ function transformText(transformType) {
 
 	// Mozilla
 	}
-    else if(txtarea.selectionStart || txtarea.selectionStart == '0') {
- 		var startPos = txtarea.selectionStart;
-		var endPos = txtarea.selectionEnd;
-		var scrollTop = txtarea.scrollTop;
-		var myText = (txtarea.value).substring(startPos, endPos);
+    else if(textdata.selectionStart || textdata.selectionStart == '0') {
+ 		var startPos = textdata.selectionStart;
+		var endPos = textdata.selectionEnd;
+		var scrollTop = textdata.scrollTop;
+		var myText = (textdata.value).substring(startPos, endPos);
 		if(! myText) {
             myText = sampleText;}
 		if(transformType == 'title-case') {
@@ -369,14 +369,14 @@ function transformText(transformType) {
         else {
 			subst = tagOpen + myText + tagClose;
 		}
-		txtarea.value = txtarea.value.substring(0, startPos) + subst +
-		  txtarea.value.substring(endPos, txtarea.value.length);
-		txtarea.focus();
+		textdata.value = textdata.value.substring(0, startPos) + subst +
+		  textdata.value.substring(endPos, textdata.value.length);
+		textdata.focus();
 
 		var cPos = startPos + (tagOpen.length + myText.length + tagClose.length);
-		txtarea.selectionStart = cPos;
-		txtarea.selectionEnd = cPos;
-		txtarea.scrollTop = scrollTop;
+		textdata.selectionStart = cPos;
+		textdata.selectionEnd = cPos;
+		textdata.scrollTop = scrollTop;
 
 	// All others
 	}
@@ -405,13 +405,13 @@ function transformText(transformType) {
 		docRef().infoform.infobox.value = text;
 		// in Safari this causes scrolling
 		if(! is_safari) {
-			txtarea.focus();
+			textdata.focus();
 		}
 		noOverwrite = true;
 	}
 	// reposition cursor if possible
-	if (txtarea.createTextRange)
-        txtarea.caretPos = docRef().selection.createRange().duplicate();
+	if (textdata.createTextRange)
+        textdata.caretPos = docRef().selection.createRange().duplicate();
 }
 
 function title_case(str) {

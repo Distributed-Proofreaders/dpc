@@ -53,23 +53,13 @@ $w1 = $dpdb->SqlOneValue("
 $w2 = $dpdb->SqlOneValue("
                SELECT YEARWEEK(DATE_SUB(CURRENT_DATE(), INTERVAL 1 WEEK))");
 
-$sql =
 $sql = "
-	SELECT  pv.phase r,
-			d.weekval w,
-			COUNT(1) c
-	FROM page_versions pv
-	JOIN days d ON pv.version_time >= d.min_unixtime AND pv.version_time <= d.max_unixtime
-	WHERE d.weekval BETWEEN YEARWEEK(DATE_SUB(CURRENT_DATE(), INTERVAL 13 WEEK))
-		AND YEARWEEK(DATE_SUB(CURRENT_DATE(), INTERVAL 1 WEEK))
-	GROUP BY r, d.weekval;
-
-//SELECT urp.round_id r,
-//       urp.weekval w,
-//       SUM(urp.page_count) c
-//FROM user_round_pages urp
-//WHERE urp.weekval BETWEEN '$w1' AND '$w2'
-//GROUP BY urp.round_id, urp.weekval";
+SELECT urp.round_id r,
+       urp.weekval w,
+       SUM(urp.page_count) c
+FROM user_round_pages urp
+WHERE urp.weekval BETWEEN '$w1' AND '$w2'
+GROUP BY urp.round_id, urp.weekval";
 
 echo html_comment($sql);
 

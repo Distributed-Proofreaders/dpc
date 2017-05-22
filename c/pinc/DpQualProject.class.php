@@ -51,23 +51,6 @@ class DpQualProject {
 		return $this->_row['username'];
 	}
 
-	public function PageRows() {
-		static $_rows;
-		global $dpdb;
-		if(! isset($_rows)) {
-			$projectid = $this->ProjectId();
-			$username = $this->Username();
-			$_rows = $dpdb->SqlRows("
-				SELECT 	pagename AS image,
-				 		state,
-				 		FROM_UNIXTIME(savedate) savetime,
-				 		text
-				 FROM qual_page_versions
-				WHERE qual_projectid = '$projectid'
-					AND username = '$username'");
-		}
-		return $_rows;
-	}
 	public function Pages() {
 		static $_pages;
 		global $dpdb;
@@ -87,7 +70,6 @@ class DpQualProject {
 				$_pages = new DpQualPage($row);
 			}
 		}
-		return $_pages;
 	}
 }
 

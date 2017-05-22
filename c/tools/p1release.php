@@ -21,6 +21,57 @@ if(count($release) > 0 && $User->MayReleaseHold("queue")) {
     }
 }
 
+$dpdb->SetEcho();
+$dpdb->SetTiming();
+
+$rows = $dpdb->SqlRows("
+        SELECT
+            p.projectid,
+            p.nameofwork,
+            p.authorsname,
+            p.genre,
+            p.language,
+            p.n_pages,
+            p.username AS pm,
+            LOWER(p.username) AS pmsort,
+            (   SELECT COUNT(*) FROM project_holds
+                WHERE projectid = p.projectid
+            ) AS holdcount,
+            DATE(FROM_UNIXTIME(p.phase_change_date)) AS moddate,
+            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date))
+                AS days_avail,
+	        IFNULL(l1.name, '') langname,
+	        IFNULL(l2.name, '') seclangname
+        FROM project_holds ph
+        JOIN projects p ON ph.projectid = p.projectid AND ph.phase = p.phase
+        LEFT JOIN languages l1 ON p.language = l1.code
+        LEFT JOIN languages l2 ON p.seclanguage = l2.code
+        WHERE ph.phase = 'P1'
+            AND ph.hold_code = 'queue'
+        ORDER BY p.genre, p.language, p.username, p.phase_change_date, p.nameofwork");
+
+// .001 sec
+
+foreach($rows as $row) {
+    $projectid = $row['projectid'];
+    $p = new DpProject($projectid);
+    $p->RecalcPageCounts();
+}
+
+$tbl = new DpTable();
+$tbl->AddColumn("^Genre", "genre");
+$tbl->AddColumn("^Language", "langname", "elanguage");
+$tbl->AddColumn("^Proj Mgr", "pm", "epm", "sortkey=pmsort");
+$tbl->AddColumn("^Mod Date", "moddate");
+$tbl->AddColumn("<Title", "nameofwork", "etitle");
+if($User->MayReleaseHold("queue")) {
+    $tbl->AddColumn("^Release", "projectid", "erelease");
+}
+// $tbl->AddColumn("<Author", "authorsname", "eauthor");
+// $tbl->AddColumn("^Pages", "n_pages", "enpages");
+// $tbl->AddColumn("^Days", "days_avail");
+$tbl->SetRows($rows);
+
 $projectids = $dpdb->SqlValues("
     SELECT DISTINCT p.projectid FROM projects p
     JOIN project_holds ph
@@ -60,65 +111,13 @@ Hold. The behavior appears the same either way.</p>
 <h2>Projects waiting in P1</h2>
 
 <?php
-echo_p1_waiting_projects();
+
+echo "<form id='frmprop' action='' method='POST' name='frmprop'>\n";
+$tbl->EchoTable();
+echo "</form>\n";
 
 theme("", "footer");
 exit;
-
-function echo_p1_waiting_projects() {
-    global $dpdb, $User;
-
-    $rows = $dpdb->SqlRows("
-        SELECT
-            p.projectid,
-            p.nameofwork,
-            p.authorsname,
-            p.genre,
-            p.language,
-            p.n_pages,
-            p.username AS pm,
-            LOWER(p.username) AS pmsort,
-            (   SELECT COUNT(*) FROM project_holds
-                WHERE projectid = p.projectid
-            ) AS holdcount,
-            DATE(FROM_UNIXTIME(p.phase_change_date)) AS moddate,
-            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date)) 
-                AS days_avail,
-	        IFNULL(l1.name, '') langname,
-	        IFNULL(l2.name, '') seclangname
-        FROM project_holds ph
-        JOIN projects p ON ph.projectid = p.projectid AND ph.phase = p.phase
-        LEFT JOIN languages l1 ON p.language = l1.code
-        LEFT JOIN languages l2 ON p.seclanguage = l2.code
-        WHERE ph.phase = 'P1'
-            AND ph.hold_code = 'queue'
-        ORDER BY p.genre, p.language, p.username, p.phase_change_date, p.nameofwork");
-
-    foreach($rows as $row) {
-        $projectid = $row['projectid'];
-        $p = new DpProject($projectid);
-        $p->RecalcPageCounts();
-    }
-
-    $tbl = new DpTable();
-    $tbl->AddColumn("^Genre", "genre");
-    $tbl->AddColumn("^Language", "langname", "elanguage");
-    $tbl->AddColumn("^Proj Mgr", "pm", "epm", "sortkey=pmsort");
-    $tbl->AddColumn("^Mod Date", "moddate");
-    $tbl->AddColumn("<Title", "nameofwork", "etitle");
-    if($User->MayReleaseHold("queue")) {
-        $tbl->AddColumn("^Release", "projectid", "erelease");
-    }
-    // $tbl->AddColumn("<Author", "authorsname", "eauthor");
-    // $tbl->AddColumn("^Pages", "n_pages", "enpages");
-    // $tbl->AddColumn("^Days", "days_avail");
-    $tbl->SetRows($rows);
-
-    echo "<form id='frmprop' action='' method='POST' name='frmprop'>\n";
-    $tbl->EchoTable();
-    echo "</form>\n";
-}
-
 
 function elanguage($langname, $row) {
 	return $langname

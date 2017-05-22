@@ -12,6 +12,7 @@ i {
 sc {
     font-variant: small-caps;
     color: red;
+    font-size: 120%;
 }
 
 g {
@@ -54,7 +55,7 @@ div#divleft {
     top: 0;
     overflow: hidden;
     height: 100%;
-    visibility: hidden;
+    /* visibility: hidden; */
 }
 
 div#divright {
@@ -70,18 +71,17 @@ div#divleft {
     z-index: 2;
     top: 0;
     left: 0;
-    visibility: hidden;
+    /* visibility: hidden; */
 }
 
 div#divcontrols {
     position: absolute;
-    bottom: 20px; /* height of controls section */
+    bottom: 21px; /* height of controls section */
     width: 100%;
-    border: 1px solid green;
     background-color: #EEDFCC;
-    padding: 0 .25em;
+    padding: 1px .25em;
     font-size: 14px;
-    visibility: hidden;
+    /* visibility: hidden; */
 }
 
 div#divcontrols div#divcharpicker {
@@ -179,8 +179,8 @@ table.tblpicker th {
         width: 100%;
         top: 0;
         bottom: 0;
-        background-color: #FCF8EA;
-        color: #FCF8EA;
+        background-color: #FFF8DC;
+        color: #FFF8DC;
         overflow: auto;
     }
 
@@ -214,8 +214,8 @@ table.tblpicker th {
     }
 
     pre#prepreview {
-        color: darkblue;
         visibility: hidden;
+        color: blue;
         /* color: #FCF8EA; */
     }
 
@@ -223,12 +223,11 @@ table.tblpicker th {
         position: absolute;
         left: 0; /* relative to parent i.e. divright */
         width: 100%;
-        padding: 1px 5px;
+        padding: 3px 5px;
         background-color:#CDC0B0;
         text-align: left;
         overflow: hidden;
-        border: 2px solid gray;
-        visibility: hidden;
+        /* visibility: hidden; */
     }
 
     div#ctlpanel * {
@@ -265,9 +264,6 @@ table.tblpicker th {
         margin: 0 1em;
     }
 
-    div#tweet {
-    }
-
     select#selfontface {
         width: 9em;
     }
@@ -283,7 +279,6 @@ table.tblpicker th {
         position: absolute;
         padding: .3em;
         width:100%;
-        height: 6em;
         overflow: hidden;
         border: 1px solid gray;
         background-color: #EEDFCC;
@@ -294,6 +289,11 @@ table.tblpicker th {
     .lh15 { line-height: 2.0em; }
     .lh20 { line-height: 2.5em; }
 
+    #imgtweet {
+        display: none;
+    }
+
+    div#divtweet,
     div#divFandR,
     iframe#uploadframe {
         position: absolute;
@@ -304,6 +304,11 @@ table.tblpicker th {
         border: 1px solid gray;
         background-color: #CDC0B0;
         z-index: 3;
+    }
+
+    textarea#tweet{
+        width: 100%;
+        height: 100%;
     }
 
     .linethru {
@@ -319,17 +324,21 @@ table.tblpicker th {
         float: left;
     }
 
+    table#tblFandR input[type=text] {
+        font-family: monospace;
+        padding: 0 1px;
+    }
+
     table#tblFandR {
         width: 100%;
     }
 
-    div#divGear input,
-    div#divFandR input {
+    div#divGear input {
         font-size: .8em;
     }
 
     .ctlcombo {
-        background-color:#FCF8EA;
+        background-color:#FFF8DC;
         font-size: 12px;
     }
 
@@ -354,7 +363,7 @@ table.tblpicker th {
 
     span.spacey {
         color: pink;
-        background-color: red;
+        background-color: lightpink;
     }
     span.accepted {
         border: 1px dotted black;
@@ -378,8 +387,9 @@ table.tblpicker th {
         color: #FFC7D7;
     }
 
-    span.wcs { border: 2px dotted green;
-        margin: -2px;
+    span.wcs {
+        border: 1px dashed green;
+        margin: -1px;
     }
 
     span.wcb { border: 2px solid red;

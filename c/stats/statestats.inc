@@ -1,4 +1,4 @@
-<?PHP
+<?
 
 // returns the change in number of projects in $state_selector states
 // between $startdate and $enddate (format YYYY-MM-DD)

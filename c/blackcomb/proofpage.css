@@ -1,0 +1,375 @@
+
+* {
+    box-sizing:border-box;
+    -moz-box-sizing:border-box; /* Firefox */
+    -webkit-box-sizing:border-box; /* Safari */
+}
+
+body#pfbody {
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    font-size: 16px;
+}
+
+pre { margin: 0; }
+
+form#formedit {
+    overflow: hidden;
+}
+
+div#selectors {
+    font-size: 1.3em;
+}
+
+div#pickers {
+    font-size: 1.1em;
+}
+
+div#divright,
+div#divleft {
+    position: absolute;
+    top: 0;
+    overflow: hidden;
+    height: 100%;
+    visibility: hidden;
+}
+
+div#divright {
+    right: 0;
+}
+div#divleft {
+    left: 0;
+}
+
+#divsplitter {
+    position: absolute;
+    background-color: green;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    visibility: hidden;
+}
+
+div#divcontrols {
+    position: absolute;
+    bottom: 20px; /* height of controls section */
+    width: 100%;
+    border: 1px solid green;
+    background-color: #EEDFCC;
+    padding: 0 .25em;
+    font-size: 14px;
+    visibility: hidden;
+}
+
+div#divcontrols div#divcharpicker {
+    float: left;
+    width: auto;
+    height: auto;
+    text-align: left;
+    margin: 1px 2px;
+    bottom: 2em;
+}
+
+div#divcontrols div#divctls {
+    float: right;
+    text-align: left;
+    width: auto;
+    height: auto;
+    margin: 0 .5em;
+}
+
+div#divcontrols div#divcharshow {
+    visibility: hidden;
+    font-size: 2em;
+    width: auto;
+    height: auto;
+    padding: 0 0 0 .2em;
+    border: 2px solid gray;
+    background-color: white;
+    line-height: 1em;
+    float: left;
+}
+
+.rfloat {
+    float: right;
+}
+
+.clear {
+    clear: both;
+}
+
+.lfloat {
+    float: left;
+}
+
+.w35 {
+    width: 35%;
+}
+
+div.proofbutton button,
+div.proofbutton input {
+    text-align: center;
+    border-color: black;
+}
+
+table.tblpicker td,
+table.tblpicker th {
+    padding: 0;
+    line-height: 1em;
+}
+
+.proofbutton a {
+    margin: 0;
+    padding: 0;
+}
+
+    #divimage {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+    }
+
+    div#divprevimage,
+    div#divnextimage {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        display: none;
+    }
+    div#divprevimage { top: 0; }
+    div#divnextimage { bottom: 0; }
+
+    img#nextimg,
+    img#previmg {
+        height: 10%;
+        width: 100%;
+    }
+
+    div#divfratext {
+        position: absolute;
+        width: 100%;
+        top: 0;
+        bottom: 30px;
+        background-color: #FCF8EA;
+        overflow: hidden;
+    }
+
+    div#divtext {
+        position: relative;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+        padding: 5px;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    textarea#tatext,
+    pre#divpreview,
+    div#divpreview {
+        position: absolute;
+        top: 0;
+        left: 0;
+        line-height: 1.5em;
+        min-width: 100%;
+        min-height: 100%;
+        margin: 0;
+        padding: 5px 5px 0;
+    }
+
+    textarea#tatext {
+        border: 0;
+        overflow: auto;
+        white-space: pre;
+        color: black;
+        background: transparent;
+    }
+
+    pre#divpreview,
+    div#divpreview {
+        visibility: hidden;
+        white-space: pre;
+        overflow: hidden;
+        color: #FCF8EA;
+    }
+
+    div#ctlpanel {
+        position: absolute;
+        left: 0; /* relative to parent i.e. divright */
+        bottom: 0;
+        width: 100%;
+        padding: 1px 5px;
+        background-color:#CDC0B0;
+        text-align: left;
+        overflow: hidden;
+        border: 2px solid gray;
+    }
+
+    div#ctlpanel * {
+        height: 24px;
+        float: left;
+    }
+    div#ctlpanel div {
+        overflow: hidden;
+        float: left;
+        height: auto;
+        width: auto;
+    }
+
+    div#ctlpanel div#divctlnav {
+        float: right;
+    }
+
+    div#divstatusbar {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: auto;
+        width: 100%;
+        background-color: #CDC0B0;
+        overflow: hidden;
+        padding: 2px 5px;
+        font-size: 13px;
+    }
+
+    div#tweet {
+    }
+
+    select#selfontface {
+        width: 9em;
+    }
+
+    img#imgpage {
+        position: relative;
+        top: 0;
+        width:100%;
+        overflow: hidden;
+    }
+
+    div#divFandR,
+    iframe#uploadframe {
+        position: absolute;
+        padding: .3em;
+        width:100%;
+        display: none;
+        overflow: hidden;
+        border: 1px solid gray;
+        background-color: #CDC0B0;
+        z-index: 1;
+    }
+
+    .linethru {
+        text-decoration: line-through;
+    }
+
+    div#divFandR div {
+        float: left;
+    }
+
+    table#tblFandR {
+        width: 100%;
+    }
+
+    div#divFandR input {
+        font-size: .8em;
+    }
+
+    .ctlcombo {
+        background-color:#FCF8EA;
+        font-size: 14px;
+    }
+
+    .quarter {
+        width: 25%;
+        text-align: center;
+        float: left;
+    }
+
+    .likealink {
+        margin: 0;
+        padding: 0;
+        color: blue;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    span#span_wccount {
+        padding: .2em .5em;
+    }
+
+    span.accepted {
+        border: 1px dotted black;
+        margin: -1px;
+        color: #cfc;
+        background-color: #cfc;
+    }
+
+
+    span.wc {
+        background-color: #FFC7D7;
+        color: #FFC7D7;
+    }
+
+    span.wcs { border: 2px dotted green;
+        margin: -2px;
+    }
+
+    span.wcb { border: 2px solid red;
+        color: #FFC7D7;
+        background-color: #FFC7D7;
+        margin: -2px;
+    }
+
+    body.wchk {
+        overflow: hidden;
+    }
+
+    div.wchkhdr {
+        position: absolute;
+        top: 0;
+    }
+
+    div.wchk {
+        position: absolute;
+        width: 100%;
+        height: 98%;
+        top: 1%;
+    }
+
+    div.wchkimg, div.wchktext {
+        position: absolute;
+        overflow: auto;
+        height: 98%;
+        width: 49%;
+    }
+
+    img.wchk { width: 100%; }
+
+    div.wchkimg { left: 1%; right: 1%; top: 1%; bottom: 1%; }
+    div.wchktext { right: 0; }
+
+    .lfloat { float: left; }
+    .rfloat { float: right; }
+    .clear  { clear: both; }
+    .w100   { width: 100%; }
+    .w75    { width: 75%; }
+    .w90    { width: 90%; }
+    .w80    { width: 80%; }
+    .w70    { width: 70%; }
+    .w65    { width: 65%; }
+    .w60    { width: 60%; }
+    .w50    { width: 50%; }
+    .w40    { width: 40%; }
+    .w35    { width: 35%; }
+    .w30    { width: 30%; }
+    .w25    { width: 25%; }
+    .w20    { width: 20%; }
+    .w15    { width: 15%; }
+    .w10    { width: 10%; }
+    .hide   { display: none; }

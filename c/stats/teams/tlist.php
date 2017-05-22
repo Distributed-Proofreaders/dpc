@@ -7,7 +7,7 @@ include_once('../teams/team.inc');
 
 $order      = Arg("order", "id");
 $direction  = Arg("direction", "ASC");
-$tstart     = Arg("tstart", 0);
+$tstart     = ArgInt("tstart", 0);
 $tname      = Arg("tname");
 
 
@@ -110,8 +110,7 @@ if(count($rows) > 0) {
 		<td>".$row['member_count']."</td>
 		<td><a href='tdetail.php?tid=".$row['id']."'>"._("View")."</a>&nbsp;\n";
 
-    if ($User->Team1() != $row['id'] && $User->Team2() != $row['id']
-                                     && $User->Team3() != $row['id']) {
+    if(! $User->IsTeamMemberOf($row['id']))  {
         echo "
         <a href='../members/jointeam.php"."?tid=".$row['id']."'>"._("Join")."</a></td>\n";
     }
@@ -166,4 +165,3 @@ echo "
 </table>
 <p>";
 theme("", "footer");
-?>

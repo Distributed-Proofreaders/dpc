@@ -23,7 +23,7 @@ if(! $pagename)
 $page       = new DpPage($projectid, $pagename);
 
 if($todo == "quit") {
-    $page->saveText($tatext);
+    $page->saveOpenText($tatext);
     redirect_to_project($projectid);
     exit;
 }

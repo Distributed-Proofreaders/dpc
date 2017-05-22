@@ -1,4 +1,4 @@
-<?PHP
+<?php
 // $Id: user_is.inc,v 1.44 2006/03/29 05:19:05 jmdyck Exp $
 
 // This file provides values (mostly permissions) for the logged-on user.

@@ -511,7 +511,7 @@ function ReplaceText(str) {
         ierange.text = str;
         sel.empty();
     } else {
-        var itop   = tatext.scrollTop;
+        var itop   = divfratext.scrollTop;
         var istart = tatext.selectionStart;
 
         tatext.value = 
@@ -519,10 +519,10 @@ function ReplaceText(str) {
             + str + tatext.value.substring(tatext.selectionEnd);
         tatext.selectionEnd = 
             tatext.selectionStart = istart + str.length;
-        tatext.scrollTop = itop;
     }
     consider_wordchecking();
     tatext.focus();
+    divfratext.scrollTop = itop;
 }
 
 

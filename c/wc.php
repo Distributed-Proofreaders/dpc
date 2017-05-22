@@ -40,11 +40,12 @@ include_once($relPath.'links.php');
 
 $jq             = Arg("jsonqry");
 $jq             = rawurldecode($jq);
+wc_log($jq);
 $json           = json_decode($jq);
+
 
 if(! is_object($json)) {
     $err = "wc: json not-an-object error: {$jq}";
-    LogMsg($err);
     send_alert($err);
     echo "not an object :: $jq";
     exit;
@@ -55,14 +56,17 @@ $querycode          = $json->querycode;
 $username           = @$json->username;
 $projectid          = @$json->projectid;
 $pagename           = @$json->pagename;
+$lineindex          = @$json->lineindex;
 $langcode           = @$json->langcode;
 $text               = @$json->text;
 $word               = @$json->word;
+$repl               = @$json->repl;
 $data               = @$json->data;
 $acceptwords        = @$json->acceptwords;
 $mode               = @$json->mode;
 $token              = @$json->token;
 $flags              = @$json->flags;
+$tweet              = @$json->tweet;
 
 
 // if a username is provided, reset active User
@@ -70,26 +74,26 @@ if($username) {
     $User               = new DpUser($username);
 }
 
-	$Log->logWrite("wc recv: $querycode");
+//	$Log->logWrite("wc recv: $querycode");
 
 // these queries come from dp_edit.js
 switch($querycode) {
     // user explicitly requests temp save
     // send back updated tags
 
-	case "clearlog":
-		$Log->logClear();
-		exit;
+//	case "clearlog":
+//		$Log->logClear();
+//		exit;
 
     case "savetemp":
         $page = new DpPage($projectid, $pagename);
-        $page->SaveText($text);
-        // if($acceptwords && count($acceptwords) > 0) {
-            // $words = preg_split("/\t/", $acceptwords);
-            // $page->SuggestWordsArray($langcode, $words);
-        // }
+        $page->SaveOpenText($text);
+         if($acceptwords && count($acceptwords) > 0) {
+             $words = preg_split("/\t/", $acceptwords);
+             $page->AcceptWordsArray($langcode, $words);
+         }
 
-        $a          = array();
+        $a          = [];
          $wct        = $page->WordCheckText($langcode, $text);
          list($wccount, $wcscount, $wcbcount, $pvwtext) = $wct;
         $a["querycode"] = "do" . $querycode;
@@ -105,11 +109,11 @@ switch($querycode) {
     case "savequit":
     case "savenext":
         if (!$User->Username()) {
-	    send_alert("Couldn't save! You are no longer signed in!\n"
+            send_alert("Couldn't save! You are no longer signed in!\n"
                        . "Please log again using another window and retry saving.");
-	    exit;
+            exit;
         }
-        $a                  = array();
+        $a                  = [];
         $a["querycode"]     = "do" . $querycode;
         json_echo($a);
         exit;
@@ -126,7 +130,7 @@ switch($querycode) {
         // wordcheck the text and return marked-up version
         $wct            = $page->WordCheckText($langcode, $text);
         list($wccount, $wcscount, $wcbcount, $pvwtext) = $wct;
-        $a              = array();
+        $a              = [];
         $a["querycode"] = "wctext";
         $a["token"]     = $token;
         $a["wccount"]   = $wccount;
@@ -143,7 +147,7 @@ switch($querycode) {
          $wct            = $page->WordCheckText($langcode, $text);
          $wct            = utf8_uriencode($text);
          list($wccount, $wcscount, $wcbcount, $pvwtext) = $wct;
-         $a              = array();
+         $a              = [];
          $a["querycode"] = "wctext";
          $a["token"]     = $token;
          $a["wccount"]   = $wccount;
@@ -166,7 +170,7 @@ switch($querycode) {
                  break;
 //
              case "suggested":
-                 $awords = $project->SuggestedWordCountArray($langcode);
+                 $awords = $project->AcceptedWordCountArray($langcode);
                  $ak = array_keys($awords);
                  $av = array_values($awords);
                  array_multisort( $av, SORT_DESC, $ak, SORT_ASC, $awords);
@@ -181,7 +185,7 @@ switch($querycode) {
                  break;
 
          }
-         $a                  = array();
+         $a                  = [];
          $a["querycode"]     = "wccontext";
          $a["wordarray"]     = $av;
          json_echo($a);
@@ -191,9 +195,9 @@ switch($querycode) {
          $project  = new DpProject($projectid);
          $wpc      = $project->WordContexts($word);
 		 $nwpc     = count($wpc["contexts"]);
-		 $a        = array();
+		 $a        = [];
 
-		 if($nwpc > 100) {
+		 if($nwpc > 500) {
 			 $a["warning"] = "Too many cases ($nwpc).";
 			 $wpc["contexts"] = array_slice($wpc["contexts"], 0, 100);
 		 }
@@ -212,7 +216,7 @@ switch($querycode) {
     case "hyphenated":
         $project            = new DpProject($projectid);
         $hypwords           = HyphenatedWords($project->ActiveText());
-        $a                  = array();
+        $a                  = [];
         $a["querycode"]     = "hyphenated";
         $a["projectid"]     = $projectid;
         $a["hypwords"]      = $hypwords;
@@ -223,7 +227,7 @@ switch($querycode) {
         $project            = new DpProject($projectid);
         $rc                 = $project->RegexContexts($word, $flags);
 
-        $a                  = array();
+        $a                  = [];
         $a["querycode"]     = "regexcontext";
         $a["projectid"]     = $projectid;
         $a["word"]          = $word;
@@ -233,29 +237,74 @@ switch($querycode) {
 */
 
     case "addgoodword":
-		$Log->logWrite("query: addgoodword");
-		$Log->logWrite(" ($langcode) $word");
         $project            = new DpProject($projectid);
+//        $Log->logWrite("addgoodword $langcode $word");
         $project->AddGoodWord($langcode, $word);
-        $a                  = array();
+
+        $a                  = [];
         $a["querycode"]     = $querycode;
         $a["response"]      = "ack";
-	    $Log->logWrite("response: (addgoodword) ACK");
+//        $Log->logWrite("post add " . serialize($a));
         json_echo($a);
         exit;
 
     case "addbadword":
         $project            = new DpProject($projectid);
         $project->AddBadWord($langcode, $word);
-        $a                  = array();
+
+        $a                  = [];
         $a["querycode"]     = $querycode;
         $a["response"]      = "ack";
         json_echo($a);
         exit;
+
+    case "get":
+        $page               = new DpPage($projectid, $pagename);
+        $a                  = [];
+        $a["querycode"]     = "gettweet";
+        $a["tweet"]         = $page->Tweet();
+        json_echo($a);
+        exit;
+
+    case "puttweet":
+        $page               = new DpPage($projectid, $pagename);
+        $page->SetTweet($tweet);
+        $a                  = [];
+        $a["querycode"]     = "gettweet";
+        $a["response"]      = "ack";
+        json_echo($a);
+        exit;
+
+    case "doreplace":
+        $page               = new DpPage($projectid, $pagename);
+        $page->ReplaceLineWord($lineindex, $word, $repl);
+        $a                  = [];
+        $a["querycode"]     = $querycode;
+        $a["response"]      = "ack";
+        json_echo($a);
+        exit;
+
+    case "doreplaceall":
+        $project            = new DpProject($projectid);
+        $project->ReplaceWord($word, $repl);
+        $a                  = [];
+        $a["querycode"]     = $querycode;
+        $a["response"]      = "ack";
+        json_echo($a);
+        exit;
+
+//    case "suggestedtogoodword":
+//        $project            = new DpProject($projectid);
+//        $project->AddGoodWord($langcode, $word);
+//        $a                  = [];
+//        $a["querycode"]     = $querycode;
+//        $a["response"]      = "ack";
+//        json_echo($a);
+//        exit;
 }
 
 function send_alert($msg) {
-    $a          = array();
+    $a          = [];
     $a["querycode"] = "popupalert";
     $a["alert"]     = _($msg);
     json_echo($a);
@@ -278,4 +327,8 @@ function unampersand($str) {
 function reampersand($str) {
     return preg_replace("/~~/", "&", $str);
 }
-?>
+
+function wc_log($str) {
+    global $ajax_log_path;
+    file_put_contents($ajax_log_path, TimeStampString() . "  " . $str . "\n", FILE_APPEND);
+}

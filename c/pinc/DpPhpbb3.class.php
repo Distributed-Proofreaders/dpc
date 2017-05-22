@@ -3,15 +3,9 @@ error_reporting(E_ALL);
 
 global $phpbb_root_path;
 
-if(!isset($relPath)) $relPath = "./";
+if(!isset($relPath))
+    $relPath = __DIR__ . "/";
 include_once $relPath . "site_vars.php";
-/*
-    This is to used for identifying a phpbb user. It tries
-    to match an existing cookie session so no username is
-    required. Failing that, try login.
-
-    http://wiki.phpbb.com/Authentication_plugins#login_method
-*/
 
 if(!defined('IN_PHPBB')) {
 	define('IN_PHPBB', true);
@@ -24,9 +18,15 @@ global $phpbb_root_path;
 require_once $phpbb_root_path . "common.php";
 $request->enable_super_globals();
 require_once $phpbb_root_path . "includes/functions_posting.php";
-// $user in phpbb extends session
+require_once $phpbb_root_path . "includes/functions_privmsgs.php" ;
+
+// phpbb functions to establish a session and identify the session user
 $user->session_begin();
 $auth->acl($user->data);
+
+/*
+ *   phpbb provides us with the $user object and, when it performs a login for us, $_user_row and $_username
+ */
 
 class DpPhpbb3
 {
@@ -39,9 +39,14 @@ class DpPhpbb3
         $this->_username = $user->data['username'];
     }
 
-    public function Exists() {
-        global $user;
-        return $user && $user->data;
+    public function UsernameExists($name) {
+        global $dpdb, $phpbb_database_name, $forum_users_table;
+        $utable = $phpbb_database_name . ".".$forum_users_table;
+        $sql = "SELECT COUNT(1) FROM $utable
+                WHERE username_clean = ?";
+        $args = [&$name];
+        $isname = $dpdb->SqlOneValuePS($sql, $args);
+        return $isname == 1;
     }
 
 //    public function UserData() {
@@ -50,7 +55,7 @@ class DpPhpbb3
 //    }
 
     public function __destruct() {
-    }
+}
     
 //    public function IsRegistered() {
 //        global $user;
@@ -61,6 +66,9 @@ class DpPhpbb3
         return $this->_username != "" && strtolower($this->_username) != "anonymous";
     }
 
+    // Called from DpThisUser if supplied with username and password.
+    // Login succeeds if $_user_row is populated and $_username is populated.
+    // Redundant since $_username = $_user_row['username'] (but should be 'username_clean'?)
     public function DoLogin($username, $password) {
         global $auth;
         $autologin = false;
@@ -73,29 +81,13 @@ class DpPhpbb3
         }
         $this->_user_row = $login['user_row'];
         $this->_username = $login['user_row']['username'];
-        if(empty($this->_username) 
-                || strtolower($this->_username) == 'anonymous') {
+        if(empty($this->_username) || strtolower($this->_username) == 'anonymous') {
             $this->_user_row = null;
             $this->_username = null;
             return false;
         }
         return true;
     }
-
-//    public function UserId() {
-//        return empty($this->_user_row) || empty($this->_user_row['user_id'])
-//            ? null
-//            : $this->_user_row['user_id'];
-//    }
-
-//    public function LoginAttempts() {
-//        global $user;
-//        return $user['user_login_attempts'];
-//    }
-
-//    public function bb_user() {
-//        return $this->_user_row;
-//    }
 
     public function Email() {
         return empty($this->_user_row)
@@ -110,8 +102,20 @@ class DpPhpbb3
             : $user->data['user_lang'];
     }
 
+    public function DataUserName() {
+        global $user;
+        return $user->data['username_clean'];
+    }
     public function UserName() {
         return $this->_username;
+    }
+    public function SessionId() {
+        global $user;
+        return $user->session_id;
+    }
+
+    public function SessionUsername() {
+        return $this->DataUserName();
     }
 
     public function DoLogout() {
@@ -124,12 +128,12 @@ class DpPhpbb3
         return $user->data['user_unread_privmsg'];
     }
 
-    public function CreateTopic($subj, $msg, $poster_name = "") {
+    public function CreateTopic($subj, $msg, $poster) {
         global $dpdb;
-//	    global $forumdb, $forumpfx;
         global $waiting_projects_forum_idx;
         $dpsubject = utf8_normalize_nfc($subj);
         $dpmessage = utf8_normalize_nfc($msg);
+	    $pname = lower($poster);
 
         // variables to hold the parameters for submit_post
         $poll = $uid = $bitfield = $options = '';
@@ -139,7 +143,7 @@ class DpPhpbb3
         generate_text_for_storage($dpmessage, $uid, $bitfield, 
                                 $options, true, true, true);
 
-        $data = array(
+        $data = [
             'forum_id'          => $waiting_projects_forum_idx,
             'icon_id'           => false,
          
@@ -164,32 +168,30 @@ class DpPhpbb3
      
             // 3.0.6
             'force_approved_state'  => true,
-        );
+        ];
         
-        submit_post('post', $dpsubject, '', POST_NORMAL,  $poll, $data);
+        submit_post('post', $dpsubject, $poster, POST_NORMAL,  $poll, $data);
 
         $post_id = $data['post_id'];
         $topic_id = $data['topic_id'];
-	    $pname = lower($poster_name);
-	    $bb_users_table = build_forum_users_table();
-        $pm_id = $dpdb->SqlOneValue("
-                SELECT user_id FROM $bb_users_table
-                WHERE username_clean = '$pname'");
+        $pm_id = forum_user_id_for_username($pname);
+//	    $bb_users_table = build_forum_users_table();
+//        $pm_id = $dpdb->SqlOneValue("
+//                SELECT user_id FROM $bb_users_table
+//                WHERE username_clean = '$pname'");
             
-        if($poster_name != "") {
-            // dump($data);
+        if($poster != "") {
+            $bb_users_table = build_forum_users_table();
             $sql = "
                 UPDATE $bb_users_table
                 SET poster_id = $pm_id
                 WHERE post_id = $post_id";
-            // dump($sql);
-            // die();
             $dpdb->SqlExecute($sql);
             $dpdb->SqlExecute("
                 UPDATE $bb_users_table
                 SET topic_poster = $pm_id,
-                    topic_first_poster_name = '$poster_name',
-                    topic_last_poster_name = '$poster_name',
+                    topic_first_poster_name = '$poster',
+                    topic_last_poster_name = '$poster',
                     topic_last_poster_id = $pm_id
                 WHERE topic_id = $topic_id");
                 
@@ -206,7 +208,7 @@ class DpPhpbb3
         generate_text_for_storage($message, $uid, $bitfield, 
                                 $options, true, true, true);
 
-        $data = array(
+        $data = [
             'topic_id'          => $topic_id,
             'icon_id'           => false,
          
@@ -231,7 +233,7 @@ class DpPhpbb3
      
             // 3.0.6
             'force_approved_state'  => true,
-        );
+        ];
         submit_post('post', $subject, '', POST_NORMAL,  $poll, $data);
     }
 
@@ -266,15 +268,44 @@ class DpPhpbb3
         return $dpdb->SqlOneValue($sql);
     }
 
-    public function SetTopicForumId($topic_id, $forum_id) {
+    public function MoveTopicForumId($topic_id, $forum_id) {
         global $dpdb;
-//	    global $forumdb, $forumpfx;
 	    $topics_table = build_forum_topics_table();
         $sql = "UPDATE $topics_table
-                SET forum_id = {$forum_id}
-                WHERE topic_id = {$topic_id}";
-        $dpdb->SqlExecute($sql);
+                SET forum_id = ?
+                WHERE topic_id = ?";
+        $args = [&$forum_id, &$topic_id];
+        $dpdb->SqlExecutePS($sql, $args);
     }
+
+    public static function SendPrivateMessage($subject, $message, $sender_username, $to_username) {
+        $nmessage = utf8_normalize_nfc($message);
+        $nsubject = utf8_normalize_nfc($subject);
+        $sender_id = forum_user_id_for_username($sender_username);
+        $uid = $bitfield = $options = ''; // will be modified by generate_text_for_storage
+        $allow_urls = $allow_bbcode = $allow_smilies = true;
+        generate_text_for_storage($nmessage, $uid, $bitfield, $options, $allow_bbcode, $allow_urls, $allow_smilies);
+        $to_id = forum_user_id_for_username($to_username);
+        $address_list = ["u" => [$to_id => "to"]];
+
+        $pm_data = [
+            'from_user_id'       => $sender_id,
+            'from_user_ip'       => "127.0.0.1",
+            'from_username'      => $sender_username,
+            'enable_sig'         => false,
+            'enable_bbcode'      => true,
+            'enable_smilies'     => true,
+            'enable_urls'        => true,
+            'icon_id'            => 0,
+            'bbcode_bitfield'    => $bitfield,
+            'bbcode_uid'         => $uid,
+            'message'            => $nmessage,
+//            'address_list'        => array('u' => array($userid => 'to')),
+            'address_list'        => $address_list
+        ];
+	    //Now We Have All Data Lets Send The PM!!
+	    submit_pm('post', $nsubject, $pm_data, false);
+	}
 }
 
 //function ForumUserIdForUsername($username) {
@@ -294,16 +325,15 @@ function forum_user_id_for_username($username) {
 
 $avatar_path = build_path($site_url,  "forumdpc/download/file.php?avatar=");
 
-class ForumUser
+class DpForumUser
 {
     private $_row;
 
-    public function __construct($username = "") {
+    public function __construct($username) {
         global $dpdb;
 
         if($username == "") {
-            global $User;
-            $username = $User->Username();
+            return;
         }
 	    $username = lower($username);
 	    $bb_users_table = build_forum_users_table();
@@ -340,6 +370,10 @@ class ForumUser
 
     public function Interests() {
         return isset($this->_row['user_interests']) ? $this->_row['user_interests'] : "";
+    }
+
+    public function Email() {
+        return isset($this->_row['user_email']) ? $this->_row['user_email'] : "";
     }
 }
 

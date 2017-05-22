@@ -16,7 +16,6 @@ $qgenre         = ArgArray("qgenre");
 $qphase         = ArgArray("qphase");
 $qstatus        = Arg("qstatus", "both");
 $orderby        = Arg("orderby", "nameofwork");
-$desc           = ArgBoolean("desc", "1");
 
 $pagenum        = Arg("pagenum", "1");
 $rowsperpage    = Arg("rowsperpage", "100");
@@ -57,22 +56,22 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	$awhere = array("p.phase != 'DELETED'");
 
 	if($qtitle) {
-		$qqtitle    = mysql_real_escape_string($qtitle);
+		$qqtitle    = $dpdb->EscapeString($qtitle);
 		$qsql = "(p.nameofwork LIKE '%$qqtitle%')";
 		$awhere []  = $qsql;
 	}
 
 	if($qauthor) {
-		$qqauthor   = mysql_real_escape_string($qauthor);
+		$qqauthor   = $dpdb->EscapeString($qauthor);
 		$qsql = "(p.authorsname LIKE '%$qqauthor%')";
 		$awhere []  = $qsql;
 	}
 
 
-	if(count($qphase)) {
+	if(count($qphase)> 0 && $qphase != array("")) {
 		$a = array();
 		foreach($qphase as $q) {
-			$a[] ="p.phase LIKE '{$q}%'";
+			$a[] ="p.phase = '{$q}'";
 		}
 
 		if(count($a) > 1) {
@@ -83,10 +82,10 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 		}
 	}
 
-	if(is_array($qpm) && count($qpm) > 0) {
+	if(is_array($qpm) && count($qpm) > 0 && $qpm != array("")) {
 		$a = array();
 		foreach($qpm as $q) {
-			$a[] ="p.username LIKE '{$q}'";
+			$a[] ="p.username = '{$q}'";
 		}
 
 		if(count($a) > 1) {
@@ -99,7 +98,7 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	if(is_array($qpp) && count($qpp) > 0) {
 		$a = array();
 		foreach($qpp as $q) {
-			$a[] ="p.postproofer LIKE '{$q}'";
+			$a[] ="p.postproofer = '{$q}'";
 		}
 
 		if(count($a) > 1) {
@@ -112,7 +111,7 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	if(is_array($qppv) && count($qppv) > 0) {
 		$a = array();
 		foreach($qppv as $q) {
-			$a[] ="p.ppverifier LIKE '{$q}'";
+			$a[] ="p.ppverifier = '{$q}'";
 		}
 
 		if(count($a) > 1) {
@@ -126,7 +125,7 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	if($qgenre) {
 		$a = array();
 		foreach($qgenre as $q) {
-			$a[] ="genre LIKE '%{$q}%'";
+			$a[] ="genre = '{$q}'";
 		}
 
 		if(count($a) > 1) {
@@ -162,7 +161,7 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	//    }
 
 	$where = implode("\nAND ", $awhere);
-	$sql = project_search_view_sql($where, $orderby, $desc);
+	$sql = project_search_view_sql($where, $orderby);
 
 	$rows = $dpdb->SqlRows($sql);
 	if($cmdPgUp) {
@@ -211,22 +210,19 @@ echo "
     <input type='hidden' name='rowsperpage' value='$rowsperpage'>
     <input type='hidden' name='pagenum' value='$pagenum'>
     <input type='hidden' name='orderby' id='orderby' value='nameofwork'>
-    <input type='hidden' name='desc' id='desc' value='0'>
     <div id='searchtable' class='left w95'>
 	    <div id='divsubmit' class='lfloat w35'>
-			<div>
+			<div class='right'>
 				<input type='submit' id='dosearch' name='dosearch' value='Submit'/>
 				<input type='button' id='doclear' name='doclear' value='Clear' onclick='eclear()'/>
 			</div>
 			<div>
-				Title
-				<input id='qtitle' name='qtitle' type='text'
-				class='rfloat' value='$qtitle' size='50' >
+				<div class='w20 left lfloat'>Title</div>
+				<input id='qtitle' name='qtitle' type='text' class='lfloat w75' value='$qtitle'>
 			</div>
 			<div>
-				Author
-				<input class='rfloat' id='qauthor' name='qauthor'
-				type='text' value='$qauthor' size='50'>
+				<div class='w20 left lfloat'>Author</div>
+				<input id='qauthor' name='qauthor' type='text' class='lfloat w75' value='$qauthor'>
 			</div>
 			<!--
 			<div>

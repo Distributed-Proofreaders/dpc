@@ -11,7 +11,6 @@ include_once($relPath.'site_news.inc');
 $limit = 10;
 
 theme(_("Welcome"), "header");
-
 // Show the number of users that have been active over various recent timescales.
 
 $sql = "SELECT

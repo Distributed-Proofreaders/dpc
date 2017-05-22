@@ -1,28 +1,28 @@
 <?PHP
 global $relPath;
-require_once $relPath . "lists.php";
+//require_once $relPath . "lists.php";
 
-function encodeFormValue($value) {
-  return htmlspecialchars($value,ENT_QUOTES);
-}
+//function encodeFormValue($value) {
+//  return htmlspecialchars($value,ENT_QUOTES);
+//}
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 function just_echo( $field_value ) {
-    echo encodeFormValue($field_value);
+    echo h($field_value);
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 function text_field( $field_value, $field_name ) {
-    $enc_field_value = encodeFormValue($field_value);
+    $enc_field_value = h($field_value);
     echo "<input type='text' size='67' name='$field_name' value='$enc_field_value'>";
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 function DP_user_field( $field_value, $field_name ) {
-    $enc_field_value = encodeFormValue($field_value);
+    $enc_field_value = h($field_value);
     echo "<input type='text' size='25' name='$field_name' value='$enc_field_value'>";
 }
 
@@ -106,6 +106,7 @@ function difficulty_list($difficulty = "Average") {
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
+/*
 function special_list($special) {
     // get info on special days
     $specs_result = mysql_query("
@@ -200,28 +201,32 @@ function special_list($special) {
     }
     echo "</select>";
 }
+*/
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 function image_source_list($image_source) {
+    global $dpdb;
     // get info on image_sources
-    $imso_result = mysql_query("
+//    $imso_result = mysql_query("
+    $sql = "
         SELECT code_name, display_name
         FROM image_sources
         WHERE is_active = 1
         ORDER BY display_name
-    ") or die(mysql_error());
+    ";
 
+    $srcs = $dpdb->SqlRows($sql);
     // it'd be nice to make this static, or something, so it only was loaded once
-    $imso_array = array();
+//    $imso_array = array();
 
     // put list into array
-    while ($i_row = mysql_fetch_assoc($imso_result))
-    {
-        $show = $i_row['display_name'];
-        $code = $i_row['code_name'];
-        $imso_array["$code"] = $show;
-    }
+//    while ($i_row = mysql_fetch_assoc($imso_result))
+//    {
+//        $show = $i_row['display_name'];
+//        $code = $i_row['code_name'];
+//        $imso_array["$code"] = $show;
+//    }
 
     // drop down select box for which image source
     echo "<select name='image_source'>";
@@ -233,23 +238,26 @@ function image_source_list($image_source) {
     echo "\n";
 
     // add the pre-defined image_sources
-    foreach($imso_array as $k=>$v)
-    {
-        echo "<option value='".encodeFormValue($k)."'";
-        if ($image_source == $k) { echo " SELECTED"; }
-        echo ">$v</option>";
+    foreach($srcs as $src) {
+//    foreach($imso_array as $k=>$v)
+//    {
+        $code = $src["code_name"];
+        $displ = h($src["display_name"]);
+        echo "<option value='".$code."'";
+        if ($image_source == $code) { echo " SELECTED"; }
+        echo ">$displ</option>";
         echo "\n";
     }
 
     echo "</select> ";
     echo "<font size=-1>". _("'DP Internal' if scanned by or for a DP user.")."</font>";
-    echo " <a href='show_image_sources.php'>"._("Details of Image Sources")."</a><br>";
+    echo " <br><a href='image_sources.php'>"._("Details of Image Sources")."</a><br>";
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 function proj_comments_field($comments) {
-    $enc_comments = encodeFormValue($comments);
+    $enc_comments = h($comments);
 
     echo "<div class='center'>
     <textarea name='comments' cols='74' rows='16'>$enc_comments</textarea>
@@ -259,7 +267,7 @@ function proj_comments_field($comments) {
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 function extra_credits_field($extra_credits) {
-    $enc_credits = encodeFormValue($extra_credits);
+    $enc_credits = h($extra_credits);
 
     echo "<div class='center'>";
     echo "<textarea name='extra_credits' cols='74' rows='4'>$enc_credits</textarea>";
@@ -271,7 +279,7 @@ function extra_credits_field($extra_credits) {
 
 
 function description_field( $description, $field_name ) {
-    $enc_description = encodeFormValue($description);
+    $enc_description = h($description);
 
     echo "<div class='center'>";
     echo "<textarea name='$field_name' cols='74' rows='6'>$enc_description</textarea>";

@@ -1,7 +1,7 @@
 <?php
 $relPath="../pinc/";
 require_once $relPath.'dpinit.php';
-require_once "word_freq_table.php";
+require_once "word_freq_table.inc";
 
 $projectid = ArgProjectId();
 $project = new DpProject($projectid);

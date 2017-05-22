@@ -5,7 +5,7 @@ error_reporting(E_ALL);
 
 $relPath = "./../../pinc/";
 include_once($relPath.'dpinit.php');
-include_once('edit_common.inc');
+//include_once('edit_common.inc');
 
 $page_title = _("Create a Project");
 theme($page_title, "header");

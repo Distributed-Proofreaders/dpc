@@ -1,0 +1,4 @@
+'(\[.{1,3}\]|\[ ?footnote.*?\])' '$1' 'Footnote tags and anchors' 'imsg'
+
+'\[Sidenote.*\]' '$1' 'Sidenotes' 'imsg'
+'\[illustration.*\]' '$1' 'Illustrations' 'imsg'

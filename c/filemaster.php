@@ -20,9 +20,11 @@ error_reporting(E_ALL);
 $relPath = "./pinc/";
 require_once $relPath."dpinit.php";
 
-//      /var/sftp
+$User->IsLoggedIn()
+	or RedirectToLogin();
+
+
 global $sftp_path;
-//      /var/sftp/dpscans
 global $dpscans_path;
 
 //      /var/sftp/dpscans/dkretz
@@ -46,6 +48,7 @@ $projectid              = ArgProjectId();
 
 // directory to browse from
 $chk_text               = ArgArray("chk_text");      // selected files
+
 $chk_other              = ArgArray("chk_other");
 $chk_delete             = ArgArray("chk_delete");
 
@@ -60,8 +63,6 @@ $username               = $User->Username();
 
 // -------------------------------------------------------
 
-$User->IsLoggedIn()
-	or RedirectToLogin();
 
 $project = new DpProject( $projectid );
 
@@ -80,6 +81,9 @@ if($readme != "" && $project->CPComments() == "") {
 //  Submit processing
 // -----------------------------------------------------------------
 
+// gather protopages as union of database and files
+$protopages = gather_page_set($project, $truepath);
+
 
 // process requested file deletions from project directory
 if ( count( $chk_delete ) > 0 ) {
@@ -89,17 +93,23 @@ if ( count( $chk_delete ) > 0 ) {
 // if requested to include or delete extra files, copy them over or delete them.
 if ( count( $chk_other ) > 0 ) {
 	// permit_path($project->ProjectPath());
-	foreach ( array_keys( $chk_other ) as $otherpath ) {
+	foreach ( array_keys( $chk_other ) as $otherkey ) {
+		$proto = $protopages[$otherkey];
+		$otherpath = $proto['external_image'];
 		$otherfile = basename($otherpath);
+        $topath = build_path( $project->ProjectPath(), $otherfile );
+
 		if ( ! file_exists( $otherpath ) ) {
 			assert(false);
 			continue;
 		}
 		if ( $submit_delete_others ) {
-			@unlink( $otherpath );
+            // this fails due to file permissions
+            @permit_path($otherpath);
+			@unlink( $topath );
+            @unlink( $otherpath );
 		}
 		else if ( $submit_load_others ) {
-			$topath = build_path( $project->ProjectPath(), $otherfile );
 			// permit_path($topath);
 			// permit_path($otherpath);
 			if ( file_exists( $topath ) ) {
@@ -116,9 +126,6 @@ if ( count( $chk_other ) > 0 ) {
 	}
 }
 
-// gather protopages as union of database and files
-$protopages = gather_page_set($project, $truepath);
-
 
 // load pages requested
 if ( $submit_load && count( $chk_text ) > 0 ) {
@@ -127,7 +134,11 @@ if ( $submit_load && count( $chk_text ) > 0 ) {
 
 // delete pages requested
 if ( $submit_delete && count( $chk_text ) > 0 ) {
-	DeletePages($project, $chk_text);
+    $ary = array();
+    foreach(array_keys($chk_text) as $chk) {
+        $ary[] = preg_replace("/pg_/", "", $chk);
+    }
+	DeletePages($project, $ary);
 }
 
 // do it again to incorporate changes
@@ -136,7 +147,12 @@ $protopages = gather_page_set($project, $truepath);
 
 // combine existing pages with potential pages
 // (pairs of files)
-/** @var DpProject $project */
+/**
+ * @param DpProject $project
+ * @param $path
+ * @return array
+ * @internal param DpProject $project
+ */
 function gather_page_set($project, $path) {
 	$ary = array();
 	$pages = $project->PageRows(true);
@@ -254,7 +270,7 @@ $tblpages->AddColumn( ">In project", null, "eInDB" );
 $tblpages->AddColumn( ">Load Image", "external_image", "epathlink" );
 $tblpages->AddColumn( ">Load Text", "external_text", "epathlink" );
 $tblpages->AddColumn( "^Encoding", "external_text", "encoding" );
-$tblpages->AddColumn( chkall(), null, "textcheck" );
+$tblpages->AddColumn( chkall(), null, "etextcheck" );
 $tblpages->AddColumn("<projectid", "projectid", null, "hidden");
 $tblpages->AddColumn("<imgpath", "external_image", null, "hidden");
 $tblpages->AddColumn("<imgpath", "external_text", null, "hidden");
@@ -281,9 +297,9 @@ $tblpages->SetRows( $pagerows );
 // build other uploaded files display
 $tblother = new DpTable( "tblother", "dptable" );
 $tblother->AddColumn( "<Name", "name", null, "hidden" );
-$tblother->AddColumn( "<Image", null, "eMaybeImage" );
-$tblother->AddColumn( "<Text", null, "eMaybeText" );
-$tblother->AddColumn( "^All", "name", "othercheck" );
+$tblother->AddColumn( "<File name", null, "eOther" );
+$tblother->AddColumn( "<In<br>project", null, "eInProject");
+$tblother->AddColumn( chkall2(), "name", "othercheck" );
 $tblother->SetRows( $otherrows );
 
 
@@ -316,7 +332,7 @@ $uploadcaption  = _("Browse files to upload");
 
   echo "
     <div class='center' id='divworkform'>
-	<form name='workform' id='workform' method='POST' action=''>
+	<form name='workform' id='workform' method='POST'>
 
         <div id='divright' class='rfloat padded center w50'>
           <div id='dirs_and_files' class='center margined bordered padded' style='margin-left: 2em;'>
@@ -387,25 +403,52 @@ echo "
 function eFileName($row) {
 
 }
-function eMaybeImage($row) {
+function eInProject( $row) {
+	global $project;
 	if ( isset( $row["external_image"] ) ) {
-		return basename( $row["external_image"] );
+		$fname = basename($row["external_image"]);
+		$fpath = build_path($project->ProjectPath(), $fname);
 	}
-	else if( isset( $row["external_text"] ) ) {
-		return basename( $row["external_text"] );
+	else if ( isset( $row["external_text"] ) ) {
+		$fname = basename($row["external_text"]);
+		$fpath = build_path($project->ProjectPath(), $fname);
 	}
-	else if( isset( $row["external_other"])) {
-		return basename( $row["oexternal_ther"] );
+	else if ( isset( $row["external_other"])) {
+		$fname = basename($row["external_other"]);
+		$fpath = build_path($project->ProjectPath(), $fname);
 	}
 	else {
 		return "";
 	}
+	return file_exists($fpath) ? "Yes" : "No";
 }
 
-function eMaybeText($row) {
-	return isset($row["external_text"])
-		? $row['name']
-		: "";
+//function eMaybeImage($row) {
+//	if ( isset( $row["external_image"] ) ) {
+//			return basename( $row["external_image"] );
+//	}
+//	else if( isset( $row["external_text"] ) ) {
+//		return basename( $row["external_text"] );
+//	}
+//	else if( isset( $row["external_other"])) {
+//		return basename( $row["external_other"] );
+//	}
+//	else {
+//		return "";
+//	}
+//}
+
+function eOther($row) {
+	if(isset($row["external_image"])) {
+		return basename($row['external_image']);
+	}
+	if(isset($row["external_text"])) {
+		return basename($row['external_text']);
+	}
+	if (isset($row["external_other"])) {
+		return basename($row['external_other']);
+	}
+	return "";
 }
 
 function eInDb($row) {
@@ -455,9 +498,10 @@ function DirectoryList($path) {
 	return $dirpaths;
 }
 
+/*
 function echo_upload_form() {
     echo "
-        <form enctype='multipart/form-data' method='post' action=''
+        <form enctype='multipart/form-data' method='post'
             name='upform' id='upform'>
         Select a zip file:
     <input type='file' name='projectzipfile' size='50'
@@ -475,6 +519,7 @@ function yes_no($boolval) {
 	$ret .= ($boolval ? " Y2 " : " N2 ");
 	return $ret;
 }
+*/
 
 
 function encoding($path) {
@@ -485,7 +530,7 @@ function encoding($path) {
 	return is_utf8($text) ? "utf-8" : "other";
 }
 
-function textcheck($page) {
+function etextcheck($page) {
 	global $protopages;
 	$name = $page['name'];
 	$key  = "pg_" . $name;
@@ -495,21 +540,22 @@ function textcheck($page) {
 		dump( $protopages );
 		die();
 	}
-	$proto = $protopages[ $key ];
+//	$proto = $protopages[ $key ];
 
-	return ( isset( $proto['external_image'] )
-	         && isset( $proto['external_text'] ) )
-		? "<input type='checkbox' name='chk_text[{$key}]'>\n"
-		: "\n";
+	return "<input type='checkbox' name='chk_text[{$key}]'>\n";
+//	return ( isset( $proto['external_image'] )
+//	         && isset( $proto['external_text'] ) )
+//		? "<input type='checkbox' name='chk_text[{$key}]'>\n"
+//		: "\n";
 }
 
 function othercheck($name) {
-	global $protopages;
+//	global $protopages;
 //	$name = $row['name'];
 	$key  = "pg_" . $name;
-	$proto = $protopages[ $key ];
-	$frompath = isset($proto['external_image']) ? $proto['external_image'] : $proto['external_text'];
-	return "<input type='checkbox' name='chk_other[$frompath]'>";
+//	$proto = $protopages[ $key ];
+//	$frompath = isset($proto['external_image']) ? $proto['external_image'] : $proto['external_text'];
+	return "<input type='checkbox' name='chk_other[$key]'>";
 }
 
 function exttxtlen($page) {
@@ -525,8 +571,12 @@ function exttxtlen($page) {
 }
 
 
-function DeletePages($project, $chk_pages) {
-
+/**
+ * @param DpProject $project
+ * @param array $pages
+ */
+function DeletePages($project, $pages) {
+    $project->DeletePages($pages);
 }
 
 // chk_pages has the heys, protopage has external_image, external_text

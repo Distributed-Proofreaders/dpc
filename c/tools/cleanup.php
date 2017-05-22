@@ -110,7 +110,7 @@ function restart_this($errmsg) {
 	global $projectid;
 
 	$msgs[] = $errmsg;
-		echo_header();
+		html_start();
 		echo "
     $errmsg
     <form name='frmflow' method='POST'>

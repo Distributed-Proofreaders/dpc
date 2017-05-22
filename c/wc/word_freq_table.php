@@ -25,9 +25,9 @@ switch($mode) {
 		$awords = $project->FlagWordsByCountAlpha($langcode);
 		break;
 
-	case "suggested":
-		$awords = $project->SuggestedWordsByCountAlpha($langcode);
-		break;
+//	case "suggested":
+//		$awords = $project->SuggestedWordsByCountAlpha($langcode);
+//		break;
 
 	case "adhoc":
 		$awords = $project->AdHocWordCountArray( $langcode, $adhoclist);

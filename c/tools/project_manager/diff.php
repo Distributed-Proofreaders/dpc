@@ -235,7 +235,6 @@ echo "
 
 
 echo "
-            $imglink
     </form>
     </div>\n";
 

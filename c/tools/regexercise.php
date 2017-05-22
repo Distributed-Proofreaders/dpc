@@ -2,6 +2,9 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+$relPath = "../../c/pinc/";
+require $relPath . "dpinit.php";
+
 $title = "Regex Testing";
 
 echo "<!DOCTYPE HTML>
@@ -12,71 +15,60 @@ echo "<!DOCTYPE HTML>
 </head>
 <body>\n";
 
-$regex = array();
-$m     = array();
 
-$regex[] = '/\btne/u'; // "tne word")
-$regex[] = "/\stne\w/iu"; // "tne prefix")
-$regex[] = "/\s\-\n\w/iu"; // "EOL hanging dash")
-$regex[] = "/(\S\- | \-\S)/u"; // "hanging dash")
-$n = count($regex);
-
-$relPath = "../../c/pinc/";
-require $relPath . "dpinit.php";
+require $relPath . "../wc/scannos.php";
+require $relPath . "../wc/guifix.php";
 
 $pids = $dpdb->SqlValues("SELECT projectid FROM projects
-						WHERE phase IN ('P1', 'P2', 'P3','F1', 'F2')");
+						WHERE phase = 'PP'");
 
-echo "<pre>\n";
 //$tots = array();
 //for($i = 0; $i < $n; $i++) {
 //	$tots[$i] = 0;
 //}
 $t = array();
+//$i = 0;
 foreach($pids as $pid) {
+//	if($i++ > 10)
+//		exit;
+	dump($pid);
 	$project = new DpProject($pid) ;
 	assert($project->Exists());
-	$text = $project->OCRText();
+	$text = $project->ActiveText();
+//	echo "<pre>" . $text . "</pre>";
+//	exit;
+	$rx = '\n\n+';
+	$fl = "ui";
+	$ary = RegexSplit($rx, $fl, $text);
+//	$n = RegexCount($rx, $fl, $text);
+	$n = count($ary);
+	say("paragraphs $n");
+
+	$i = 0;
+	foreach($ary as $para) {
+		$i++;
+		$n = RegexCount('"', "u", $para);
+		say("$i  $n");
+	}
+
+//	$i = 0;
+//	foreach($guifix as $key => $value) {
+//		$i++;
+//		$rx = "$key";
+//		$n = RegexCount($rx, "u", $text);
+//		if($n > 0) {
+//			say("$i |$rx|===|$value|  $n");
+//			exit;
+//		}
+//	}
+	echo "<pre>$text</pre>";
+	exit;
 	// echo "\n$pid  {$project->NameOfWork()}\n";
-	for($i = 0; $i < $n; $i++) {
-		$m            = preg_match_all( $regex[ $i ], $text, $matches, PREG_SET_ORDER );
-		$tots[ $pid ] = array( "pid" => $pid, "descr" => $project->NameOfWork(), $regex[ $i ], $m );
-	}
+//	for($i = 0; $i < $n; $i++) {
+//		$m            = preg_match_all( $regex[ $i ], $text, $matches, PREG_SET_ORDER );
+//		$tots[ $pid ] = array( "pid" => $pid, "descr" => $project->NameOfWork(), $regex[ $i ], $m );
+//	}
 }
-
-foreach($pids as $pid) {
-	for ( $i = 0; $i < $n; $i ++ ) {
-		$t[ $i ] += $tots[ $pid ][ $i ];
-	}
-}
-
-$nproj = count($pids);
-
-uasort($tots, "t_sort");
-
-uasort($tots, "t_sortr");
-
-$i =  0;
-foreach($tots as $t) {
-	echo "{$t['pid']} {$t['descr']} {$t[$regex1]} {$t[$regex1]} {$t[$regex3]} {$t[$regex4]}\n";
-	if(++$i > 30) {
-		break;
-	}
-}
-echo "
-</pre>
-</body>
-</html>";
-exit;
-
-function t_sort($a, $b) {
-	return $a["tdbl"] - $b["tdbl"];
-}
-function t_sortr($a, $b) {
-	return $b["tdbl"] - $a["tdbl"];
-}
-
-
 
 
 

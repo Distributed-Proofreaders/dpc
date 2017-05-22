@@ -13,6 +13,10 @@ error_reporting(E_ALL);
 
 $relPath="./../pinc/";
 include_once($relPath.'dpinit.php');
+
+$User->IsLoggedIn()
+	or RedirectToLogin();
+
 include_once($relPath.'gettext_setup.inc');
 include_once($relPath.'theme.inc');
 include_once($relPath.'site_news.inc');

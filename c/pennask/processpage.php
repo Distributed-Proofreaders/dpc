@@ -7,7 +7,7 @@ if(! $User->IsLoggedIn()) {
     exit;
 }
 
-$projectid          = ArgProjectId();
+$projectid          = ArgProjectid();
 if(! $projectid)
     die("No projectid");
 $pagename           = ArgPageName();
@@ -20,10 +20,12 @@ $langcode           = Arg("langcode");
 $acceptwords        = Arg("acceptwords");
 $editor             = Arg("editor");
 $badreason          = Arg("badreason", "");
+//$txtfind            = Arg("txtfind");
+//$txtrepl            = Arg("txtrepl");
 
-if($editor != "") {
-	$User->SetInterface($editor);
-}
+//if($editor != "") {
+//	$User->SetInterface($editor);
+//}
 if(IsArg("opt_submit_continue_x")) {
 	$seltodo = "opt_submit_continue";
 }
@@ -34,7 +36,7 @@ else if(IsArg("opt_submit_quit_x")) {
 	$seltodo = "opt_submit_quit";
 }
 else if(IsArg("opt_draft_continue_x")) {
-		$seltodo = "opt_draft_continue";
+    $seltodo = "opt_draft_continue";
 }
 else if(IsArg("opt_draft_quit_x")) {
 	$seltodo = "opt_draft_quit";
@@ -52,25 +54,22 @@ if(count($awords) > 0) {
 }
 
 /** @var DpPage $page */
-if(! $page->UserIsOwner()) {
+if(! $page->IsAvailable() && ! $page->UserIsOwner()) {
 	LogMsg("Owner is " . $page->Owner() . " and User is " . $User->Username() . "
 		Action: $seltodo
 		Projectid: $projectid
 		Page: $pagename
 		Phase: $phase");
-//    $errmsg = "You are trying to save a page that is not checked out to you.
-//        If you think this is an error, please post to the System Errors topic in the Forums.";
-//    die($errmsg);
 }
 
 switch($seltodo) {
     case "opt_draft_quit" :
-        $page->saveText($tatext);
+        $page->SaveOpenText($tatext);
         redirect_to_project($projectid);
         break;
 
     case "opt_draft_continue" :
-        $page->saveText($tatext);
+        $page->SaveOpenText($tatext);
         redirect_to_proof_page($projectid, $pagename);
         break;
 
@@ -80,7 +79,7 @@ switch($seltodo) {
         break;
 
     case "opt_submit_continue" :
-        $page->saveAsDone($tatext);
+        $page->SaveAsDone($tatext);
         $project = new DpProject($projectid);
         if($project->IsRoundCompleted()) {
             redirect_to_project($projectid, "Round Complete");
@@ -97,12 +96,12 @@ switch($seltodo) {
         break;
 
     case "opt_submit_quit" :
-        $page->saveAsDone($tatext);
+        $page->SaveAsDone($tatext);
         redirect_to_project($projectid);
         break;
 
     case "opt_return_quit" :
-        $page->returnToRound();
+        $page->ReturnToRound();
         redirect_to_project($projectid);
         break;
 

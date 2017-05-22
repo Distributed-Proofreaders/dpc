@@ -2,39 +2,64 @@
 $relPath="./../../pinc/";
 require_once $relPath."dpinit.php";
 
-if($User->Username() == 'dkretz') {
-	require_once $relPath."DpTable2.class.php";
-}
-
 $projectid          = Arg("projectid")
-    or die("No Projectid");
+or die("No Projectid");
 
-$todo               = Arg("todo");
-$show_image_size    = Arg("show_image_size", 0);
+$username           = Arg("username", $User->Username());
 $select_by_user     = Arg("select_by_user");
-$is_my_pages        = IsArg("select_by_user");
-$chkfile            = ArgArray("chkfile");
 
 /** @var $User DpThisUser */
 $User->IsLoggedIn()
     or redirect_to_home();
 
 $project = new DpProject($projectid);
+$projphase = $project->Phase();
 
-$chkfiles = array_keys($chkfile);
-if(count($chkfiles) > 0) {
-    switch($todo) {
-        default:
+$tbl = new DpTable("tblpages", "dptable bordered em90 margined");
+$tbl->AddCaption("^", 4, "center b-left b-bottom b-top");
+$tbl->AddColumn("^Page", "pagename", "epage");
+$tbl->AddColumn("^Page<br />state", "state", "estate", "b-right");
+$tbl->AddColumn("^Image", "imagefile", "eimage");
+$tbl->AddColumn(">OCR<br>Text", "P0", "etext", "b-right");
+
+$colclass = false;
+
+if($projphase != "PREP") {
+    foreach(["P1", "P2", "P3", "F1", "F2"] as $phase) {
+        $colclass = ! $colclass;
+        // Note: for AddCaption, the third aargument, class, can bd executable.
+        // If it is, the !caption text! executes it.
+        $tbl->AddCaption(ephasecaption($phase), 4, "b-all center");
+        $tbl->AddColumn("^Diff", $phase, "ediff", "b-left");
+        $tbl->AddColumn("^Date", $phase, "edate", "em80");
+        $tbl->AddColumn("<User", $phase, "euser");
+        $tbl->AddColumn(">Text", $phase, "etext", "b-right");
+        if(lower($phase) == lower($projphase)) {
             break;
-        case "deletePages":
-            $project->DeletePages($chkfiles);
-            break;
-	    case "clearPages":
-		    $project->ClearPages($chkfiles);
-		    break;
+        }
     }
 }
 
+$ncol = 0;
+if($project->IsInRounds()) {
+    $ncol++;
+    $tbl->AddColumn("^Edit", "pagename", "eedit", "b-right");
+}
+
+if ($project->UserMayManage()) {
+    $tbl->AddColumn("^Clear", "pagename", "eclear", "b-right");
+    $ncol ++;
+
+//    if( ($projphase == 'PREP' || $project->IsInRounds())) {
+//        $ncol++;
+//        $tbl->AddColumn("^Delete", "pagename", "edelete", "b-right");
+//    }
+}
+if($ncol > 0) {
+    $tbl->AddCaption("Manage", $ncol, "center b-all");
+}
+
+$sql = table_sql($projectid, $select_by_user);
 
 
 // ====================================================================================
@@ -44,508 +69,425 @@ if(count($chkfiles) > 0) {
 $title = $project->Title();
 $page_title = _('Page details: ').$title;
 
-$args = array("css_data" => "
-        .package {
-            text-align: center;
-        }
-        .shrink-to-fit {
-            padding: .5em 2.5em;
-            display: inline-block;
-        }
-        .lfloat {
-            float: left;
-        }
-        .rfloat {
-            float: right;
-        }\n");
-
-theme($page_title, "header", $args);
+theme($page_title, "header");
 
 echo "
-    <div class='w25 left'>
-    ".link_to_project($projectid, "Return to project page")."<br>
-    ".($is_my_pages
+    <div class='w25 left'>"
+//     .link_to_project($projectid, "Return to project page")
+    ."<br>
+    ".($select_by_user
         ? link_to_page_detail($projectid, "Show all pages")
         : link_to_page_detail_mine($projectid, "Show your pages"))."
     </div>
-    <div class='package'>
+    <div class='center'>
     <h1>$title</h1>
+    ";
 
-    <form name='pagesform' id='pagesform' method='POST'  onclick='eFormClick(event)'>
-    <input type='hidden' id='projectid' name='projectid' value='{$projectid}' />
-    <input type='hidden' id='pagename' name='pagename' value='' />
-    <input type='hidden' id='todo' name='todo' value='' />";
-
-    echo "
-    <div class='shrink-to-fit'>\n";
-if($project->UserMayManage()) {
-	echo "
-        <input type='button' value='Clear selected'  onclick='eClearPages()'
-            title='Forget work done in this round and set text to result of previous round' />
-        <input type='button' value='Delete selected' onclick='eDeletePages()'
-            title='Remove selected pages entirely from the project' />\n";
-}
-	echo "
-        <input type='button' value='View logs' onclick='eViewLogs()'
-            title='View event log for all pages in this project' />
-    </div>\n";
-
-echo_pagetable($project, $is_my_pages);
+echo_page_table($project, $select_by_user);
 echo "
-    </form>
-</div> <!-- package -->
+</div>
 </table> <!-- hanging tag from theme -->\n";
 
 html_footer();
 exit;
 
-function echo_pagetable($project, $is_my_pages) {
-	/** @var $project DpProject */
-	$tblrows = page_table_rows( $project, $is_my_pages );
-
-	echo_js( $tblrows );
-
-	$tbl = new DpTable( "tblpages dptable em90" );
-
-    if($project->UserMayManage()) {
-        $tbl->AddCaption(null, 4);  // leave one for the rownumber?
-        $tbl->AddColumn(chk_caption(), null, "rowchkbox", "width: 4em");
-    }
-    else {
-        $tbl->AddCaption(null, 3);
-    }
-
-    $tbl->AddColumn("^"._("Page"), null, "imagelink", "skinny");
-    $tbl->AddColumn("^"._("OCR"), null, "mastertextlink");
-    $tbl->AddColumn("^"._("Status"), "state", "eState", "w4em");
-
-    if($project->Phase() != "PREP") {
-        $i = 0;
-        foreach(array("P1", "P2", "P3", "F1", "F2") as $roundid) {
-            $i++;
-            $tbl->AddCaption("^".$roundid, $project->UserMayManage() ? 4 : 3);
-            $tbl->AddColumn("^"._("Diff"), $roundid, "ediff");
-            $tbl->AddColumn("^"._("Date"), $roundid . "_version_time");
-            if($project->UserMayManage()) {
-                $tbl->AddColumn("<"._("User"), "$roundid", "usrlnk", "nopad");
-            }
-            $tbl->AddColumn(">"._("Text"), $roundid, "textlink");
-            if($roundid == $project->RoundId())
-                break;
-        }
-    }
-
-    $tbl->SetRows($tblrows);
-    $tbl->EchoTableNumbered();
-}
-
-function chk_caption() {
-    return "All <input type='checkbox' name='ckall' 
-                onclick='CheckAll();'>";
-}
-
-function page_table_rows($project, $is_my_pages) {
+function echo_page_table( $project, $select_by_user )
+{
+    /** @var DpProject $project */
+    global $code_url;
     global $dpdb;
-	global $User;
-	$username = $User->Username();
-
-    /** @var $project DpProject */
 
     $projectid = $project->ProjectId();
-	$subwhere = $is_my_pages
-			? "AND '$username' IN (
-			        p1.username, p2.username, p3.username,
-					p4.username, p5.username)"
-			: "";
+    $projphase = $project->Phase();
 
-	$sql = "
-SELECT
-    pg.projectid,
-    pg.pagename,
-    pg.imagefile,
+    // This project may have skipped some rounds, and/or it may have rounds
+    $tbl = new DpTable("tblpages", "dptable bordered em90 margined");
 
-	DATE_FORMAT(FROM_UNIXTIME(p0.version_time), '%b-%e-%y %k:%i') P0_version_time,
-    p0.crc32        P0_crc32,
-    p0.textlen      P0_textlen,
+    $tbl->AddCaption("^", 4, "center b-left b-bottom b-top");
+    $tbl->AddColumn("^Page", "pagename", "epage");
+    $tbl->AddColumn("^Page<br />state", "state", "estate", "b-right");
+    $tbl->AddColumn("^Image", "imagefile", "eimage");
+    $tbl->AddColumn(">OCR<br>Text", "P0", "etext", "b-right");
 
-    p1.version      P1_version,
-    p1.username     P1_username,
-    p1.phase        P1_phase,
-    p1.state        P1_state,
-	DATE_FORMAT(FROM_UNIXTIME(p1.version_time), '%b-%e-%y %k:%i') P1_version_time,
-    p1.crc32        P1_crc32,
-    p1.textlen      P1_textlen,
-
-    p2.version      P2_version,
-    p2.username     P2_username,
-    p2.phase        P2_phase,
-    p2.state        P2_state,
-	DATE_FORMAT(FROM_UNIXTIME(p2.version_time), '%b-%e-%y %k:%i') P2_version_time,
-    p2.crc32        P2_crc32,
-    p2.textlen      P2_textlen,
-
-    p3.version      P3_version,
-    p3.username     P3_username,
-    p3.phase        P3_phase,
-    p3.state        P3_state,
-	DATE_FORMAT(FROM_UNIXTIME(p3.version_time), '%b-%e-%y %k:%i') P3_version_time,
-    p3.crc32        P3_crc32,
-    p3.textlen      P3_textlen,
-
-    p4.version      F1_version,
-    p4.username     F1_username,
-    p4.phase        F1_phase,
-    p4.state        F1_state,
-	DATE_FORMAT(FROM_UNIXTIME(p4.version_time), '%b-%e-%y %k:%i') F1_version_time,
-    p4.crc32        F1_crc32,
-    p4.textlen      F1_textlen,
-
-    p5.version      F2_version,
-    p5.username     F2_username,
-    p5.phase        F2_phase,
-    p5.state        F2_state,
-	DATE_FORMAT(FROM_UNIXTIME(p5.version_time), '%b-%e-%y %k:%i') F2_version_time,
-    p5.crc32        F2_crc32,
-    p5.textlen      F2_textlen,
-
-    plv.version     version,
-    plv.username    username,
-    plv.phase       phase,
-    plv.state		state,
-
-	p0.crc32 != p1.crc32 P1_diff,
-	p1.crc32 != p2.crc32 P2_diff,
-	p2.crc32 != p3.crc32 P3_diff,
-	p3.crc32 != p4.crc32 F1_diff,
-	p4.crc32 != p5.crc32 F2_diff
-
- FROM page_versions pv
-
- JOIN page_last_versions plv
-     ON pv.projectid = plv.projectid
-     AND pv.pagename = plv.pagename
-
- LEFT JOIN page_versions p0
-     ON pv.projectid = p0.projectid
-     AND pv.pagename = p0.pagename
-     AND p0.phase = 'PREP'
-
- LEFT JOIN page_versions p1
-     ON pv.projectid = p1.projectid
-     AND pv.pagename = p1.pagename
-     AND p1.phase = 'P1'
-
- LEFT JOIN page_versions p2
-     ON pv.projectid = p2.projectid
-     AND pv.pagename = p2.pagename
-     AND p2.phase = 'P2'
-
- LEFT JOIN page_versions p3
-     ON pv.projectid = p3.projectid
-     AND pv.pagename = p3.pagename
-     AND p3.phase = 'P3'
-
- LEFT JOIN page_versions p4
-     ON pv.projectid = p4.projectid
-     AND pv.pagename = p4.pagename
-     AND p4.phase = 'F1'
-
- LEFT JOIN page_versions p5
-     ON pv.projectid = p5.projectid
-     AND pv.pagename = p5.pagename
-     AND p5.phase = 'F2'
-
- JOIN pages pg
-     ON pv.projectid = pg.projectid
-     AND pv.pagename = pg.pagename
-
-WHERE pv.projectid = '$projectid'
-	$subwhere
- GROUP BY pv.projectid, pv.pagename
-	";
-
-    $rows = $dpdb->SqlRows($sql);
-    return $rows;
-}
-
-function rowchkbox($pagerow) {
-    $name = 'chkfile['.$pagerow['pagename'].']';
-    return "<input type='checkbox' name='$name'>";
-}
-
-function imagelink($pagerow) {
-    $projectid  = $pagerow['projectid'];
-    $pagename   = $pagerow['pagename'];
-
-    return $pagerow['imagefile']
-        ? link_to_view_image($projectid, $pagename, $pagename)
-        : "<span class='danger'>$pagename</span>";
-}
-
-function mastertextlink($pagerow) {
-//    global $pm_url;
-    $projectid = $pagerow['projectid'];
-    $pagename = $pagerow['pagename'];
-	$pagelen  = $pagerow['P0_textlen'];
-    return link_to_page_text($projectid, $pagename, "PREP", $pagelen, true);
-}
-
-function textlink($roundid, $pagerow) {
-	$prompt = $pagerow[$roundid . "_textlen"];
-//    global $User;
-//    $idx = substr($idx, 1);
-//    $roundid = RoundIdForIndex($idx);
-    $projectid = $pagerow['projectid'];
-    $pagename = $pagerow['pagename'];
-	return link_to_page_text($projectid, $pagename, "PREP", $prompt, true);
-//    $key = "textlength_{$idx}";
-//    if(! isset($pagerow[$key]))
-//        return "";
-//	 c/textsrv.php
-//    $url = url_for_page_text($projectid, $pagename, $roundid);
-//    $userval = $pagerow["user_{$rindex}"];
-//    $myclass = ($User->NameIs($userval)
-//            ? " class='red'"
-//            : " ");
-//    return "<a $myclass target='_blank' href='$url'>".$pagerow[$key]."</a>";
-}
-
-function eState($state) {
-	return pagestate($state);
-}
-function pagestate($state) {
-
-    switch($state) {
-        case "A":
-            return "<div class='pg_available'>Avail</div>\n";
-
-        case "B":
-            return "<div class='danger'>Bad</div>\n";
-
-        case "O":
-            return "<div class='pg_out'>Chk Out</div>\n";
-
-        case "C":
-            return "<div class='pg_completed'>Done</div>\n";
-
-        default:
-            return $state;
-    }
-}
-
-//function roundtime($val) {
-//    return $val == 0
-//        ? ""
-//        : strftime( "%x %H:%M", intval($val) );
-//}
-
-function clearlink($pagerow) {
-    $pgstate = $pagerow['pageroundstate'];  // e.g. P2a.page_avail
-    if(right($pgstate, 10) == "page_avail") {
-        return "";
-    }
-    return "<span id='{$pagerow['pagename']}'
-                    class='likealink'>"._("Clear")."</a>";
-}
-
-function fixlink($pagerow) {
-    global $pm_url;
-    $fix = _("Fix");
-    $url = "$pm_url/handle_bad_page.php"
-            ."?projectid={$pagerow['projectid']}"
-            . "&chkfile={$pagerow['imagefile']}";
-    return "<a target='_blank' href='{$url}'>$fix</a>";
-}
-
-function ediff($phase, $pagerow) {
-	$isdiff = $pagerow[$phase . "_diff"];
-	if(! $isdiff) {
-		return "";
-	}
-	$projectid = $pagerow['projectid'];
-	$pagename = $pagerow['pagename'];
-	return link_to_diff($projectid, $pagename, $phase, "Diff", "1", true);
-}
-
-function pageroundid($pagerow) {
-    return preg_replace("/\..*$/", "", $pagerow['pageroundstate']);
-}
-
-function usrlnk($roundid, $page) {
-    global $User;
-	$phase = $page['phase'];
-//    $rindex = RoundIndexForId($roundid);
-//    if($rindex <= 0) {
-//        return "";
-//    }
-	$key = $roundid . "_username";
-    $proofername = $page[$key];
-    // index for current round
-
-    if($proofername == "")
-        return "";
-
-    if($User->NameIs($proofername)) {
-        return link_to_pm($proofername);
-        // return "<div class='notmypage'>$proofername</div>";
-    }
-
-    // current round?
-    if($roundid != $phase) {
-        return "<div class='mypagedone'>$proofername</div>";
-    }
-
-    // based on page state ...
-    switch($roundid) {
-        case "O":
-            return "<div class='mypageopen'>$proofername</div>";
-        case "C":
-            return "<div class='mypagesaved'>$proofername</div>";
-        default:
-            return "<div class='mystery'>$proofername</div>";
-    }
-}
-
-function echo_js($rows) {
-//    $num_rows = count($rows);
-    
-    ?>
-<script type='text/javascript'>
-
-    var _cks;
-
-    function $(id) {
-        return document.getElementById(id);
-    }
-
-    var avail_pages = [
-    <?php 
-    foreach($rows as $row) {
-        if(pagestate($row) == 'avail') {
-            echo "'{$row['pagename']}', ";
-            // echo "avail_pages.push('{$row['pagename']}')\n";
-        }
-    }
-    ?>];
-    var i;
-
-    function checked_count() {
-        var n = 0;
-        var pgchecks = $('tblpages').getElementsByTagName('input');
-        for(var i = 0; i < pgchecks.length; i++) {
-            if(pgchecks[i].checked) {
-                n++;
+    $colclass = false;
+    if($projphase != "PREP") {
+        foreach(["P1", "P2", "P3", "F1", "F2"] as $phase) {
+            $colclass = ! $colclass;
+            // Note: for AddCaption, the third aargument, class, can bd executable.
+            // If it is, the !caption text! executes it.
+            $tbl->AddCaption(ephasecaption($phase), 4, "b-all center");
+            $tbl->AddColumn("^Diff", $phase, "ediff", "b-left");
+            $tbl->AddColumn("^Date", $phase, "edate", "em80");
+            $tbl->AddColumn("<User", $phase, "euser");
+            $tbl->AddColumn(">Text", $phase, "etext", "b-right");
+            if(lower($phase) == lower($projphase)) {
+                break;
             }
         }
-        return n;
     }
 
-    function eDeletePages() {
-        var n = checked_count();
-        if(n == 0) {
-            return false;
-        }
-        if(! window.confirm('Confirm you want to delete page ' 
-                                    + n.toString() + ' pages')) {
-            return false;
-        }
-        $('todo').value = 'deletePages';
-        $('pagesform').submit();
-        return true;
+    $ncol = 0;
+    if($project->IsInRounds()) {
+        $ncol++;
+        $tbl->AddColumn("^Edit", "pagename", "eedit", "b-right");
     }
 
-    function eClearPages() {
-        var n = checked_count();
-        if(n == 0) {
-            return false;
-        }
-        if(! window.confirm('Confirm you want to clear '
-                                + n.toString() + ' pages')) {
-            return false;
-        }
-        $('todo').value = 'clearPages';
-        $('pagesform').submit();
-        return true;
+    if ($project->UserMayManage()) {
+        $tbl->AddColumn("^Clear", "pagename", "eclear", "b-right");
+        $ncol ++;
+
+    }
+    if($ncol > 0) {
+        $tbl->AddCaption("Manage", $ncol, "center b-all");
     }
 
-    function eViewLogs() {
-        $('pagesform').target = '_blank';
-        $('pagesform').action = 'pagelog.php';
-        $('pagesform').submit();
-        return true;
-    }
+    // yet to do, so there may be some round-columns with no data in them.
+    // Figure out which ones to display.
+    //
 
-    function eDeletePage(name) {
-        if(! window.confirm('Confirm you want to delete page '  + name)) {
-            return false;
-        }
-        $('pagename').value = name;
-        $('todo').value = 'deletePage';
-        $('pagesform').submit();
-        return true;
-    }
 
-    function eClearPage(name) {
-        if(! window.confirm('Confirm you want to clear page '  + name)) {
-            return false;
-        }
-        $('pagename').value = name;
-        $('todo').value = 'clearPage';
-        $('pagesform').submit();
-        return true;
-    }
+    // Top header row
 
-    function ePageLog(name) {
-        $('pagename').value = name;
-        $('todo').value = 'clearPage';
-        $('pagesform').submit();
-    }
 
-    function eFormClick(e) {
-        if(! e) e = window.event;
-        var t = e.target;
-        if(t.innerHTML == 'Delete') {
-            return eDeletePage(t.id);
-        }
-        else if(t.innerHTML == 'Clear') {
-            return eClearPage(t.id);
-        }
-        else if(t.innerHTML == 'Page log') {
-            return ePageLog(t.id);
-        }
-        return true;
-    }
+    $sql = table_sql($projectid, $select_by_user);
+    echo html_comment($sql);
+    $rows = $dpdb->SqlRows( $sql );
 
-    function CheckAll() {
-        if(document.pagesform.ckall.checked) {
-            eSelectAll();
-        }
-        else {
-            eClearAll();
-        }
-    }
+	if(count($rows) < 1) {
+		echo "<h3>No pages in this project yet.</h3>\n";
+		return;
+	}
 
-    function SetCheckboxes(val) {
-        val = val ? 'checked' : '';
-        var pgchecks = $('tblpages').getElementsByTagName('input');
-        for(var i = 0; i < pgchecks.length; i++) {
-            pgchecks[i].checked = val;
-        }
-    }
 
-    function eSelectAll() {
-        SetCheckboxes(true);
-    }
+	foreach($rows as &$row) {
+//		dump($row);
+		$projectid = $row['projectid'];
+		$pagename = $row['pagename'];
+		$P0_version = $row['P0_version'];
+		$P1_version = $row['P1_version'];
+		$P2_version = $row['P2_version'];
+		$P3_version = $row['P3_version'];
+		$F1_version = $row['F1_version'];
+		$F2_version = $row['F2_version'];
+		$P0_text = PageVersionText($projectid, $pagename, $P0_version);
+		$P1_text = PageVersionText($projectid, $pagename, $P1_version);
+		$P2_text = PageVersionText($projectid, $pagename, $P2_version);
+		$P3_text = PageVersionText($projectid, $pagename, $P3_version);
+		$F1_text = PageVersionText($projectid, $pagename, $F1_version);
+		$F2_text = PageVersionText($projectid, $pagename, $F2_version);
+		$row['P1_diff'] = (rtrim($P0_text) != rtrim($P1_text));
+		$row['P2_diff'] = (rtrim($P1_text) != rtrim($P2_text));
+		$row['P3_diff'] = (rtrim($P2_text) != rtrim($P3_text));
+		$row['F1_diff'] = (rtrim($P3_text) != rtrim($F1_text));
+		$row['F2_diff'] = (rtrim($F1_text) != rtrim($F2_text));
+	}
+    $tbl->SetRows($rows);
 
-    function eClearAll() {
-        SetCheckboxes(false);
-    }
+    echo "
+    <form id='pagesform' name='pagesform' method='post'
+            action='$code_url/tools/project_manager/edit_pages.php'>
+        <input type='hidden' name='projectid' value='$projectid'>\n";
 
-</script>
-<?php
+    $tbl->EchoTable();
+
+    echo "</form>\n";
 }
 
-// vim: sw=4 ts=4 expandtab
-?>
+function echeck($pagename) {
+    return "<input type='checkbox' name='chk[$pagename]' />";
+}
+
+function efix($pagename, $row) {
+    $projectid = $row["projectid"];
+    return link_to_view_image($projectid, $pagename, "Upload", true);
+}
+
+function epage($pagename, $row) {
+    $image = $row["imagefile"];
+    return "<div class='bold' title='$image'>$pagename</div>\n";
+}
+
+function eimage($imagefile, $row) {
+    /** @var DpPage $page */
+    $projectid = $row["projectid"];
+    $pagename = $row["pagename"];
+    $size = ProjectImageFileSize($projectid, $imagefile);
+    return link_to_view_image($projectid, $pagename, $size, true);
+}
+
+function emaster($len, $row) {
+    $projectid = $row['projectid'];
+    $pagename = $row['pagename'];
+    return link_to_page_text($projectid, $pagename, "PREP", $len, true);
+}
+
+function estate($state) {
+    switch($state) {
+        case "A":
+            return "avail";
+        case "O":
+            return "chk out";
+        case "C":
+            return "done";
+        case "B":
+        default:
+            return "bad";
+    }
+}
+
+//function roundtextlenfield($roundid) {
+//    return "{$roundid}_length";
+//}
+
+// diff is asking about diff with preceding phase
+function ediff($phase, $row) {
+    switch($phase) {
+        case "PREP":
+            return "";
+//        case "P4":
+//            $phase2 = "F1";
+//            break;
+//        case "P5":
+//            $phase2 = "F2";
+//            break;
+        default:
+            $phase2 = $phase;
+            break;
+    }
+    if($row[$phase.'_state'] == 'A') {
+        return "";
+    }
+    $projectid = $row['projectid'];
+    $pagename = $row['pagename'];
+    return $row[$phase.'_diff']
+        ? link_to_diff($projectid, $pagename, $phase2, "Diff", "1", true)
+        : "";
+}
+function edate($phase, $row) {
+    if($row[$phase.'_state'] == 'A') {
+        return "";
+    }
+    return $row[$phase.'_time'];
+}
+
+function color_class($roundid, $phase, $state) {
+    if($phase != $roundid) {
+        return "pg_unavailable";
+    }
+    if($state == $roundid . ".page_out") {
+        return "pg_out";
+    }
+    return "pg_completed";
+}
+
+function euser($phase, $row) {
+    global $User;
+//
+    if($row[$phase.'_state'] == 'A') {
+        return "";
+    }
+    if($phase == "PREP") {
+        return "";
+    }
+    $phase_user = $row[$phase . '_user'];
+    $projphase = $row['project_phase'];
+    $privacy = $row[$phase . "_privacy"];
+    $state = $row[$phase . "_state"];
+    $username = $User->Username();
+
+    switch($projphase) {
+        case "F1":
+        case "F2":
+        case "PP":
+        case "PPV":
+        case "POSTED":
+            $class = "em80 ";
+            break;
+        default:
+            $class = "em100 ";
+            break;
+    }
+
+    if($privacy) {
+        return "<span class='$class'>Anon</span>";
+    }
+
+    if(lower($phase_user) != lower($username)) {
+        return "<span class='$class'>" . link_to_pm($phase_user, $phase_user, true) . "</span>";
+    }
+
+    $class = $class . color_class($phase, $phase, $state);
+    return "<div class='$class'>$phase_user</div>";
+}
+
+function etext($phase, $row) {
+    if($row[$phase.'_state'] == 'A') {
+        return "";
+    }
+    $vsn = $row[$phase.'_version'];
+    $version = number_format($vsn);
+    if($version == "") {
+        return "";
+    }
+    $projectid = $row['projectid'];
+    $pagename = $row['pagename'];
+    $text = PageVersionText($projectid, $pagename, $version);
+    $lenstr = mb_strlen($text);
+    return link_to_version_text($projectid, $pagename, $version, $lenstr, true);
+}
+function eclear($pagename) {
+    return "<input type='submit' name='submit_clear[$pagename]' value='Clear' />\n";
+}
+function eedit($pagename, $row) {
+    global $User;
+    $projectid = $row['projectid'];
+    $proofer = $row['proofer'];
+    if(lower($proofer) == lower($User->Username())
+        || lower($row['pm']) == lower($User->Username()) || $User->IsSiteManager()) {
+        return link_to_proof_page($projectid, $pagename, "Edit", true);
+    }
+    return "";
+}
+//function edelete($pagename) {
+//    return "<input type='submit' name='submit_delete[$pagename]' value='Delete' />\n";
+//}
+
+function ephasecaption($pfx) {
+    switch($pfx) {
+        case "P1":
+        case "P2":
+        case "P3":
+        case "F1":
+        case "F2":
+            return $pfx;
+//        case "P4":
+//            return "F1";
+//        case "P5":
+//            return "F2";
+        default:
+            return "";
+    }
+}
+// -----------------------------------------------------------------------------
+
+function table_sql($projectid, $select_by_user ) {
+    global $User;
+    $username = $User->Username();
+    $userwhere =
+        $select_by_user == true
+        ?  "AND '$username' IN (pv1.username, pv2.username, pv3.username, pv4.username, pv5.username)"
+        : "";
+
+    return "
+			SELECT DISTINCT
+			pg.projectid,
+			pg.pagename,
+			pg.imagefile,
+			p.phase project_phase,
+			p.username AS pm,
+			pvlast.version,
+			FROM_UNIXTIME(pvlast.version_time) version_time,
+			pvlast.state,
+			pvlast.username proofer,
+
+			pv0.state P0_state,
+	        pv1.state P1_state,
+	        pv2.state P2_state,
+	        pv3.state P3_state,
+	        pv4.state F1_state,
+	        pv5.state F2_state,
+
+			pv0.version P0_version,
+	        pv1.version P1_version,
+	        pv2.version P2_version,
+	        pv3.version P3_version,
+	        pv4.version F1_version,
+	        pv5.version F2_version,
+
+	        pv0.crc32 = pv1.crc32 P1_diff,
+	        pv1.crc32 = pv2.crc32 P2_diff,
+	        pv2.crc32 = pv3.crc32 P3_diff,
+	        pv3.crc32 = pv4.crc32 F1_diff,
+	        pv4.crc32 = pv5.crc32 F2_diff,
+
+			FROM_UNIXTIME(pv1.version_time, '%m-%d-%y %H:%i') P1_time,
+			FROM_UNIXTIME(pv2.version_time, '%m-%d-%y %H:%i') P2_time,
+			FROM_UNIXTIME(pv3.version_time, '%m-%d-%y %H:%i') P3_time,
+			FROM_UNIXTIME(pv4.version_time, '%m-%d-%y %H:%i') F1_time,
+			FROM_UNIXTIME(pv5.version_time, '%m-%d-%y %H:%i') F2_time,
+
+			pv1.username P1_user,
+			pv2.username P2_user,
+			pv3.username P3_user,
+			pv4.username F1_user,
+			pv5.username F2_user,
+
+			pv0.textlen P0_textlen,
+			pv1.textlen P1_textlen,
+			pv2.textlen P2_textlen,
+			pv3.textlen P3_textlen,
+			pv4.textlen F1_textlen,
+			pv5.textlen F2_textlen,
+
+			u1.u_privacy P1_privacy,
+			u2.u_privacy P2_privacy,
+			u3.u_privacy P3_privacy,
+			u4.u_privacy F1_privacy,
+			u5.u_privacy F2_privacy,
+
+			urp1.page_count P1_page_count,
+			urp2.page_count P2_page_count,
+			urp3.page_count P3_page_count,
+			urf1.page_count F1_page_count,
+			urf2.page_count F2_page_count
+
+			FROM projects p
+
+			JOIN pages pg
+				ON p.projectid = pg.projectid
+
+	    	JOIN page_last_versions pvlast
+	    		ON pg.projectid = pvlast.projectid
+				AND pg.pagename = pvlast.pagename
+
+			LEFT JOIN page_versions pv0 ON pg.projectid = pv0.projectid
+				AND pg.pagename = pv0.pagename AND pv0.phase = 'PREP'
+			LEFT JOIN page_versions pv1 ON pg.projectid = pv1.projectid
+				AND pg.pagename = pv1.pagename AND pv1.phase = 'P1'
+			LEFT JOIN page_versions pv2 ON pg.projectid = pv2.projectid
+				AND pg.pagename = pv2.pagename AND pv2.phase = 'P2'
+			LEFT JOIN page_versions pv3 ON pg.projectid = pv3.projectid
+				AND pg.pagename = pv3.pagename AND pv3.phase = 'P3'
+			LEFT JOIN page_versions pv4 ON pg.projectid = pv4.projectid
+				AND pg.pagename = pv4.pagename AND pv4.phase = 'F1'
+			LEFT JOIN page_versions pv5 ON pg.projectid = pv5.projectid
+				AND pg.pagename = pv5.pagename AND pv5.phase = 'F2'
+
+			LEFT JOIN users u1 ON pv1.username = u1.username
+			LEFT JOIN users u2 ON pv2.username = u2.username
+			LEFT JOIN users u3 ON pv3.username = u3.username
+			LEFT JOIN users u4 ON pv4.username = u4.username
+			LEFT JOIN users u5 ON pv5.username = u5.username
+
+			LEFT JOIN total_user_round_pages urp1
+				ON urp1.phase= 'P1' AND urp1.username = pv1.username
+
+			LEFT JOIN total_user_round_pages urp2
+				ON urp2.phase = 'P2' AND urp2.username = pv2.username
+
+			LEFT JOIN total_user_round_pages urp3
+				ON urp3.phase = 'P3' AND urp3.username = pv3.username
+
+			LEFT JOIN total_user_round_pages urf1
+				ON urf1.phase = 'F1' AND urf1.username = pv4.username
+
+			LEFT JOIN total_user_round_pages urf2
+				ON urf2.phase = 'F2' AND urf2.username = pv5.username
+
+		   WHERE p.projectid = '$projectid'
+		       $userwhere
+		   GROUP BY p.projectid, pg.pagename
+		   ORDER BY pg.pagename ASC";
+}
 
 

@@ -27,6 +27,7 @@
 *
 ****************************************************************************************/
 
+/*
 function sr_user_is_committed($projectid, $username) {
     global $dpdb;
     return $dpdb->SqlExists("
@@ -34,6 +35,7 @@ function sr_user_is_committed($projectid, $username) {
         WHERE projectid = '$projectid' 
             AND username = '$username'");
 }
+*/
 
 
 /***************************************************************************************
@@ -48,6 +50,7 @@ function sr_user_is_committed($projectid, $username) {
 *
 ****************************************************************************************/
 
+/*
 function sr_commit($projectid, $username) {
     global $dpdb;
     $dpdb->SqlExecute("
@@ -56,6 +59,7 @@ function sr_commit($projectid, $username) {
             username = '$username'");
 
 }
+*/
 
 /***************************************************************************************
 *
@@ -68,6 +72,7 @@ function sr_commit($projectid, $username) {
 *
 ****************************************************************************************/
 
+/*
 function sr_withdraw_commitment($projectid, $username) {
     global $dpdb;
     $dpdb->SqlExecute("
@@ -76,6 +81,7 @@ function sr_withdraw_commitment($projectid, $username) {
             AND username = '$username'");
 
 }
+*/
 
 /***************************************************************************************
 *
@@ -87,12 +93,14 @@ function sr_withdraw_commitment($projectid, $username) {
 *
 ****************************************************************************************/
 
+/*
 function sr_get_committed_users($projectid) {
     global $dpdb;
     return $dpdb->SqlValues("
         SELECT username FROM smoothread
         WHERE projectid = '$projectid'");
 }
+*/
 
 /***************************************************************************************
 *
@@ -104,12 +112,14 @@ function sr_get_committed_users($projectid) {
 *
 ****************************************************************************************/
 
+/*
 function sr_number_users_committed($projectid) {
     global $dpdb;
     return $dpdb->SqlOneValue("
         SELECT COUNT(1) FROM smoothread
         WHERE projectid = '$projectid'");
 }
+*/
 
 /***************************************************************************************
 *
@@ -129,6 +139,7 @@ function sr_number_users_committed($projectid) {
 *
 ****************************************************************************************/
 
+/*
 
 function sr_echo_commitment_form($projectid) {
     global $code_url;
@@ -144,6 +155,7 @@ function sr_echo_commitment_form($projectid) {
         <input type='submit' value='$button_text'>
     </form>\n";
 }
+*/
 
 /***************************************************************************************
 *
@@ -157,6 +169,7 @@ function sr_echo_commitment_form($projectid) {
 *
 ****************************************************************************************/
 
+/*
 function sr_echo_withdrawal_form($projectid) {
     global $code_url;
 
@@ -172,6 +185,7 @@ function sr_echo_withdrawal_form($projectid) {
     </form>\n";
 
 }
+*/
 
 
 ?>

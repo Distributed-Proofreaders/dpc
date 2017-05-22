@@ -1,4 +1,4 @@
-<?PHP
+<?php
 function mentor_banner() {
     global $dpdb;
 

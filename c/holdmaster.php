@@ -75,8 +75,8 @@
     $tbl->AddColumn("<Phase", "phase");
     $tbl->AddColumn("<Set by", "set_by", "epm");
     $tbl->AddColumn("^", "set_time");
-    $tbl->AddColumn("^Options", "holdid", "eoptions");
-    $tbl->AddColumn("^Note", "note");
+    $tbl->AddColumn("<Options", "holdid", "eoptions");
+    $tbl->AddColumn("<Note", "note");
 
     $tbl->SetRows($rows);
 
@@ -107,23 +107,23 @@
   <pre style='font: inherit'>
   Hold Types
 
-  QC = Quality Control Hold.
-        Automatically created for PREP phase when project created.
-        These Holds are released by an Inspector.
-        Project cannot exit PREP until this Hold released.
   PM = Project Manager Hold.
-        Automatically created for PREP phase when project created. PM releases this hold to indicate the project
-            can be inspected by QC (but subject to other constraints, e.g. Clearance.)
-        Automatically created for P1 phase when project created. PM releases this hold to make project visible
-            to Queue Manager.
-        Released by the Project Manager.
-  User = User Hold.
-        Released by the user who set it.
-        Available to PMs for their own projects, and administrators.
-        There are no automatic User Holds.
-  Queue = Queue Hold.
-        Released by the P1 Queue Manager.
-        Automatically created for P1 phase when project created. (It's dormant through PREP.)
+        A PM Hold is automatically created for the PREP phase when the project is created.
+            The PM releases this hold to indicate the project can be inspected by the QC Manager
+            (but subject to other constraints, e.g. Clearance.)
+        Another PM Hold is also automatically created for the P1 phase when the project is created.
+            The PM releases this hold to make the project visible to the P1 Queue Manager.
+  QC = Quality Control Hold.
+        A QC Hold is automatically created for the PREP phase when the project is created.
+            These Holds are released by a QC Manager. Project cannot exit PREP until this Hold released.
+  Queue = Phase Queue Hold.
+        Currently these are only used for the P1 Phase. One of these is automatically created for
+            the P1 phase when the project is created. (It's dormant through PREP.)
+            It is released by a P1 Queue Manager.
+
+  User = User Hold. An arbitrary Phase Hold that can be set by administrators, and PMs for their projects.
+        They are released by the users who set them.
+            There are no automatic User Holds.
 
   </pre>
   <p>Warning: Restrictions are not in place yet, so you may be able to release

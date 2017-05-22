@@ -14,9 +14,7 @@ error_reporting(E_ALL);
 $relPath="./pinc/";
 // dpinit grabs prefs and loads userP
 include_once($relPath.'dpinit.php');
-include_once($relPath.'resolution.inc');
-include_once($relPath.'prefs_options.inc');
-//include_once($relPath.'user_is.inc');
+//include_once($relPath.'prefs_options.inc');
 include_once($relPath.'tabs.inc');
 
 $User->IsLoggedIn()
@@ -216,7 +214,7 @@ function echo_general_tab() {
     // language
     show_preference(
         _('Language'), 'u_lang', 'lang',
-        $User->Language(),
+        $User->InterfaceLanguage(),
         'dropdown',
         $u_lang);
 
@@ -326,9 +324,6 @@ function save_general_tab() {
 /*************** PROOFREADING TAB ***************/
 
 function echo_proofreading_tab() {
-    global $f_f, $f_s;
-    global $User;
-//    global $userP;
 
     // see if they already have 10 profiles, etc.
 //    $pf_rows = $dpdb->SqlRows("
@@ -697,9 +692,9 @@ function show_preference( $label, $field_name, $pophelp_name,
             show_radio_group( $field_name, $current_value, $extras ) ;
             break;
 
-        case "credits_wanted":
-            show_credits_wanted() ;
-            break;
+//        case "credits_wanted":
+//            show_credits_wanted() ;
+//            break;
 
         case "credit_name":
 //            show_credit_name() ;

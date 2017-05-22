@@ -10,9 +10,9 @@ include_once($relPath.'maybe_mail.inc');
 // This is because this function may be called by a site admin to send
 // a mail to a completely different user (e.g. a Polish user shouldn't
 // get a Spanish mail because one of the site admins is Spanish).
-function maybe_activate_mail($email, $real_name, $ID, $username, $u_intlang) {
-
-  global $code_url, $auto_email_addr;
+function maybe_activate_mail($email, $real_name, $ID, $username) {
+  global $general_help_email_addr;
+  global $code_url;
 
   $activate = "Please activate your account at the Distributed Proofreaders' Site!";
 
@@ -44,7 +44,8 @@ PS - Your user name, in case you forget, is %s.
 
 function maybe_welcome_mail($email, $real_name, $username) {
 
-  global $PG_home_url, $code_url, $reset_password_url, $auto_email_addr;
+  global $general_help_email_addr;
+  global $site_url, $PG_home_url, $code_url, $reset_password_url;
 
   $welcome = _("Welcome to the Distributed Proofreaders' Canada Site!");
 

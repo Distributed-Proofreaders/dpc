@@ -1,4 +1,4 @@
-<?PHP
+<?php
 
 
 $relPath = "../c/pinc/";

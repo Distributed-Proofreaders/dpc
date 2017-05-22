@@ -28,7 +28,7 @@ $tbl->SetRows($dpdb->SqlRows("
     WHERE r.role_code NOT IN ('P1', 'P2', 'P3', 'F1', 'F2')
     ORDER BY $orderby"));
 
-html_head("Role List");
+echo html_head("Role List");
 echo "<h1 class='center'>Role List</h1>\n";
 $tbl->EchoTable();
-html_end();
+echo html_end();

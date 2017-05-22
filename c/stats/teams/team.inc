@@ -1,4 +1,4 @@
-<?PHP
+<?
 //A file full of functions used in team stats
 
 //$team_avatars_dir = "/sharehome/htdocs/c/users/teams/avatar";

@@ -1,4 +1,4 @@
-<?PHP
+<?
 /**
  * Created by PhpStorm.
  * User: don

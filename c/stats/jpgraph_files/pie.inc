@@ -1,4 +1,4 @@
-<?PHP
+<?
 // Create the graph. These two calls are always required
 //Last value controls how long the graph is cached for in minutes
 $graph = new PieGraph(640, 400, "auto", 58);

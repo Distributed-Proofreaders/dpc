@@ -32,7 +32,7 @@ function RoleUserPicker($role,
 function LanguagePicker( $name = "pklangcode", $default = "",
 $class = "", $onchange = "", $dispfunc = null, $ismulti = false) {
     $langs = ActiveLanguagesData();
-
+    $title = "Select language for wordcheck dictionary";
     // $dflt2 = $default;
     // foreach($langs as $key => $data) {
         // $args[$data["code2"]] = $data["name"];
@@ -42,7 +42,7 @@ $class = "", $onchange = "", $dispfunc = null, $ismulti = false) {
     // }
 
     return picker($langs, $name, $default, $class, 
-                            $onchange, $ismulti, $dispfunc); 
+                            $onchange, $ismulti, $dispfunc, $title);
 }
 
 function WordlistPicker($name="pkwordlist",
@@ -50,7 +50,7 @@ function WordlistPicker($name="pkwordlist",
                         $class = "",
                         $onchange="") {
     $args = array( "flagged"    => _("Wordcheck words to flag"),
-//                   "suggested"  => _("Wordcheck suggested words"),
+                   "suggested"  => _("Wordcheck suggested words"),
                    "good"       => _("Project good word list"),
                    "bad"        => _("Project bad word list"),
                    "allalpha"   => _("Project words (alphabetic)"),
@@ -74,9 +74,10 @@ function picker($valarray,
                 $class = "",
                 $onchange = "",
                 $mult = false,
-				$dispfunc = null) {
+				$dispfunc = null,
+                $title = "") {
     $ret = "<select name=\"{$ctlname}\" id=\"{$ctlname}\" "
-            . ($selectedkey ? " title=\"{$selectedkey}\"" : "")
+            . ($title ? " title=\"{$title}\"" : "")
             . ($class ? " class=\"{$class}\"" : "")
             . ($onchange ? " onchange=\"{$onchange}\"" : "")
             . ($mult ? " multiple=\"multiple\" size=\"8\"" : "")

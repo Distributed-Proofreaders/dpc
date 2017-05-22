@@ -13,27 +13,24 @@ $User->IsSiteManager() || $User->IsProjectFacilitator() || $User->IsProjectManag
     or die("Unauthorized");
 
 $projectid = Arg("projectid");
-$postednum = Arg("postednum");
+$projectid != ""
+    or die("No project identified");
 
-$no_stats = true;
-theme("Project Trace", "header");
 
-if($projectid == "") {
-    echo "
-    <form name='frmflow' method='POST'>
-    <div>
-    Project ID: <input type='text' name='projectid' value='$projectid' size='30'><input tabindex='1' type='submit'>
-    </div>\n";
-    theme("", "footer");
-    exit;
-}
+$Context->IsProjectId($projectid)
+    or die("No such project id - $projectid");
 
 $project = new DpProject($projectid);
 if(! $project->UserMayManage()) {
-	say("Not your project");
+    say("Not your project");
     theme("", "footer");
     exit;
 }
+
+$title = $project->NameOfWork();
+
+
+$postednum = Arg("postednum");
 
 $isPPUploadFile = file_exists($project->PPUploadPath()) ? "Yes" : "No";
 $isPPVUploadFile = file_exists($project->PPVUploadPath()) ? "Yes" : "No";
@@ -45,7 +42,6 @@ $f2_disabled = ($project->Phase() == "F2" ? "" : " disabled");
 $pp_disabled = ($project->Phase() == "PP" ? "" : " disabled");
 $ppv_disabled = ($project->Phase() == "PPV" ? "" : " disabled");
 $posted_disabled = ($project->Phase() == "POSTED" ? "" : " disabled");
-$submit_backup          = IsArg("submit_backup");
 $submit_test_advance    = IsArg("submit_test_advance");
 $submit_advance         = IsArg("submit_advance");
 $submit_pp_uncheckout   = IsArg("submit_ppv_uncheckout");
@@ -56,11 +52,11 @@ $submit_ppv_complete    = IsArg("submit_ppv_complete");
 $submit_ppv_post        = IsArg("submit_ppv_complete");
 $submit_revert          = IsArg("submit_revert");
 $radio_revert           = Arg("radio_revert");
-//$submit_adjust_pages    = ArgArray("submit_adjust_pages");
 $set_holds              = ArgArray("set_hold");
 $release_holds          = ArgArray("release_hold");
 $set_qc_hold            = IsArg("set_qc_hold");
 $release_qc_hold        = IsArg("release_qc_hold");
+$hold_remark            = Arg("hold_remark");
 
 $proj_link = link_to_project($projectid, "Back to project page");
 $p1_link   = link_to_round("P1", "link");
@@ -82,9 +78,6 @@ if($submit_advance) {
     $msgs = $project->MaybeAdvanceRound();
 }
 
-//if($submit_backup) {
-//    $project->CreateBackupTable();
-//}
 if($set_qc_hold) {
     $project->SetQCHold();
 }
@@ -123,10 +116,6 @@ if($submit_ppv_complete) {
 if($submit_ppv_post) {
     $project->SetPosted($postednum);
 }
-
-//if($submit_adjust_pages) {
-//    AdjustPhasePages($project);
-//}
 
 $holds = $project->HoldRows();
 $holdcount = count($holds);
@@ -167,25 +156,34 @@ $tblhistory->AddColumn("<", 2);
 $tblhistory->AddColumn("<", 3);
 $tblhistory->SetRows($rows);
 
-// --------------------
-// your next page
-// --------------------
+$no_stats = true;
+theme("Project Trace", "header");
 
-$nextpage = $project->NextAvailablePage();
-if($nextpage) {
-	$versions = $nextpage->Versions();
-	$ary      = array();
-	foreach ( $versions as $version ) {
-		/** @var DpVersion $version */
-		$ary[] = $version->Phase() . " " . $version->Username();
 
-		echo "<div id='divyournext'>
-		<p>Username: " . $User->Username() . "</p>
-		<p>Next Page: " . $nextpage->PageName() . "</p>
-		<p>Proofers: " . implode( ", ", $ary ) . "</p>
-		</div> <!-- divyournext' -->\n";
-	}
-}
+echo "
+<form name='frmflow' method='post'>
+<div class='w75'>
+    <h3>$title</h3>
+    <p>Project ID: $projectid</p>
+<p>This page is only available to Adminstrators, and for Project Managers, only for their own projects. For the time being, PMs can view all projects - but be careful.</p>
+</div>
+<hr>\n";
+
+//$nextpage = $project->NextAvailablePage();
+//if($nextpage) {
+//	$versions = $nextpage->Versions();
+//	$ary      = array();
+//	foreach ( $versions as $version ) {
+//        /** @var DpVersion $version */
+//        $ary[] = $version->Phase() . " " . $version->Username();
+//    }
+//
+//    echo "<div id='divyournext'>
+//    <p>Username: " . $User->Username() . "</p>
+//    <p>Next Page: " . $nextpage->PageName() . "</p>
+//    <p>Proofers: " . implode( ", ", $ary ) . "</p>
+//    </div> <!-- divyournext' -->\n";
+//}
 
 // -­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­-­
 
@@ -203,14 +201,6 @@ if(isset($msgs)) {
     echo "</div>
     <hr />\n";
 }
-
-echo "
-<form target='' name='frmflow' method='post'>
-<div class='w75'>
-    Project ID: <input type='text' name='projectid' value='$projectid' size='30'><input tabindex='1' type='submit'>
-<p>This page is only available to Adminstrators, and for Project Managers, only for their own projects. For the time being, PMs can view all projects - but be careful.</p>
-</div>
-<hr>\n";
 
 $is_u_hold_PREP = ($project->UserPhaseHoldId("PREP") != 0);
 $is_u_hold_P1   = ($project->UserPhaseHoldId("P1") != 0);
@@ -245,22 +235,24 @@ echo "
     $tbl = new DpTable("tblstats", "w25 lfloat dptable");
     $tbl->SetRows($stats);
 
-    echo "<div>\n";
+    echo "<div style='margin: auto'>\n";
     $tbl->EchoTable();
     echo "</div>\n";
 
 
 echo "
-<div>
+<div id='test' class='center'>
     <h3>Test round advance:</h3>
     <input type='submit' name='submit_test_advance' value='Test' />
     <input type='submit' name='submit_advance' value='Advance' />
+</div>
 
+<div id='divholds' class='center w50'>
     <h3>Holds:</h3>\n";
 
     $tblholds->EchoTable();
 
-    $tbl = new DpTable("tblusrholds", "w25 lfloat dptable");
+    $tbl = new DpTable("tblusrholds", "w35 dptable");
     $tbl->SetTitle("Your User Holds");
 
     $rows = array();
@@ -279,7 +271,8 @@ echo "
     $tbl->SetRows($rows);
     $tbl->EchoTable();
 
-echo "</div>\n";
+
+echo "</div>    <!-- divholds -->\n";
 
 echo "
 <div>
@@ -292,13 +285,12 @@ echo "
 {$project->PostComments()}
 </pre>
 </div>
-</div>
+</div>\n";
 
-<hr>
-<div id='divprep'>\n";
 
 if($project->Phase() == "PREP") {
-	echo "
+	echo "<hr>
+<div id='divprep'>
 	<pre>
 	 PREP   <a href='http://www.pgdpcanada.net/c/tools/prep.php'>link</a>\n";
     $qcholdid = $project->QCHoldId();
@@ -310,21 +302,23 @@ Advance Requirements:
     Language:     {$project->LanguageCode()}
     QC Hold Id:   {$qcholdid}\n";
     echo ($qcholdid == 0 ? "<input type='submit' name='set_qc_hold' value='Set QC Hold'/>\n"
-               : "<input type='submit' name='release_qc_hold' value='Release QC Hold'/>\n");
+               : "<input type='submit' name='release_qc_hold' value='Release QC Hold'/>
+    </pre>
+    </div>  <!--  divprep -->\n");
 }
 
 $prevphase = $Context->PhaseBefore($project->Phase());
 echo "
-</pre>
+<div>
 <fieldset id='divrevert'>
      <input type='submit' name='submit_revert' value='Revert to previous Phase ($prevphase)'>
      <br>
-     <input type='radio' name='radio_revert' id='radio_revert' value='clear'>
+     <input type='radio' name='radio_revert' value='clear'>
      Clear the pages so they are each available to proof again.<br>
      The previous work will not be lost.
      The new proofers will start with the work of the previous proofer, if any.
      <br>
-     <input type='radio' name='radio_revert' id='radio_revert' value='hold' checked='checked'>
+     <input type='radio' name='radio_revert' value='hold' checked='checked'>
      Leave the pages as they are, including pages completed by proofers.<br>
      Set a personal hold on the project to keep it from advancing until you release it.
 </fieldset>  <!-- divrevert -->
@@ -378,6 +372,8 @@ $tblhistory->EchoTable();
 //</pre>
 //<hr>\n";
 
+echo "<p>" . link_to_page_trace($projectid) . "</p>\n";
+
 EchoPageStateIssues($project);
 echo "
 </form>\n";
@@ -421,141 +417,12 @@ function EchoPageStateIssues($project) {
 }
 
 
-/*
-function AdjustPhasePages($project) {
-
-    global $dpdb;
-
-    $projectid = $project->ProjectId();
-    $phase = first_phase_with_incomplete_text($project);
-//    $state = "{$phase}.proj_avail";
-    echo("<p>It appears that the project should be working in $phase.</p>");
-    if($project->Phase() != $phase) {
-        $project->SetPhase($phase);
-    }
-//    if($project->State() != $state) {
-//        $project->SetState($state);
-//    }
-
-//    switch($phase) {
-//        case "P1":
-//            $round = "round1_";
-//            break;
-//        case "P2":
-//            $round = "round2_";
-//            break;
-//        case "P3":
-//            $round = "round3_";
-//            break;
-//        case "F1":
-//            $round = "round4_";
-//            break;
-//        case "F2":
-//            $round = "round5_";
-//            break;
-//        default:
-//            return;
-//    }
-
-//    $phase_user = $round . "user";
-//    $phase_time = $round . "time";
-//    $phase_text = $round . "text";
-
-//    $avail       = $phase . ".page_avail";
-//    $saved       = $phase . ".page_saved";
-//    $checked_out = $phase . ".page_out";
-//    $temp        = $phase . ".page_temp";
-
-    // any empty field for current round means available.
-    $n = $dpdb->SqlExecute("
-        UPDATE page_last_versions
-        SET state = 'A',
-        	version_time = UNIX_TIMESTAMP()
-        WHERE username IS NULL
-        	AND projectid = '$projectid'");
-
-    echo("<p>Pages set to available: $n</p>");
-
-    $n = $dpdb->SqlExecute("
-        UPDATE page_last_versions
-        SET state = 'C',
-        	version_time = UNIX_TIMESTAMP()
-        WHERE LENGTH(username) > 0");
-
-    echo("<p>Pages set to saved:</p>$n");
-
-    return;
-    // if for any other round
-}
-*/
-
-function first_phase_with_incomplete_text($project) {
-    /** @var DpProject $project */
-    global $dpdb;
-    $projectid = $project->ProjectId();
-	$sql = "
-		SELECT p.phase,
-			pp.page_count,
-			SUM(pv.state = 'C') completed_count
-		FROM
-		(
-			SELECT projectid, COUNT(1) page_count
-			FROM pages
-			WHERE projectid = '$projectid'
-			GROUP BY projectid
-		) pp,
-
-    	phases p
-
-    	LEFT JOIN page_versions pv
-        	ON p.phase = pv.phase
-        	AND '$projectid' = pv.projectid
-        	AND pv.state = 'C'
-	GROUP BY p.phase
-	ORDER BY p.sequence";
-
-	$rows = $dpdb->SqlRows($sql);
-
-	foreach($rows as $row) {
-		if($row['page_count'] < $row['page_count']) {
-			return $row['phase'];
-		}
-	}
-
-    return "PP";
+function link_to_round_diff($projectid, $phase) {
+    return link_to_url(url_for_round_diff($projectid, $phase), "Project Diff for $phase");
 }
 
-function phase_sequence($phase) {
-    switch($phase) {
-        case "PREP":
-            return 0;
-        case "P1":
-            return 1;
-        case "P2":
-            return 2;
-        case "P3":
-            return 3;
-        case "F1":
-            return 4;
-        case "F2":
-            return 5;
-        case "PP":
-            return 6;
-        case "PPV":
-            return 7;
-        case "POSTED":
-            return 8;
-        default:
-            return -1;
-    }
-}
-
-function link_to_round_diff($projectid, $roundid) {
-    return link_to_url(url_for_round_diff($projectid, $roundid), "Project Diff for $roundid");
-}
-
-function url_for_round_diff($projectid, $roundid) {
-    return "/c/tools/projdiff.php?projectid={$projectid}&roundid={$roundid}";
+function url_for_round_diff($projectid, $phase) {
+    return "/c/tools/projdiff.php?projectid={$projectid}&phase={$phase}";
 }
 
 

@@ -1,5 +1,5 @@
 <?php 
-include_once("gettext_setup.inc");
+//include_once("gettext_setup.inc");
 
 function slim_header($title = "", $doctype = true, $head = true) {
 if($doctype) {

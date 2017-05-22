@@ -1,0 +1,95 @@
+<?
+//   - Clean up Files: Remove duplicates and check in missing pages after 4 hours
+//   - Promote Rounds: If a project is ready to be promoted, send it to next round
+//   - Complete Project: If a project has completed all rounds, send it to post-processing
+//   - Release Projects: If there are not enough projects available, release projects waiting to be released
+
+$relPath = "../../pinc/";
+require_once $relPath . "dpinit.php";
+// require "RoundDescriptor.inc";
+require_once $relPath . "stages.inc";
+require_once $relPath . "Project.inc";
+
+error_reporting(E_ALL);
+
+dump("automodify.php");
+
+echo "<pre>\n";
+
+foreach(rounds_in_order() as $round) {
+    dump($round->id);
+    
+    $projects = available_projects_in_round($round);
+    foreach($projects as $project) {
+        // dump($project->projectid);
+        // dump($project->state);
+        // dump($project->IsAvailable());
+        // dump($project->Round());
+        
+        if($project->IsBad()) {
+            echo "Project ". $project->projectid ." is currently Bad.";
+            continue;
+        }
+        if($project->BadPageCount() > 0) {
+            echo "Project ".$project->projectid." has Bad pages.";
+            $project->SetBad();
+            continue;
+        }
+        if(! $project->IsAvailable()) {
+            echo "Project ".$project->projectid." is not Available.";
+            continue;
+        }
+
+        if($project->AvailablePageCount() > 0) {
+            echo "Project ".$project->projectid." still has available pages.";
+            continue;
+        }
+        dump("Project $project->projectid requires pages.");
+        $n = $project->ReclaimPages();
+
+        echo "Project ".$project->projectid.": released $n pages.";
+
+        if($project->AvailablePageCount() > 0) {
+            echo "Project ".$project->projectid." now has available pages.";
+            continue;
+        }
+
+        dump("carry on with $project->projectid. ");
+
+/*
+        $project->SetComplete();
+
+        if($project->IsLastRound()) {
+            $pper = $project->get_auto_PPer();
+            $state = $pper ? PROJ_POST_FIRST_AVAILABLE : PROJ_POST_FIRST_CHECKED_OUT ;
+            $error_msg = project_transition($project->projectid, $state, PT_AUTO);
+            continue;
+        }
+
+        $project->AdvanceRound();
+    */
+    }
+}
+
+function rounds_in_order() {
+    global $Round_for_round_id_;
+    return $Round_for_round_id_;
+}
+
+function available_projects_in_round($round) {
+    global $dpdb;
+    $ary = array();
+    $state = $round->project_available_state;
+    $sql = "
+        SELECT projectid FROM projects
+        WHERE state = '$state'";
+    // dump($sql);
+    $projectids = $dpdb->SqlValues($sql);
+    foreach($projectids as $projectid) {
+        $ary[] = new Project($projectid);
+    }
+    return $ary;
+}
+
+// vim: sw=4 ts=4 expandtab
+?>

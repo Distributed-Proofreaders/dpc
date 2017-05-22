@@ -1,4 +1,4 @@
-<?PHP
+<?
 $relPath='./../pinc/';
 include_once($relPath.'project_states.inc');
 include_once($relPath.'theme.inc');

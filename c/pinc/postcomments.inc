@@ -1,4 +1,4 @@
-<?PHP
+<?php
 
 // Return the PP-ers' comments for a certain project
 // They will be HTML-encoded and with line breaks

@@ -16,14 +16,15 @@ switch($phase) {
 	case "dk":
 		$text = $project->PrePostText();
 		break;
-	case "utf8":
-		$text = h($project->ActiveText());
-		break;
-	case "":
-		$text = $project->ActiveText();
+	case "P1":
+	case "P2":
+	case "P3":
+	case "F1":
+	case "F2":
+        $text = $project->RoundText( $phase );
 		break;
 	default:
-		$text = $project->RoundText( $phase );
+		$text = $project->ActiveText();
 		break;
 }
 

@@ -14,8 +14,10 @@ error_reporting(E_ALL);
 class DpContext {
 	//    private $_languages;
 //	private $_phaserows;
+	/** @var Phase[] $_phases */
 	private $_phases;
 	private $_iphases;
+	/** @var Round[] $_rounds */
 	private $_rounds;
 	private $_irounds;
 	private $_holds;
@@ -28,13 +30,13 @@ class DpContext {
 	private function init_phases() {
 		global $dpdb;
 		$rows = $dpdb->SqlRows( "
-            SELECT phase, sequence, description, round_id, caption, round_sequence, default_state
+            SELECT phase, sequence, description, round_id, caption, round_sequence, default_state, forum_id
             FROM phases
             ORDER BY sequence" );
-		$this->_phases    = array();
-		$this->_iphases    = array();
-		$this->_rounds    = array();
-		$this->_irounds    = array();
+		$this->_phases    = [];
+		$this->_iphases    = [];
+		$this->_rounds    = [];
+		$this->_irounds    = [];
 		foreach ( $rows as $row ) {
 			$this->_phases[ $row['phase'] ] = new Phase($row);
 			$this->_iphases[ $row['sequence'] ] = new Phase($row);
@@ -79,7 +81,7 @@ class DpContext {
 	}
 //
 	public function PhaseDescription( $code ) {
-		return $this->_phases[ $code ]['description'];
+		return $this->_phases[ $code ]->Description();
 	}
 
 	public function Phases() {
@@ -144,7 +146,7 @@ class DpContext {
 		$sql = "
 			SELECT id FROM nonces
 			WHERE username = ? AND uuid = ?";
-		$args = array(&$username, &$nonce);
+		$args = [&$username, &$nonce];
 		$is_dup = $dpdb->SqlOneValuePS($sql, $args);
 		if($is_dup) {
 			return false;
@@ -152,7 +154,7 @@ class DpContext {
 
 		$sql = "REPLACE INTO nonces
 				SET uuid = ?, username = ? nonce_time = UNIX_TIMESTAMP()";
-		$args = array(&$nonce, &$username);
+		$args = [&$nonce, &$username];
 		return $dpdb->SqlExecutePS($sql, $args);
 
 	}
@@ -163,10 +165,24 @@ class DpContext {
             SELECT hold_code, sequence, description, release_time
             FROM hold_types
             ORDER BY sequence" );
-		$this->_holds = array();
+		$this->_holds = [];
 		foreach ( $rows as $row ) {
 			$this->_holds[ $row['hold_code'] ] = $row;
 		}
+	}
+
+	public function ReleaseHold($id) {
+		global $dpdb;
+		if($id == 0)
+			return 0;
+		$sql = "
+			DELETE FROM project_holds
+			WHERE id = ?";
+		$args = [&$id];
+		$ret = $dpdb->SqlExecutePS($sql, $args);
+		$this->init_holds(); // again
+		// need to log an event here at least
+		return $ret;
 	}
 
 	public function HoldSequence( $code ) {
@@ -192,8 +208,9 @@ class DpContext {
 		global $dpdb;
 
 		return $dpdb->SqlOneValue( "
-            SELECT COUNT(1) FROM projects
-            WHERE state = 'proj_post_complete'" );
+            SELECT COUNT(DISTINCT postednum) FROM projects
+            WHERE phase = 'POSTED'" );
+
 	}
 
 	/*
@@ -227,6 +244,9 @@ class DpContext {
 	private function Bb() {
 		global $User;
 
+        if(! $User) {
+            return null;
+        }
 		return $User->Bb();
 	}
 
@@ -275,6 +295,7 @@ class DpContext {
             SELECT DISTINCT username
             FROM projects
             WHERE phase IN ('PREP', 'P1', 'P2', 'P3', 'F1', 'F2', 'PP', 'PPV', 'POSTED')
+                AND IFNULL(username, '') != ''
             ORDER BY username" );
 
 		return $a;
@@ -309,7 +330,7 @@ class DpContext {
 	 */
 	public function GenreArray() {
 		global $include_dir;
-		$ary   = array();
+		$ary   = [];
 		$str   = file_get_contents( build_path( $include_dir, "genre.txt" ) );
 		$lines = preg_split( "/[\r\n]+/u", $str );
 		foreach ( $lines as $line ) {
@@ -331,15 +352,77 @@ class DpContext {
 		return $a;
 	}
 
-	public static function UserExists( $username ) {
+	public function UserExists( $username ) {
 		global $dpdb;
-		if ( empty( $username ) ) {
+		if ( ! $username ) {
 			return false;
 		}
 
-		return $dpdb->SqlExists( "
-            SELECT 1 FROM users
-            WHERE username = '$username'" );
+		return $dpdb->SqlOneValue( "
+            SELECT COUNT(1) FROM users
+            WHERE username = '$username'") > 0;
+	}
+
+    public static function IsProjectId($projectid) {
+        global $dpdb;
+        return $dpdb->SqlOneValue( "
+            SELECT COUNT(1) FROM projects
+            WHERE projectid = '$projectid'") > 0;
+    }
+
+    public function CreateUser( $username, $language ) {
+        global $dpdb;
+        LogMsg("INFO: creating dpc user $username");
+//        $lang      = $this->_bb->Language();
+
+        $sql = "
+					INSERT INTO users
+                    (
+                        username,
+                        u_intlang,
+                        t_last_activity,
+                        date_created
+                    )
+					VALUES
+                    (
+                        ?,
+                        ?,
+                        UNIX_TIMESTAMP(),
+                        UNIX_TIMESTAMP()
+                    )";
+        $args = [&$username, &$language];
+        if($dpdb->SqlExecutePS($sql, $args) != 1) {
+            LogMsg("Create DP User Failed");
+            die( "Create DP User Failed." );
+        }
+        assert($this->UserExists($username));
+        LogMsg("Success - create DP user $username");
+    }
+
+	public static function TeamExists( $teamname ) {
+		global $dpdb;
+		if ( empty( $teamname ) ) {
+			return false;
+		}
+
+		return $dpdb->SqlOneValue("
+            SELECT COUNT(1) FROM teams
+            WHERE teamname = '$teamname'") > 0;
+	}
+
+	public function CreateTeam($teamname, $description) {
+		global $User, $dpdb;
+        $username = $User->Username();
+        $sql = "
+            INSERT INTO teams
+                (teamname, team_info, createdby, created_time)
+            VALUES
+                (?, ?, ?, UNIX_TIMESTAMP())";
+                $args = [&$teamname, &$description, &$username];
+//    dump($sql);
+//    dump($args);
+//    die();
+        $dpdb->SqlExecutePS($sql, $args);
 	}
 
 	public function TransientDirectory() {
@@ -364,7 +447,7 @@ class DpContext {
 		dump($to_url);
 
 		$zip = new ZipArchive();
-		if ( ( $ret = $zip->open( $topath, ZIPARCHIVE::CREATE ) ) != true ) {
+		if ( ( $ret = $zip->open( $topath, ZipArchive::CREATE ) ) != true ) {
 			die( "zip error $ret on open $topath." );
 		}
 		if ( ! $zip->addFromString( $filename, $text ) ) {
@@ -387,7 +470,7 @@ class DpContext {
 		file_put_contents($textpath, $text);
 		$zippath = build_path( $zipdir, $zipfile );
 		$zip = new ZipArchive();
-		if ( ( $ret = $zip->open( $zippath, ZIPARCHIVE::CREATE ) ) != true ) {
+		if ( ( $ret = $zip->open( $zippath, ZipArchive::CREATE ) ) != true ) {
 			die( "zip error $ret on open $zippath." );
 		}
 		if ( ! $zip->addFromString( $textfile, $text ) ) {
@@ -398,6 +481,7 @@ class DpContext {
 		}
 
 		send_file( $zippath );
+		unlink($zippath);
 	}
 
 	/*
@@ -420,10 +504,10 @@ class DpContext {
 
 	public function ZipSendFileArray( $stub, $apaths ) {
 		$zipfile = $stub . ".zip";
-		$zippath = build_path( TEMP_DIR, $zipfile );
+		$zippath = build_path( TEMP_DIR, "zip/$zipfile" );
 		@unlink( $zippath );  // in case anything from before
 		$zip = new ZipArchive();
-		if ( ! ( $zip->open( $zippath, ZIPARCHIVE::CREATE ) ) ) {
+		if ( ! ( $zip->open( $zippath, ZipArchive::CREATE ) ) ) {
 			die( "zip error on open $zippath." );
 		}
 		foreach ( $apaths as $path ) {
@@ -437,6 +521,7 @@ class DpContext {
 			die( "zip error on close." );
 		}
 		send_file( $zippath );
+		@unlink($zippath);
 	}
 
 	/*
@@ -514,7 +599,7 @@ class DpContext {
                     pagename = ?,
                     imagefile = ?";
 
-		$args = array( &$projectid, &$pagename, &$imagefile );
+		$args = [&$projectid, &$pagename, &$imagefile];
 		$dpdb->SqlExecutePS( $sql, $args );
 
 		$sql = "REPLACE INTO page_versions
@@ -524,10 +609,11 @@ class DpContext {
                     task = 'LOAD',
                     state = 'C',
                     version_time = UNIX_TIMESTAMP(),
+                    dateval = CURRENT_DATE(),
                     crc32 = ?,
                     textlen = ?";
 
-		$args = array( &$projectid, &$pagename, &$crc32, &$textlength );
+		$args = [&$projectid, &$pagename, &$crc32, &$textlength];
 		$dpdb->SqlExecutePS( $sql, $args );
 
 		if ( file_exists( $toarchivepath ) ) {
@@ -554,7 +640,30 @@ class DpContext {
 		return file_put_contents($textpath, $text);
 	}
 
-	public function UpdateVersion($projectid, $pagename, $version, $state, $text) {
+    public function UpdateLastVersion($projectid, $pagename, $version, $text) {
+        global $dpdb, $User;
+        $text = norm($text);
+        $crc32 = crc32($text);
+        $username = $User->Username();
+        $len   = mb_strlen($text);
+        $sql = "
+			UPDATE page_versions
+			SET crc32 = ?,
+			textlen = ?,
+			username = ?,
+			version_time = UNIX_TIMESTAMP(),
+			dateval = CURRENT_DATE()
+			WHERE projectid = ?
+				AND pagename = ?
+				AND version = ?
+				";
+        $args = [&$crc32, &$len, &$username, &$projectid, &$pagename, &$version];
+        $dpdb->SqlExecutePS($sql, $args);
+
+        return $this->PutPageVersionText($projectid, $pagename, $version, $text);
+    }
+
+	public function UpdateOpenVersion($projectid, $pagename, $version, $state, $text) {
 		global $dpdb, $User;
 		$text = norm($text);
 		$crc32 = crc32($text);
@@ -565,15 +674,22 @@ class DpContext {
 			SET crc32 = ?,
 			textlen = ?,
 			username = ?,
-			state = ?
+			state = ?,
+			version_time = UNIX_TIMESTAMP(),
+			dateval = CURRENT_DATE()
 			WHERE projectid = ?
 				AND pagename = ?
 				AND version = ?
 				";
-		$args = array(&$crc32, &$len, &$username, &$state, &$projectid, &$pagename, &$version);
+		$args = [&$crc32, &$len, &$username, &$state, &$projectid, &$pagename, &$version];
 		$dpdb->SqlExecutePS($sql, $args);
 
 		return $this->PutPageVersionText($projectid, $pagename, $version, $text);
+	}
+
+	public static function SendForumMessage($from, $to, $subject, $message) {
+//		$bb = $this->Bb();
+		DpPhpbb3::SendPrivateMessage($subject, $message, $from, $to);
 	}
 
     public function SendUserEmail($username, $subject, $message) {
@@ -590,13 +706,78 @@ class DpContext {
 	    return $usr->EmailAddress();
     }
 
-    public function CreateForumThread($subject, $message, $poster_name = "") {
+    public function CreateForumThread($subject, $message, $poster) {
         $bb = $this->Bb();
         /** @var DpPhpbb3 $bb  */
-        return $bb->CreateTopic($subject, $message, $poster_name);
+        return $bb->CreateTopic($subject, $message, $poster);
     }
 
+	public function MoveTopicToPhaseForum($topicid, $phasename) {
+		if(! isset($this->_phases[$phasename])) {
+			return;
+		}
+        $bb = $this->Bb();
+//        $f = $this->_phases[$phasename];
+        $forumid = $this->_phases[$phasename]->ForumId();
+        /** @var DpPhpbb3 $bb  */
+        $bb->MoveTopicForumId($topicid, $forumid);
+    }
+
+	/** @var DpTeam $team */
+	public function CreateTeamTopic($team) {
+		$subj = "Create " . $team->TeamName() . " Forum Topic";
+		$teamname = $team->TeamName();
+		$creator = $team->CreatedBy();
+		$info = $team->Info();
+		$url = url_for_team_stats($team->Id());
+
+		$msg = "
+Team Name: $teamname
+Created By: $creator`
+
+Info: $info
+
+Team Page: $url
+Use this area to have a discussion with your fellow teammates! :-Dp";
+
+		$id = $this->CreateForumThread($subj, $msg, $creator);
+        return $id;
+	}
+
+
     public function InstalledLanguages() {
+    }
+
+    /**
+    timer
+     */
+
+    public function TimerInit() {
+        return $this->_timer(true);
+    }
+
+    public function TimerGet() {
+        return number_format($this->_timer(), 3);
+    }
+
+    public function TimerSay() {
+        say("<br>time: " . $this->TimerGet()."<br>");
+    }
+
+    private function _timer($is_init = false) {
+        static $_start;
+        if($is_init) {
+            $_start = microtime(true);
+            return 0.0;
+        }
+        else if(! isset($_start)) {
+            say("default timer init");
+            $this->_timer(true);
+            return 0.0;
+        }
+        else {
+            return microtime(true) - $_start;
+        }
     }
 }
 
@@ -673,6 +854,10 @@ class Phase
 	public function Caption() {
 		return $this->_row['caption'];
 	}
+    public function ForumId() {
+        return $this->_row['forum_id'];
+    }
+
 }
 class Round
 {

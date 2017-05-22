@@ -1,76 +1,42 @@
-<?php require "/sharehome/htdocs/crontab2/dpinit.php";
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-// Each L_<interval> field gives the number of distinct users
-// who logged in sometime in the <interval> preceding the row's timestamp.
+require "/home/pgdpcanada/public_html/crontab2/dpinit.php";
 
-// Each A_<interval> field gives the number of distinct users
-// who were active sometime in the <interval> preceding the row's timestamp.
+$n = $dpdb->SqlExecute("DELETE FROM user_round_pages
+		WHERE count_time >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))");
 
-/*
-$n = $dpdb->SqlExecute("
-    INSERT INTO user_active_log
-        ( year, month, day, hour, time_stamp,
-          L_hour, L_day, L_week, L_4wks,
-          A_hour, A_day, A_week, A_4wks )
-    SELECT
-        YEAR(NOW()),
-        MONTH(NOW()),
-        DAYOFMONTH(NOW()),
-        HOUR(NOW()),
-        UNIX_TIMESTAMP(),
+dump("$n user/round counts deleted before recalculating the last 90 days");
 
-        SUM( last_login > UNIX_TIMESTAMP() - 60 * 60 ),
-        SUM( last_login > UNIX_TIMESTAMP() - 60 * 60 * 24 ),
-        SUM( last_login > UNIX_TIMESTAMP() - 60 * 60 * 24 * 7 ),
-        SUM( last_login > UNIX_TIMESTAMP() - 60 * 60 * 24 * 7 * 4 ),
 
-        SUM( t_last_activity > UNIX_TIMESTAMP() - 60 * 60 ),
-        SUM( t_last_activity > UNIX_TIMESTAMP() - 60 * 60 * 24 ),
-        SUM( t_last_activity > UNIX_TIMESTAMP() - 60 * 60 * 24 * 7 ),
-        SUM( t_last_activity > UNIX_TIMESTAMP() - 60 * 60 * 24 * 7 * 4 )
-
-    FROM users
-    WHERE    t_last_activity > UNIX_TIMESTAMP() - 60 * 60 * 24 * 7 * 4");
-
-say("User activity log updated (return: $n)");
-*/
-
-$n = $dpdb->SqlExecute("
+$sql = "
 		REPLACE INTO user_round_pages
-				( username, PHASE, count_time, page_count )
+				( username, phase, count_time, page_count )
 
 		SELECT  username,
-				PHASE,
+				phase,
 				UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(version_time))),
 				COUNT(1)
 		FROM page_versions
-		WHERE version_time >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 10 DAY))
+		WHERE version_time >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))
 			AND state = 'C'
-			AND PHASE IN ('P1', 'P2', 'P3', 'F1', 'F2')
-    	GROUP BY username, PHASE, UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(version_time)))
-    	");
+			AND phase IN ('P1', 'P2', 'P3', 'F1', 'F2')
+    	GROUP BY username, phase, UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(version_time)))
+    	";
+$n = $dpdb->SqlExecute($sql);
 
-/*
-	REPLACE INTO user_round_pages
-		( username, round_id, count_time, page_count )
-	SELECT  username,
-            round_id,
-            UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(TIMESTAMP))),
-            COUNT(1)
-    	FROM page_events_save pe
-	WHERE timestamp >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY))
-    	GROUP BY username, round_id, UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(TIMESTAMP)))");
-*/
+dump("$n user/round counts recalculated for the last 90 days");
 
 $dpdb->SqlExecute("TRUNCATE TABLE total_user_round_pages");
 
 $n = $dpdb->SqlExecute("
     INSERT INTO total_user_round_pages
-        ( username, round_id, count_time, page_count)
-    SELECT username, round_id, UNIX_TIMESTAMP(DATE(CURRENT_DATE())), SUM(page_count)
+        ( username, phase, count_time, page_count)
+    SELECT username, phase, UNIX_TIMESTAMP(DATE(CURRENT_DATE())), SUM(page_count)
     FROM user_round_pages
     WHERE count_time < UNIX_TIMESTAMP(CURRENT_DATE())
-    GROUP BY username,round_id");
+    GROUP BY username,phase");
 
 dump("$n user/round counts before today summed in total_user_round_pages.");
 

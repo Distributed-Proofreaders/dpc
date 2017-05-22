@@ -10,17 +10,18 @@ include_once($relPath.'site_news.inc');
 include_once($relPath.'page_header.inc');
 
 // ---------------------------------------
-//Page construction varies with whether the user is logged in or out
+
+// $User->IsLoggedIn()
+// 	or RedirectToLogin();
 
 $no_stats = 1;
-$header_text = $User->IsLoggedIn() 
-        ? _("Smooth Reading Projects")
-        : _("Smooth Reading Projects Preview");
+$header_text = _("Smooth Reading Projects");
+
 theme( $header_text, 'header');
-dp_page_header( 'SR', $header_text );
+//dp_page_header( 'SR', $header_text );
+echo "<h1 class='center'>$header_text</h1>\n";
 show_news_for_page( "SR" );
 
-if ($User->IsLoggedIn()) {
     echo "
     <p> The goal of 'Smooth Reading' is to read the text attentively, as for
         pleasure, with just a little more attention than usual to punctuation,
@@ -30,12 +31,20 @@ if ($User->IsLoggedIn()) {
         disrupts the sense or the flow of the book.  Note that some of these
         will be due to the author and/or publisher. </p>
 
-    <p> The way to report errors is by adding a comment of the form
+    <p> There are two primary ways to provide feedback.</p>
+     <h4>1. Make notes in the text as you read, and submit the annotated file (<b>after zipping it</b>.)</h4>
+	<h4>2. Take notes in a separate file.</h4>
+     <p>If you read using software that allows you to make notes in the text, you can do so.
+     Then, when you are done, you should be able to save the text, including your comments, to a file;
+     and you should be able to upload the saved file using your browser. You can do so by returning to
+     this page and clicking the link in the table below, in the column under 'Upload with notes'
+     (third from the right end of the line).<p>
+     <p>The way to report errors is by adding a comment of the form
         <blockquote class='red'>
         [**correction or query]<br>
         </blockquote>
-    immediately after the problem spot.
-    Do not correct or change the problem, just note it in the above format. </p>
+    immediately after the problem spot.</p>
+    <p>Do not correct or change the problem, just note it in the above format. </p>
 
     <p>
     Examples:
@@ -44,16 +53,9 @@ if ($User->IsLoggedIn()) {
     <li>that was the end[**.] However, the next day</li>
     <li>that was the emd.[**end] However, the next day</li>
     </ul>
-    </p>\n";
-}
-else {
-    echo "
-    <p>This Preview page shows which books are currently available for Smooth Reading.</p>
-
-    <p>To be able to upload corrections, join DP.  There is a register link near
-    the upper right corner of this page.</p>\n";
-}
-
+    </p>
+    <p>Just record questions and remarks, and send them to the Project Manager any way convenient to you.
+	 You can send a PM by clicking the Project Manager's username anywhere you find it./p>\n";
 
 $sql = "
         SELECT p.projectid,
@@ -85,12 +87,12 @@ $tbl->AddColumn("<Title", "nameofwork", "etitle");
 $tbl->AddColumn("<Author", "authorsname");
 $tbl->AddColumn("<Language", "langname", "elanguage");
 $tbl->AddColumn("<Genre", "genre");
-if($User->IsLoggedIn()) {
+
     $tbl->AddColumn("<PM", "PM", "epm", "sortkey=pmsort");
     $tbl->AddColumn("<PPer", "postproofer", "epm", "sortkey=ppsort");
     $tbl->AddColumn("<Download<br>to read", "projectid", "edownload", "sorttable_nosort");
     $tbl->AddColumn("^Upload<br>with notes", "projectid", "eupload", "sorttable_nosort");
-}
+
 $tbl->AddColumn(">Pages", "n_pages");
 $tbl->AddColumn("^Days<br/>left", "days_left", "edaysleft");
 $tbl->SetRows($rows);
@@ -105,7 +107,7 @@ function elanguage($langname, $row) {
 }
 
 function eupload($projectid) {
-	return link_to_upload_smoothed_text($projectid, "upload");
+	return link_to_smoothed_upload($projectid, "upload");
 //    global $projects_dir;
 //    $nup = count(glob("$projects_dir/$projectid/*smooth*"));
 //    $nup -= 1;

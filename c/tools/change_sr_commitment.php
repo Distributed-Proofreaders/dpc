@@ -1,7 +1,7 @@
 <?PHP
 $relPath="../pinc/";
 include_once($relPath.'dpinit.php');
-include_once($relPath.'smoothread.inc');
+//include_once($relPath.'smoothread.inc');
 
 /***************************************************************************************
 *
@@ -13,6 +13,7 @@ include_once($relPath.'smoothread.inc');
 * It will automatically call the page adressed by next_url.
 *
 ****************************************************************************************/
+/*
 
 $projectid      = Arg("projectid");
 $action         = Arg("action");
@@ -29,5 +30,5 @@ switch ($action) {
 }
 
 divert($refresh_url);
-
+*/
 ?>

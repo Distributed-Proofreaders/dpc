@@ -1,4 +1,4 @@
-<?PHP
+<?
 $relPath="./../../pinc/";
 include $relPath . "dpinit.php";
 include_once($relPath.'dpsql.inc');

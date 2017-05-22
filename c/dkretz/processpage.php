@@ -22,6 +22,16 @@ $acceptwords        = Arg("acceptwords");
 $awords             = preg_split("/\t/", $acceptwords);
 
 $page               = new DpPage($projectid, $pagename);
+switch($page->Phase()) {
+	case "PREP":
+	case "P1":
+	case "P2":
+	case "P3":
+		$tatext = norm($tatext);
+		break;
+	default:
+		break;
+}
 
 if(count($awords) > 0) {
     $page->AcceptWordsArray($langcode, $awords);
@@ -36,12 +46,12 @@ if(! $page->UserIsOwner()) {
 
 switch($seltodo) {
     case "opt_draft_quit" :
-        $page->saveText($tatext);
+        $page->saveOpenText($tatext);
         redirect_to_project($projectid);
         break;
 
     case "opt_draft_continue" :
-        $page->saveText($tatext);
+        $page->saveOpenText($tatext);
         redirect_to_proof_page($projectid, $pagename);
         break;
 

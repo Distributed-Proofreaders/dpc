@@ -1,4 +1,4 @@
-<?PHP
+<?php
 
 function build_selectlist( $states, $field) {
     global $dpdb;

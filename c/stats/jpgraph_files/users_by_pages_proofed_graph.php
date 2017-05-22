@@ -1,4 +1,4 @@
-<?PHP
+<?
 $relPath = "./../../pinc/";
 require_once $relPath . "dpinit.php";
 include_once($jpgraph_dir.'/src/jpgraph.php');

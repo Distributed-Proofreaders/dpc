@@ -6,7 +6,7 @@ include_once($relPath.'misc.inc');
 include($relPath.'metarefresh.inc');
 include_once($relPath.'user_is.inc');
 include($relPath.'project_edit.inc');
-//include($relPath.'DPage.inc');
+include($relPath.'DPage.inc');
 
 $projectid  =  $_GET['project'];
 $rel_source =  $_GET['rel_source'];

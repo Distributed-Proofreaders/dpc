@@ -11,7 +11,7 @@ global $User;
 $roundid = Arg('round_id', Arg('roundid'));
 $usrname = Arg ('username', $User->Username());
 $usr = new DpUser($usrname);
-$usr->FetchUser();
+//$usr->FetchUser();
 if($usr->Privacy() != 0 && $usr->Username() != $User->Username()) {
 	die("No such user, or user is Private.");
 }
@@ -30,7 +30,10 @@ if ( $usr->Privacy() > 0 && ! $User->IsAdmin()) {
 }
 
 EchoMemberDpProfile($usr);
-if ( $roundid ) {
+if( $roundid == "all") {
+    EchoMemberAllStats($usr);
+}
+else if ( $roundid ) {
 	EchoMemberRoundStats($usr, $roundid);
 	EchoMemberTeams($usr, $roundid);
 	EchoMemberNeighbors($usr, $roundid);
@@ -73,7 +76,10 @@ function EchoMemberStats($usrname) {
 }
 */
 
-/** @var DpUser $usr */
+/**
+ * @param DpUser $usr
+ * @param string $roundid
+ */
 function EchoMemberRoundStats( $usr, $roundid ) {
     if($roundid == "ALL") {
         EchoMemberAllStats($usr);
@@ -100,14 +106,12 @@ function EchoMemberRoundStats( $usr, $roundid ) {
 /** @var DpUser $usr */
 function EchoMemberAllStats($usr) {
 	global $dpdb;
-	$start = $usr->DateCreated();
-	$pagecount = $usr->PageCount();
 
 	$username = $usr->Username();
 
 	$sql = "SELECT username, round_id, page_count
-			FROM user_round_pages_total urpt
-			JOIN phases p ON urpt.round_id = p.phase
+			FROM total_user_round_pages urpt
+			JOIN phases p ON urpt.phase = p.phase
 			WHERE username = '$username'
 			ORDER BY p.sequence";
 
@@ -147,19 +151,19 @@ function EchoMemberNeighbors($usr, $roundid) {
 function EchoMemberTeams($usr, $roundid) {
     /** @var DpUser $usr */
 
-    $teams = $usr->UserTeams();
+    $teams = $usr->Teams();
     if(count($teams) == 0) {
         return;
     }
 
     $t = new DpTable("tblmyteams", "dptable minitab w75", "User's Teams");
-    $t->AddColumn("<Team Name", "name");
+    $t->AddColumn("<Team Name", "teamname");
+    $t->AddColumn(">Team Pages", "teampages");
     $rows = array();
     /** @var DpTeam $team */
     foreach($teams as $team) {
-        $rows[] = array( _("<Team Name") => $team->Name(), eTeamLink($team->Id(), $roundid),
-            _(">Pages Completed") => $team->RoundPageCount($roundid),
-            _("^Active Members") => $team->ActiveMembers());
+        $rows[] = array( "teamname" => $team->Name(), "id" => $team->Id(), "phase" => $roundid,
+            "teampages" => $team->RoundPageCount($roundid));
 
     }
     $t->SetRows($rows);
@@ -178,7 +182,7 @@ function EchoMemberHistory($usrname, $roundid) {
         $text = ($range == 'all')
             ? _('Lifetime')
             : sprintf( _('Last %d Days'), $range );
-        $choices[] = link_to_member_stats($usrname, $roundid, $range, $text);
+        $choices[] = link_to_member_stats($usrname, $roundid, $text);
     }
     $choices_str = join( $choices, ' | ' );
     $history_link = link_to_user_history($usrname, $roundid, $range, "User count history");

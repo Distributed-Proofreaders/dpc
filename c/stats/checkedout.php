@@ -33,7 +33,6 @@ $rows = $dpdb->SqlRows("
            p.username,
            IFNULL(p.postproofer, '') postproofer,
            IFNULL(p.ppverifier, '') ppverifier,
-		   DATE(FROM_UNIXTIME(p.modifieddate)) moddate,
 		   DATE(FROM_UNIXTIME(upp.t_last_activity)) upp_last_time,
 		   DATE(FROM_UNIXTIME(uppv.t_last_activity)) uppv_last_time
 	FROM projects p
@@ -49,7 +48,6 @@ $tbl->AddColumn("<PPer", "postproofer", "epm");
 $tbl->AddColumn("<Last on site", "upp_last_time");
 $tbl->AddColumn("<PPVer", "ppverifier", "epm");
 $tbl->AddColumn("<Last on site", "uppv_last_time");
-$tbl->AddColumn("<Project modified", "moddate");
 $tbl->SetRows($rows);
 $tbl->EchoTable();
 

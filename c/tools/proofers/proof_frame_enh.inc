@@ -22,7 +22,7 @@ else {
     $textHeight = $userP['h_tframe'];
     $imageHeight = (100 - $userP['h_tframe']) - 1;
     $textTop = (100 - $userP['h_tframe'])."%";
-    $textLeft = "1%";
+    $textLeft = ".5%";
 }
 
 slim_header("Proofreading Page", true, false);
@@ -166,7 +166,7 @@ echo "height:".$textHeight."%;\r\n";
 }
 .dropsmall {
   vertical-align: top;
-  width: 4em;
+  width: 5em;
   font-size: 75%;
   background-color:#FFF8DC;
   }

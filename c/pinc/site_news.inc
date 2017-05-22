@@ -4,6 +4,8 @@ global $Context;
 
 $news_pages = array(
     'PREP'    => _("Project Prep"),
+    'PP'      => _("Post Processing"),
+    'PPV'     => _("PP Verification"),
     'FRONT'   => _('Front Page'),
     'FAQ'     => _('FAQ Central'),
     'HUB'     => _('Activity Hub'),
@@ -13,6 +15,9 @@ $news_pages = array(
 );
 
 /** @var Round $round */
+if(! isset($Context)) {
+	$Context = new DpContext();
+}
 foreach($Context->Rounds() as $round) {
 	$news_pages[$round->RoundId()] = $round->Caption();
 }
@@ -67,20 +72,20 @@ function show_news_for_page( $news_page_id ) {
 
     // Get a randomly selected news item from the set of 
     // 'recent' news items defined for the given page.
-    $random = $dpdb->SqlOneValue("
-        SELECT content FROM news_items 
-        WHERE status = 'recent' 
-            AND (news_page_id = '$news_page_id' 
-                OR news_page_id IS NULL)
-        ORDER BY RAND() LIMIT 1");
+//    $random = $dpdb->SqlOneValue("
+//        SELECT content FROM news_items
+//        WHERE status = 'recent'
+//            AND (news_page_id = '$news_page_id'
+//                OR news_page_id IS NULL)
+//        ORDER BY RAND() LIMIT 1");
 
     // -------------------------------------------
 
-    if (count($rows) > 0 || $random != "") {
+    if (count($rows) > 0) {
         // We have at least one news item to show,
         // so display the news header.
 
-        $header_title = sprintf( _('News for %s'), $news_subject );
+        $header_title = _("$news_subject News");
 
         // Show header-title as an image, if available.
         global $dyn_dir, $dyn_url;
@@ -100,12 +105,7 @@ function show_news_for_page( $news_page_id ) {
             <p class='right em50'>$echo_date</p>
             </div>  <!-- div_ph2 -->\n";
         }
-    }
 
-    // -------------------------------------------
-    // Output the 'current' news items, if any.
-
-    if (count($rows) > 0) {
         foreach($rows as $news_item) {
             echo 
             "<div class='article left'>
@@ -118,17 +118,17 @@ function show_news_for_page( $news_page_id ) {
     // -------------------------------------------
     // Output the 'random' news item, if any.
 
-    if ($random != "") {
-
-        echo "<h4>", _("Random News Item"), ":</h4>
-        <div id='div_article' class='article'>
-        $random
-        </div>  <!-- div_article -->\n";
-
-        $url = "$code_url/pastnews.php?news_page_id=$news_page_id";
-        $linktext = _("See All Random News Items");
-        echo "(<a href='$url'>$linktext</a>)";
-    }
+//    if ($random != "") {
+//
+//        echo "<h4>", _("Random News Item"), ":</h4>
+//        <div id='div_article' class='article'>
+//        $random
+//        </div>  <!-- div_article -->\n";
+//
+//        $url = "$code_url/pastnews.php?news_page_id=$news_page_id";
+//        $linktext = _("See All Random News Items");
+//        echo "(<a href='$url'>$linktext</a>)";
+//    }
 
     // -------------------------------------------
     // Give site admin and news editors a link to add/edit/show/hide/delete
@@ -143,4 +143,3 @@ function show_news_for_page( $news_page_id ) {
 }
 
 // vim: sw=4 ts=4 expandtab
-?>

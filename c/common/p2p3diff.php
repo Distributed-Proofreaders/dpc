@@ -35,7 +35,7 @@ foreach($projs as $projectid) {
 
 	file_put_contents( $path2, $text1 );
 	file_put_contents( $path3, $text2 );
-	$cmd = "wdiff -b -B -E $path2 $path3 > $pathdiff";
+	$cmd = "diff -b -B $path2 $path3 > $pathdiff";
 	say( $cmd );
 	exec( $cmd );
 	assert( is_file( $pathdiff ) );

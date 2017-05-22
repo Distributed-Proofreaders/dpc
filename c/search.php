@@ -4,7 +4,8 @@ error_reporting(E_ALL);
 $relPath = "./pinc/";
 require_once $relPath."dpinit.php";
 
-$Context = new DpContext();
+$User->IsLoggedIn()
+	or RedirectToLogin();
 
 $qtitle         = Arg("qtitle");
 $qauthor        = Arg("qauthor");
@@ -13,9 +14,8 @@ $qpp            = Arg("qpp");
 $qlang          = ArgArray("qlang");
 $qgenre         = ArgArray("qgenre");
 $qroundid       = ArgArray("qroundid");
-$qstatus        = Arg("qstatus", "both");
+$qstatus        = Arg("qstatus", "avail");
 $orderby        = Arg("orderby", "nameofwork");
-$desc           = ArgBoolean("desc", "1");
 
 $pagenum        = Arg("pagenum", "1");
 $rowsperpage    = Arg("rowsperpage", "100");
@@ -36,7 +36,7 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	$pmCaption      = sprintf($fmt, "lkpm",       _("Proj Mgr"));
 	//	$ppCaption      = sprintf($fmt, "lkpp",       _("Post Proofer"));
 	$diffCaption    = sprintf($fmt, "lkdiff",     _("Difficulty"));
-	$stateCaption   = sprintf($fmt, "lkphase",    _("State"));
+	$stateCaption   = sprintf($fmt, "lkphase",    _("Round"));
 
 	$tbl = new DpTable("tblsearch", "dptable w90");
 	$tbl->AddColumn("<".$titleCaption,          "title",            "title_link");
@@ -52,34 +52,39 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	$tbl->AddColumn(_("^Edit"),                 null,               "edit_link", "nosort");
 	//    $tbl->AddColumn("^".$projidCaption, "projectid");
 
-	$awhere = array("p.phase != 'DELETED'");
+
+    $awhere = array();
 
 	if($qtitle) {
-		$qqtitle    = mysql_real_escape_string($qtitle);
+		$qqtitle    = $dpdb->EscapeString($qtitle);
 		$qsql = "(p.nameofwork LIKE '%$qqtitle%')";
 		$awhere []  = $qsql;
 	}
 
 	if($qauthor) {
-		$qqauthor   = mysql_real_escape_string($qauthor);
+		$qqauthor   = $dpdb->EscapeString($qauthor);
 		$qsql = "(p.authorsname LIKE '%$qqauthor%')";
 		$awhere []  = $qsql;
 	}
 
 
-	if(count($qroundid)) {
-		$a = array();
-		foreach($qroundid as $q) {
-			$a[] ="p.phase LIKE '{$q}%'";
-		}
+    if(count($qroundid) == 0) {
+        $qroundid = RoundIdsInOrder();
+    }
 
-		if(count($a) > 1) {
-			$awhere [] = "(".implode(" OR ", $a).")";
-		}
-		else if(count($a) == 1) {
-			$awhere [] = $a[0];
-		}
-	}
+    $awhere[] = "p.phase IN ('" . implode("', '", $qroundid) . "')";
+//		$a = array();
+//		foreach($qroundid as $q) {
+//			$a[] ="p.phase LIKE '{$q}%'";
+//		}
+//
+//		if(count($a) > 1) {
+//			$awhere [] = "(".implode(" OR ", $a).")";
+//		}
+//		else if(count($a) == 1) {
+//			$awhere [] = $a[0];
+//		}
+//	}
 
 	if(is_array($qpm) && count($qpm) > 0) {
 		$a = array();
@@ -125,17 +130,24 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 		}
 	}
 
-	//    if($qprojectid) {
-	//        $qqid = mysql_real_escape_string($qprojectid);
-	//        $ids = preg_split("/\s+/", $qqid);
-	//        $qsql = "p.projectid IN ('"
-	//            . implode("', '", $ids)
-	//            . "')";
-	//        $awhere [] = $qsql;
-	//    }
+	switch($qstatus) {
+		case "avail":
+			$having = "HAVING holdcount = 0";
+			break;
 
-	$where = implode("\nAND ", $awhere);
-	$sql = project_search_view_sql($where, $orderby, $desc);
+		case "unavail":
+			$having = "HAVING holdcount > 0";
+			break;
+
+		default:
+			$having = "";
+	}
+
+	$where = count($awhere) > 0
+		? "WHERE " . implode("\nAND ", $awhere)
+		: "";
+
+	$sql = project_search_view_sql($where, $having, $orderby);
 
 	$rows = $dpdb->SqlRows($sql);
 	if($cmdPgUp) {
@@ -184,7 +196,6 @@ echo "
     <input type='hidden' name='rowsperpage' value='$rowsperpage'>
     <input type='hidden' name='pagenum' value='$pagenum'>
     <input type='hidden' name='orderby' id='orderby' value='nameofwork'>
-    <input type='hidden' name='desc' id='desc' value='0'>
     <div id='searchtable' class='left w75'>
 	    <div id='divsubmit' class='lfloat w35'>
 			<div>
@@ -254,8 +265,7 @@ echo "
 				<select class='selsearch' id='qroundid[]' name='qroundid[]'
 					   multiple='multiple' size='12'>\n";
 
-// $optroundids = RoundIdsInOrder();
-$optroundids = PhasesInOrder();
+ $optroundids = RoundIdsInOrder();
 echo array_to_options($optroundids, true, $qroundid);
 
 echo "
@@ -353,11 +363,11 @@ function array_to_options($optarray, $is_blank = true,
 	return $ret;
 }
 
-function project_search_view_sql($where, $orderby = "nameofwork") {
-	$where = trim($where);
-	if($where != "") {
-		$where = "WHERE \n".$where;
-	}
+function project_search_view_sql($where, $having = "", $orderby = "nameofwork") {
+//	$where = trim($where);
+//	if($where != "") {
+//		$where = "WHERE \n".$where;
+//	}
 	$orderby = "ORDER BY {$orderby}";
 	return  "SELECT
                 p.projectid,
@@ -377,20 +387,25 @@ function project_search_view_sql($where, $orderby = "nameofwork") {
                 SUM(1) pagecount,
                 SUM(plv.state = 'A') pages_available,
                 p.username AS project_manager,
+                COUNT(DISTINCT pholds.id) holdcount,
                 ph.sequence
             FROM projects AS p
             JOIN page_last_versions plv
             	ON p.projectid = plv.projectid
             LEFT JOIN languages l1 ON p.language = l1.code
             LEFT JOIN languages l2 ON p.seclanguage = l2.code
+            LEFT JOIN project_holds pholds
+            	ON p.projectid = pholds.projectid
+            	AND p.phase = pholds.phase
             JOIN phases ph ON p.phase = ph.phase
             $where
             GROUP BY p.projectid
+            $having
             $orderby";
 }
 
 function title_link($title, $row) {
-	return link_to_project($row['projectid'], $row['title']);
+	return link_to_project($row['projectid'], $title);
 }
 
 function page_counts($row) {

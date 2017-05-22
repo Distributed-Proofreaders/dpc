@@ -93,7 +93,7 @@ function AllMonthsPages($roundid) {
         SELECT  DATE_FORMAT(dateval, '%b-%Y') dateval,
                 SUM(IFNULL(page_count, 0)) pages
         FROM user_round_pages
-        WHERE round_id = '$roundid'
+        WHERE phase = '$roundid'
           AND dateval < DATE(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'))
         GROUP BY YEAR(dateval), MONTH(dateval)
         ORDER BY YEAR(dateval), MONTH(dateval)";
@@ -127,7 +127,7 @@ function Pages30Days($roundid) {
         FROM days d
         LEFT JOIN user_round_pages urp
         ON d.dateval = urp.dateval
-        WHERE urp.round_id = '$roundid'
+        WHERE urp.phase = '$roundid'
             AND d.dateval >=  DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
             AND d.dateval < CURRENT_DATE()
         GROUP BY d.dateval

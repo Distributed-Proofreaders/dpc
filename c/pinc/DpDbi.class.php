@@ -5,6 +5,7 @@ global $relPath;
 
 require_once dirname(__FILE__) . "/udb_user.php";
 
+/** @noinspection PhpUndefinedClassInspection */
 class DpDb
 {
     private $_is_echo_queries   = false;
@@ -60,6 +61,10 @@ class DpDb
         return $this->_result;
     }
 
+    public function EscapeString($str) {
+        return $this->_mysqli->real_escape_string($str);
+    }
+
     // identity value created by insertion
     public function InsertId() {
         return $this->_mysqli->insert_id;
@@ -88,7 +93,7 @@ class DpDb
     }
 
     public function SqlRows($sql, $flag = MYSQLI_ASSOC) {
-        $rows = array();
+        $rows = [];
         $result = $this->sql_select($sql);
         if($result === false) {
             echo html_comment($sql);
@@ -96,8 +101,9 @@ class DpDb
 //            die($this->ErrorMessage());
         }
         if($result === true) {
-            return array();
+            return [];
         }
+        /** @noinspection PhpAssignmentInConditionInspection */
         while($row = $result->fetch_array($flag)) {
             $rows[] = $row;
         }
@@ -111,7 +117,7 @@ class DpDb
 		if($this->_is_log_queries) {
 			$this->Log("SqlOneRowPS: $sql");
 		}
-		return count($rows) > 0 ? $rows[0] : array();
+		return count($rows) > 0 ? $rows[0] : [];
 	}
 
     public function SqlRowsPS($sql, $args) {
@@ -131,10 +137,10 @@ class DpDb
 
         // make the type-string
         $typestr = make_typestring($args);
-        $params = array($typestr);
+        $params = [$typestr];
         $params = array_merge($params, $args);
         try {
-            call_user_func_array(array($stmt, 'bind_param'), $params);
+            call_user_func_array([$stmt, 'bind_param'], $params);
         }
         catch ( Exception $e ) {
             dump($e);
@@ -151,9 +157,9 @@ class DpDb
         /** @vaⅹ mysqli_result $md */
         $md = $stmt->result_metadata();
         $parms = $this->bind_meta($md, $row);
-        call_user_func_array(array($stmt, 'bind_result'), $parms);
+        call_user_func_array([$stmt, 'bind_result'], $parms);
 
-        $rows = array();
+        $rows = [];
         while($stmt->fetch()) {
             $rows[] = unserialize(serialize($row));
         }
@@ -167,7 +173,7 @@ class DpDb
     }
 
     private function bind_meta($md, &$row) {
-        $parms = array();
+        $parms = [];
         /** @var mysqli_result $md */
         while($field = $md->fetch_field()) {
             $parms[] = &$row[$field->name];
@@ -176,7 +182,7 @@ class DpDb
     }
 
     public function SqlObjects($sql) {
-        $objects = array();
+        $objects = [];
         $result = $this->sql_select($sql);
         if($result === false) {
             sqldump($sql);
@@ -184,7 +190,7 @@ class DpDb
 	        return null;
         }
         if($result === true) {
-            return array();
+            return [];
         }
         while($object = $this->_result->fetch_object()) {
             $objects[] = $object;
@@ -211,7 +217,7 @@ class DpDb
 //            die($this->ErrorMessage());
         }
         if($result === true) {
-            return array();
+            return [];
         }
         $obj = $result->fetch_object();
         $result->free();
@@ -228,19 +234,31 @@ class DpDb
 	        return null;
         }
         if($result === true) {
-            return array();
+            return [];
         }
         if($result->num_rows > 0)
             $row = $result->fetch_array($flag); 
         else
-            $row = array();
+            $row = [];
         $result->free();                  
         $this->DrainResults();
         return $row;
     }
 
+    public function SqlValuesPS($sql, $args) {
+        $rows = $this->SqlRowsPS($sql, $args);
+        if(! $rows || count($rows) < 1) {
+            return [];
+        }
+        $ary = [];
+        foreach($rows as $row) {
+            $ary[] = current($row);
+        }
+        return $ary;
+    }
+
     public function SqlValues($sql) {
-        $objects = array();
+        $objects = [];
         $result = $this->sql_select($sql);      
         if($result === false) {
             echo html_comment($sql);
@@ -287,7 +305,7 @@ class DpDb
         if($this->_is_time_queries) {
             $this->_marktime = microtime(true);
         }
-        if($this->IsEcho()) {
+        if($this->_is_echo_queries) {
             echo html_comment($sql);
         }
         $this->_sql = $sql;
@@ -342,6 +360,10 @@ class DpDb
         if($this->_is_time_queries) {
             $this->_marktime = microtime(true);
         }
+        if($this->_is_echo_queries) {
+            echo html_comment($sql);
+            echo html_comment(pdump($args));
+        }
         $stmt = $this->_mysqli->prepare($sql);
         if(! $stmt) {
             dump($sql);
@@ -355,10 +377,10 @@ class DpDb
 
         // make the type-string
         $typestr = make_typestring($args);
-        $params = array($typestr);
+        $params = [$typestr];
         $params = array_merge($params, $args);
         
-        call_user_func_array(array($stmt, 'bind_param'), $params);
+        call_user_func_array([$stmt, 'bind_param'], $params);
         $b = $stmt->execute();
         if(! $b) {
             dump($stmt->error);
@@ -373,9 +395,14 @@ class DpDb
         return $ret;
     }
 
+    public function SqlExistsPS($sql, $args) {
+        $result = $this->SqlOneRowPS($sql, $args);
+        return count($result) > 0;
+    }
+
     public function SqlExists($sql) {
         $result = $this->SqlOneRow($sql);
-        return (boolean) $result;
+        return count($result) > 0;
     }
 
     public function IsTable($name) {
@@ -390,7 +417,7 @@ class DpDb
         return ($colname != "");
     }
 
-    public function Log($text) {
+    private function Log($text) {
         global $User;
         if(! $this->_mysqli) {
             assert(false);
@@ -459,12 +486,28 @@ class DpDb
                 FROM information_schema.columns
                 WHERE table_name = '$tablename'";
         $objs = $this->SqlObjects($sql);
-        $ary = array();
+        $ary = [];
 
         foreach($objs as $value) {
             $ary[$value->COLUMN_NAME] = $value;
         }
         return $ary;
+    }
+
+    public function SetProfiling() {
+        $this->_mysqli->query("set profiling_history_size = 100");
+        $this->_mysqli->query("set profiling = 1");
+    }
+
+    public function ClearProfiling() {
+        $this->_mysqli->query("set profiling = 0");
+    }
+
+    public function EchoProfiling() {
+        $objs = $this->SqlObjects("SHOW PROFILES");
+        foreach($objs as $obj) {
+            say( $obj->Query_ID . ' - ' . $obj->Duration . "  " .  $obj->Query);
+        }
     }
 }
 

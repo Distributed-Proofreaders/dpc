@@ -12,12 +12,12 @@ $team = new DpTeam($team_id);
 // Get info about team
 
 // TODO: this needs to move into DpTeam
-//Determine if there is an existing topic or not; if not, create one
+//Determine if there is an existing topic. If not create one
 if(! $team->TopicId()) {
-            $tname          = $team->TeamName();
-            $towner_id      = $team->OwnerId();
+    $tname          = $team->TeamName();
+    $towner_id      = $team->OwnerId();
 
-            $message = "
+    $message = "
     Team Name: {$team->TeamName()};
     Created By: {$team->OwnerName()};
     Info: {$eam->Info()}
@@ -35,7 +35,7 @@ if(! $team->TopicId()) {
 
 
     $topic_id = $Context->CreateTeamThread($post_subject, $message, $towner_name);
-    $dpdb->SqlExecute("UPDATE user_teams SET topic_id = $topic_id WHERE id = $team_id");
+    $dpdb->SqlExecute("UPDATE teams SET topic_id = $topic_id WHERE id = $team_id");
 
 
     /*

@@ -63,7 +63,7 @@ var _ajaxActionFunc;
 var _rsp;
 
 
-function initAjax(handler) {
+function initAjax() {
     if(_ajax) {
         return;
     }
@@ -73,7 +73,7 @@ function initAjax(handler) {
     else {
         _ajax = new ActiveXObject("Microsoft.XMLHTTP");
     }
-    _ajaxActionFunc = handler;
+    _ajaxActionFunc = eWCMonitor;
     _ajax.onreadystatechange = readAjax;
 }
 
@@ -85,7 +85,7 @@ function readyToSend() {
 function writeAjax(a_args) {
     var discard_pending = false;
 
-    //initAjax();
+    initAjax();
     if (!readyToSend()) {
         //previous request haven-t completed yet
         if (_pending_request == "") {

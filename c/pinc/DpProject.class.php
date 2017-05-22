@@ -12,7 +12,8 @@ define("PJ_EVT_CLONE",      "clone");
 define("PJ_EVT_SET_PM",     "set_pm");
 define("PJ_EVT_ACTIVATE",   "activate");
 define("PJ_EVT_DEACTIVATE", "deactivate");
-define("PJ_EVT_HOLD",       "hold");
+define("PJ_EVT_HOLD",       "set_hold");
+define("PJ_EVT_RELEASE",    "release_hold");
 define("PJ_EVT_SMOOTH",     "smooth_reading");
 define("PJ_EVT_REVERT",     "revert");
 define("PJ_EVT_COMPLETE",   "set_complete");
@@ -27,15 +28,16 @@ class DpProject
     protected $_projectid;
     protected $_text;
     protected $_row;
-    protected $_pagerows;
-    protected $_pages;
+//    protected $_pagerows;
+//    protected $_pages;
     protected $_page_objects;
     protected $_error_message = "";
-    protected $_page_char_offset_array = array();
-    protected $_page_byte_offset_array = array();
-    protected $_enchanted_words = array();
+//    protected $_page_char_offset_array = [];
+    protected $_page_byte_offset_array = [];
+    protected $_enchanted_words = [];
     // phases are PREP, P1, P2, P3, F1, F2, PP, PPV, POSTED
     // now correlates with "rounds" table hence RoundIdForIndex etc.
+    // soon to be determined by project_sequence taeble
     protected $_phase;
 
     public function __construct($projectid = null) {
@@ -65,7 +67,6 @@ class DpProject
                 createdby,
                 createtime,
                 cp_comments,
-                modifieddate,
                 phase_change_date,
                 DATE_FORMAT(FROM_UNIXTIME(phase_change_date), '%b %e %Y %H:%i') phase_date,
                 DATE_FORMAT(FROM_UNIXTIME(t_last_edit), '%b %e %Y %H:%i') t_last_edit_str,
@@ -77,6 +78,7 @@ class DpProject
                 postproofer,
                 ppverifier,
                 postcomments,
+                smoothcomments,
                 image_source,
                 image_link,
                 image_preparer,
@@ -89,7 +91,7 @@ class DpProject
                 n_checked_out AS checked_out_count,
                 n_bad_pages AS bad_count,
                 tags,
-                DATE(FROM_UNIXTIME(smoothread_deadline)) smoothread_date,
+                DATE(FROM_UNIXTIME(smoothread_deadline)) smoothread_date_string,
                 DATEDIFF(
                     DATE(FROM_UNIXTIME(IFNULL(smoothread_deadline, 0))),
                     CURRENT_DATE()) AS smooth_days_left,
@@ -108,26 +110,29 @@ class DpProject
 
 	/* rewrite */
     public function init_text() {
-        global $dpdb;
+//        global $dpdb;
         $projectid = $this->ProjectId();
 
-        $sql = "
-            SELECT pagename, version
-            FROM projects p
-            JOIN page_last_versions pv
-            	ON p.projectid = pv.projectid
-            WHERE p.projectid = '$projectid'
-            order by pv.pagename";
+//        $sql = "
+//            SELECT pagename, version
+//            FROM page_last_versions pv
+//            WHERE projectid = ?
+//            order by pagename";
+//	    $args = array(&$projectid);
+//        $rows = $dpdb->SqlRowsPS($sql, $args);
 
-
-        $rows = $dpdb->SqlRows($sql);
+        $rows = $this->PageRows();
+        $b_offset = 0;
         foreach($rows as $row) {
-            $name = $row['pagename'];
-	        $version = $row['version'];
-	        $text = PageVersionText($projectid, $name, $version);
-            $this->_text .= ("\n" . $text);
-            $this->_page_char_offset_array[$name] = mb_strlen($text);
-            $this->_page_byte_offset_array[$name] = strlen($text);
+            $pagename = $row['pagename'];
+            $version = $row['version'];
+            $imagefile = $row['imagefile'];
+            $this->_page_byte_offset_array[$pagename]["offset"] = $b_offset;
+            $this->_page_byte_offset_array[$pagename]["version"] = $version;
+            $this->_page_byte_offset_array[$pagename]["imagefile"] = $imagefile;
+            $text = PageVersionText($projectid, $pagename, $version);
+            $this->_text .= ($text . "\n");
+            $b_offset = strlen($this->_text);
         }
     }
 
@@ -151,10 +156,10 @@ class DpProject
 	public function VersionState() {
 		return  $this->_row['version_state'];
 	}
-	public function LastProofTime() {
-		return  $this->_row['last_proof_time'];
-	}
-    public function LatestProofTime() {
+//	public function LastProofTime() {
+//		return  $this->_row['last_proof_time'];
+//	}
+    public function CurrentVersionTime() {
 	    return $this->_row['last_proof_time'];
     }
 
@@ -215,6 +220,7 @@ class DpProject
                 : _("No more pages are available for you.");
     }
 
+	/*
     public function SetModifiedDate() {
         global $dpdb;
         $dpdb->SqlExecute("
@@ -222,6 +228,7 @@ class DpProject
 		SET modifieddate = UNIX_TIMESTAMP()
                 WHERE projectid = '{$this->ProjectId()}'");
     }
+	*/
 
     public function SetPhaseDate() {
         global $dpdb;
@@ -230,9 +237,9 @@ class DpProject
                 WHERE projectid = '{$this->ProjectId()}'");
     }
 
-    public function ModifiedDateInt() {
-        return $this->_row['modifieddate'];
-    }
+//    public function ModifiedDateInt() {
+//        return $this->_row['modifieddate'];
+//    }
 
 	public function PhaseDate() {
 		return $this->_row['phase_date'];
@@ -305,46 +312,127 @@ class DpProject
 
 	public function SmoothUploadedFiles() {
 		$path = build_path($this->ProjectPath(), "*_smooth_done_*");
-		$ary = array();
+		$ary = [];
 		foreach(glob($path) as $filepath) {
 			$ary[] = basename($filepath);
 		}
 		return $ary;
 	}
 
+    public function UserSmoothreadCommit() {
+        global $dpdb, $User;
+        $username = $User->Username();
+        $projectid = $this->ProjectId();
+        $dpdb->SqlExecutePS("
+        REPLACE INTO smoothread
+        SET projectid = ?,
+            username = ?",
+            [&$projectid, &$username]);
+    }
+
+    public function UserSmoothreadWithdraw() {
+        global $dpdb, $User;
+        $username = $User->Username();
+        $projectid = $this->ProjectId();
+        $dpdb->SqlExecutePS("
+        DELETE FROM smoothread
+        WHERE projectid = ?
+            AND username = ?",
+        [&$projectid, &$username]);
+    }
+
+    public function CommittedSmoothReaders() {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        $args = [&$projectid];
+        return $dpdb->SqlValuesPS(
+            "SELECT username FROM smoothread
+            WHERE projectid = ?",
+            $args);
+    }
+    public function UserIsCommittedToSmoothread() {
+        global $dpdb, $User;
+        $projectid = $this->ProjectId();
+        $username = $User->Username();
+        $sql = "
+            SELECT COUNT(1) FROM smoothread
+            WHERE projectid = ?
+                AND username = ?";
+        $args = [&$projectid, &$username];
+        $n = $dpdb->SqlOneValuePS($sql, $args);
+        return $n > 0;
+    }
+
     public function SmoothreadDeadline() {
         return $this->_row['smoothread_deadline'];
     }
 
-    public function SmoothreadDate() {
-        return $this->_row['smoothread_date'];
+    public function SmoothDirectoryPath() {
+        return build_path($this->ProjectPath(), "smooth");
     }
 
+//    public function SmoothDirectoryPath() {
+//        return build_path(ProjectPath($this->ProjectId()), "smooth");
+//    }
+
+    public function SmoothreadDateString() {
+        return $this->_row['smoothread_date_string'];
+    }
+
+    public function SmoothZipFilePath() {
+        return build_path($this->ProjectPath(), $this->SmoothZipFileName());
+    }
+
+    public function SmoothZipFileName() {
+       return $this->ProjectId() . "_smooth_avail.zip";
+    }
     public function IsRoundCompleted() {
-        return count($this->AdvanceValidateErrors()) == 0;
+	    return $this->UncompletedCount() == 0;
+//        return count($this->AdvanceValidateErrors()) == 0;
     }
 
-    public function IsSmoothDownloadFile() {
-        return file_exists($this->SmoothDownloadPath());
+//    public function IsSmoothDownloadFile() {
+//        return file_exists($this->SmoothDownloadPath("zip"));
+//    }
+
+    public function IsSmoothDownloadFiles() {
+        return count($this->SmoothDownloadFileNames()) > 0;
     }
 
-    public function SmoothDownloadPath() {
-        return ProjectSmoothDownloadPath($this->ProjectId());
+    public function SmoothDownloadPaths() {
+        $dir = build_path($this->ProjectPath(), "smooth");
+        $ary = glob($dir);
+        $rslt = [];
+        foreach($ary as $path) {
+            if(is_dir($path)) {
+                continue;
+            }
+            $type = extension($path);
+            $rslt[$type] = $path;
+        }
+        return $rslt;
     }
 
-	public function SmoothDownloadUrl() {
-		return ProjectSmoothDownloadUrl($this->ProjectId());
-	}
+//	public function SmoothDownloadUrl($filename) {
+//		return build_path(ProjectSmoothDownloadUrl($this->ProjectId()), $filename);
+//	}
 
-    public function SmoothUploadPath() {
+    public function SmoothZipUploadPath() {
         global $User;
-        return ProjectSmoothUploadPath($this->ProjectId(), $User->Username());
+        $username = $User->Username();
+        $projectid = $this->ProjectId();
+//        return ProjectSmoothZipUploadPath($this->ProjectId(), $User->Username());
+    return build_path(ProjectPath($projectid), $projectid
+                    . "_smooth_done_{$username}.zip");
     }
 
 	public function SmoothUploadFilename() {
-		return ProjectSmoothUploadFilename($this->Projectid());
+		return ProjectSmoothUploadFilename($this->ProjectId());
 	}
 
+    public function LogSmoothUpload($filename) {
+        $this->LogProjectEvent(PJ_EVT_SMOOTH, "smooth project upload ($filename)");
+    }
     public function LogSmoothDownload() {
         $this->LogProjectEvent(PJ_EVT_SMOOTH, "smooth reader download");
     }
@@ -353,10 +441,158 @@ class DpProject
         $this->LogProjectEvent(PJ_EVT_SMOOTH, "smooth reader returned (done)");
     }
 
+    // =====================================================
+
+    public function SmoothTextFilePath() {
+        foreach($this->SmoothDownloadFileNames() as $name) {
+            if(extension($name) == "txt") {
+                return build_path($this->SmoothDirectoryPath(), $name);
+            }
+        }
+        return "";
+    }
+
+    public function SmoothDirectoryUrl() {
+        return build_path($this->ProjectUrl(), "smooth");
+    }
+
+    private function SmoothDownloadFilePaths() {
+        $path = build_path($this->SmoothDirectoryPath(), "*");
+        $ary = glob($path);
+        $key = array_search("images", $ary);
+        if($key !== false) {
+            unset($ary[$key]);
+        }
+        return $ary;
+    }
+
+    public function SmoothDownloadFileNames() {
+        $ary = [];
+        foreach($this->SmoothDownloadFilePaths() as $path) {
+            if(basename($path) != "images") {
+                $ary[] = basename($path);
+            }
+        }
+        return $ary;
+    }
+
+    public function SmoothDownloadUrls($projectid) {
+        $dir = build_path($this->SmoothDirectoryPath(), "*");
+        $ary = glob("$dir");
+        $rslt = [];
+        $smoothurl = build_path(ProjectUrl($projectid), "smooth");
+        foreach($ary as $path) {
+            if(is_dir($path)) {
+                continue;
+            }
+            $filename = basename($path);
+            $type = extension($path);
+            $url = build_path($smoothurl, $filename);
+            $rslt[$type] = $url;
+        }
+        return $rslt;
+    }
+
+    public function MaybeUnzipSmoothZipFile() {
+//        if(! is_file($this->SmoothZipFilePath()))
+//            return;
+//        $dest = $this->SmoothDirectoryPath();
+//        if(! file_exists($dest)) {
+//            mkdir($dest);
+//            chmod($dest, 0777);
+//        }
+        $this->UnzipSmoothZipFile();
+    }
+
+    public function AddPostComment($comment) {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        $postcomments = "\n----------\n".date("Y-m-d H:i")
+            . "\n$comment
+        {$this->PostComments()}\n";
+
+        $sql = "
+			UPDATE projects
+			SET  postcomments = CONCAT(IFNULL(postcomments, ''), ?)
+			WHERE projectid = '$projectid'";
+
+        $args = [&$postcomments];
+        $dpdb->SqlExecutePS($sql, $args);
+    }
+    /*
+    function UnzipSmoothZipFile($projectid) {
+        $dest = SmoothDirectoryPath($projectid);
+        if(file_exists($dest)) {
+            return;
+        }
+        mkdir($dest);
+        chmod($dest, 0777);
+        $zip = new ZipArchive();
+        $zip->open(SmoothZipFilePath($projectid));
+        $zip->extractTo($dest);
+
+        fix_smooth_paths($dest);
+    }
+    */
+    private function UnzipSmoothZipFile() {
+        if(! file_exists($this->SmoothZipFilePath())) {
+            die("Cannot unzip {$this->SmoothZipFilePath()}");
+        }
+        $dest = $this->SmoothDirectoryPath();
+
+        if(! file_exists($dest)) {
+            mkdir($dest);
+            chmod($dest, 0777);
+        }
+        $zip = new ZipArchive();
+        $zip->open($this->SmoothZipFilePath());
+        $zip->extractTo($dest);
+        $this->fix_smooth_paths();
+    }
+
+    private function fix_smooth_paths() {
+        $dest = $this->SmoothDirectoryPath();
+        $paths = glob("$dest/*");
+        foreach($paths as $path) {
+            $pre = rootname($path);
+            $fixed = nice_filename($pre);
+            $ext = extension($path);
+            $newpath = build_path($dest, "$fixed.$ext");
+            switch($ext) {
+                case "txt":
+                case "epub":
+                case "html":
+                case "pdf":
+                case "mobi":
+                    if($path != $newpath) {
+                        rename($path, $newpath);
+                        dump("$path $newpath");
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    public function SmoothComments() {
+        return $this->_row['smoothcomments'];
+    }
+    public function SetSmoothComments($str) {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        $sql = "UPDATE projects
+                SET smoothcomments = ?
+                WHERE projectid = ?";
+        $args = [&$str, &$projectid];
+        $dpdb->SqlExecutePS($sql, $args);
+    }
+    // =====================================================
+
     public function Credits() {
         global $site_name;
 
-        $credits = array();
+        $credits = [];
         if($this->ProjectManager() != "")
             $credits[$this->ProjectManager()] = true;
         if($this->TextPreparer() != "")
@@ -406,6 +642,9 @@ class DpProject
         if(! $this->Exists()) {
             return "";
         }
+        switch($this->Phase()) {
+
+        }
 	    return $this->Phase();
     }
 
@@ -419,11 +658,11 @@ class DpProject
     public function PageStateCounts() {
         static $ary;
         if(! isset($ary)) {
-            $ary = array("A"    => $this->_row["available_count"],
+            $ary      = ["A"    => $this->_row["available_count"],
                          "O"   => $this->_row["checked_out_count"],
                          "C"    => $this->_row["completed_count"],
                          "B"          => $this->_row["bad_count"],
-                         "total"        => $this->_row["n_pages"]);
+                         "total"        => $this->_row["n_pages"]];
         }
         return $ary;
     }
@@ -436,7 +675,7 @@ class DpProject
     // and set page records appropriately
 
     public function AdvanceValidateErrors() {
-        $msgs = array();
+        $msgs = [];
 
 	    // freshen counts in projects row
         $this->RecalcPageCounts();
@@ -492,6 +731,9 @@ class DpProject
                 if($this->PostedNumber() == "") {
                     $msgs[] = "No Posted Number";
                 }
+		if(strlen($this->PostedNumber()) != 8) {
+		    $msgs[] = "Incorrect Posted Number";
+		}
                 if($this->PPVer() == "") {
                     $msgs[] =  "No PPVer";
                 }
@@ -520,8 +762,11 @@ class DpProject
 	 *      in DpPage->SaveText which is used for editing actions
 	 */
     public function MaybeAdvanceRound() {
-//        $projectid = $this->ProjectId();
+        global $Context;
 
+        if($this->IsPosted()) {
+            return null;
+        }
 	    // the following checks that all pages are completed
         $msgs = $this->AdvanceValidateErrors();
 
@@ -529,58 +774,77 @@ class DpProject
             return $msgs;
         }
 
-
 	    /*
 	     * For all cases:
 	     * UPDATE project_pages SET status = 'page_avail' WHERE projectid = '$projectid'
 	     */
 
+        $to_phase   = $Context->PhaseAfter($this->Phase());
 
         switch($this->Phase()) {
             case "PREP":
+            case "P1":
+            case "P2":
+                $this->SetPhase($to_phase);
+                assert($this->ClonePageVersions( $to_phase, "PROOF", "A"));
+                break;
+            case "P3":
+            case "F1":
+                $this->SetPhase($to_phase);
+                assert($this->ClonePageVersions( $to_phase, "FORMAT", "A"));
+                break;
+
+            case "F2":
+            case "PP":
+            case "PPV":
+                $this->SetPhase($to_phase);
+                break;
+/*
+            case "PREP":
 	            $this->SetPhase("P1");
 	            assert($this->ClonePageVersions( "P1", "PROOF", "A"));
-	            $this->SetModifiedDate();
+//	            $this->SetModifiedDate();
                 break;
 
             case "P1":
 				$this->SetPhase("P2");
 	            assert($this->ClonePageVersions( "P2", "PROOF", "A"));
-	            $this->SetModifiedDate();
+//	            $this->SetModifiedDate();
                 break;
 
             case "P2":
 	            $this->SetPhase("P3");
 	            assert($this->ClonePageVersions( "P3", "PROOF", "A"));
-	            $this->SetModifiedDate();
+//	            $this->SetModifiedDate();
 	            break;
 
             case "P3":
 	            $this->SetPhase("F1");
 	            assert($this->ClonePageVersions( "F1", "FORMAT", "A"));
-	            $this->SetModifiedDate();
+//	            $this->SetModifiedDate();
 	            break;
 
             case "F1":
 	            $this->SetPhase("F2");
 	            assert($this->ClonePageVersions( "F2", "FORMAT", "A"));
-	            $this->SetModifiedDate();
+//	            $this->SetModifiedDate();
 	            break;
 
             case "F2":
 	            $this->SetPhase("PP");
-	            $this->SetModifiedDate();
+//	            $this->SetModifiedDate();
                 break;
 
             case "PP":
 	            $this->SetPhase("PPV");
-	            $this->SetModifiedDate();
+//	            $this->SetModifiedDate();
 	            break;
 
             case "PPV":
 	            $this->SetPhase("POSTED");
-	            $this->SetModifiedDate();
+//	            $this->SetModifiedDate();
                 break;
+*/
 
             case "POSTED":
                 break;
@@ -600,36 +864,63 @@ class DpProject
     }
 
 	public function PageNames() {
-		global $dpdb;
 		static $_names;
 		if ( ! $_names ) {
-			$_names = $dpdb->SqlValues( "
-				SELECT pagename FROM pages
-				WHERE projectid = '{$this->ProjectId()}'
-				ORDER BY pagename" );
+            global $dpdb;
+            $pid = $this->ProjectId();
+            $sql = "
+				SELECT DISTINCT pagename FROM page_last_versions
+				WHERE projectid = ?
+				ORDER BY pagename";
+            $args = [&$pid];
+            $_names = $dpdb->SqlValuesPS($sql, $args);
 		}
 		return $_names;
 	}
 
-	/*
-	public function LastPageVersion($pagename) {
-		global $dpdb;
-		$projectid = $this->ProjectId();
-		$phase     = $this->Phase();
-		$sql = "
-			SELECT version
-			FROM page_last_versions
-			WHERE projectid = ?
-			AND pagename = ?
-		";
-		$args = array(&$projectid, &$pagename, &$phase);
-		return $dpdb->SqlOneValuePS($sql, $args);
-	}
-	*/
+    /*
+    public function LastPageVersions() {
+        global $dpdb;
+        static $_rows;
+        if(! isset($_rows)) {
+            $projectid = $this->ProjectId();
+            $_rows = $dpdb->SqlRows("
+                SELECT pv.pagename, pv.version, pp.imagefile
+                FROM page_last_versions pv
+                JOIN pages pp
+                ON pv.projectid = pp.projectid
+                    AND pv.pagename = pp.pagename
+                WHERE pv.projectid = '$projectid'
+                ORDER BY pv.pagename");
+        }
+        return $_rows;
+    }
+    */
+
+    public function ImageFileForPageName($pagename) {
+        return $this->_page_byte_offset_array[$pagename]["imagefile"];
+    }
+    public function LastPageVersion($pagename) {
+        return $this->_page_byte_offset_array[$pagename]["version"];
+    }
+
+    public function RoundPageVersions($roundid) {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        return $dpdb->SqlRows("
+			SELECT pv.pagename, pv.version, pp.imagefile
+			FROM page_versions pv
+			JOIN pages pp
+            ON pv.projectid = pp.projectid
+                AND pv.pagename = pp.pagename
+			WHERE pv.projectid = '$projectid'
+			    AND pv.phase = '$roundid'
+			    AND pv.task IN ('PROOF', 'FORMAT')
+			ORDER BY pv.pagename");
+    }
 
 	// Given a project, ad a new version for every page with phase, task, version state
-	public function ClonePageVersions( $phase, $task, $state, $username = "(auto)") {
-		/** @var DpDb $pgdp; */
+	private function ClonePageVersions( $phase, $task, $state, $username = "(auto)") {
 		global $dpdb;
 		// first add the database rows.
 		// We then have a version row without a text file
@@ -671,11 +962,11 @@ class DpProject
 		$this->ClonePageVersionFile( $projectid, $pagename, $version );
 
 		$sql = "REPLACE INTO page_versions
-					(projectid, pagename, version, phase, task, username, state, version_time, crc32, textlen)
+					(projectid, pagename, version, phase, task, username, state, version_time, dateval, crc32, textlen)
 				VALUES
-				 	(?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP(), ?, ?)";
+				 	(?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP(), CURRENT_DATE(), ?, ?)";
 
-		$args = array(&$projectid, &$pagename, &$newversion, &$phase, &$task, &$username, &$state, &$crc32, &$textlen);
+		$args = [&$projectid, &$pagename, &$newversion, &$phase, &$task, &$username, &$state, &$crc32, &$textlen];
 		return $dpdb->SqlExecutePS($sql, $args);
 	}
 	private function ClonePageVersionFile( $projectid, $pagename, $version ) {
@@ -777,7 +1068,7 @@ class DpProject
     }
     public function PPSetComplete() {
         global $User;
-        $msgs = array();
+        $msgs = [];
         assert($this->Phase() == "PP");
         if(! $User->MayPP()) {
             $msgs[] = "User not a PPer.";
@@ -791,7 +1082,7 @@ class DpProject
         $this->ReleasePPHold();
         $this->ClearUserHold("PP");
         $this->SetPhase("PPV");
-        return array();
+        return [];
     }
 
 	public function SetTags($tags) {
@@ -855,7 +1146,7 @@ class DpProject
 
     public function PPVSetComplete() {
         global $User;
-        $msgs = array();
+        $msgs = [];
         assert($this->Phase() == "PPV");
         if(! $User->MayPPV()) {
             $msgs[] = "User not a PPVer.";
@@ -868,7 +1159,7 @@ class DpProject
         }
 
         $this->ClearUserHold("PPV");
-        return array();
+        return [];
     }
 
     public function ClearPPVer() {
@@ -894,62 +1185,142 @@ class DpProject
 //        return $this->UploadPath();
 //    }
 
-    private function RoundsDownloadPath() {
-        return ProjectRoundsDownloadPath($this->ProjectId());
+//    private function RoundsDownloadPath() {
+//        return ProjectRoundsDownloadPath($this->ProjectId());
+//    }
+
+//     function IsPPDownloadFile() {
+//        return file_exists($this->PPDownloadPath());
+//    }
+
+    public function LastCompletedText() {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        $sql = "SELECT pagename, version
+                FROM page_last_completed_versions
+                WHERE projectid = ?
+                ORDER BY pagename";
+        $args = [&$projectid];
+        $pgs = $dpdb->SqlRowsPS($sql, $args);
+        $text = "";
+        foreach($pgs as $pg) {
+            $name = $pg['pagename'];
+            $vsn = $pg['version'];
+            $text .= (ExportPageHeader($pg['pagename'], null) . "\n");
+            $text .= PageVersionText($this->ProjectId(), $name, $vsn) . "\n";
+        }
+        return $text;
     }
 
-    private function IsPPDownloadFile() {
-        return file_exists($this->PPDownloadPath());
-    }
-
-	public function PhaseExportText($phase) {
+    /*
+     * $include can be nothing, separator, names, or pagetag
+     * $exact is true or false
+     * $pagetags is true or false
+     */
+	public function PhaseExportText($phase, $include = "nothing", $exact = false) {
 		global $dpdb;
+        switch($phase) {
+            case "PP":
+            case "PPV":
+            case "POSTED":
+                $phase = "F2";
+                break;
+
+            default:
+                break;
+        }
+        $projectid = $this->ProjectId();
 		$sql = "SELECT
-					pagename,
-					version
-			    FROM page_versions
-			    WHERE projectid = '{$this->ProjectId()}'
-			    	AND phase = '$phase'
-			    	AND state = 'C'
-		        ORDER BY pagename";
-		$pgs = $dpdb->SqlRows($sql);
+					pv.pagename,
+					pp.imagefile,
+					pv.version,
+					pv.state,
+					pv2.proofernames
+			    FROM page_versions pv
+			    JOIN pages pp
+			    ON pv.projectid = pp.projectid
+			        AND pv.pagename = pp.pagename
+			    LEFT JOIN (
+                    SELECT  projectid,
+                            pagename,
+                            GROUP_CONCAT(username) proofernames
+                    FROM page_versions
+                    WHERE state = 'C'
+                    GROUP BY projectid, pagename
+                    ORDER BY VERSION
+                ) pv2
+                ON pv.projectid = pv2.projectid
+                    AND pv.pagename = pv2.pagename
+			    WHERE pv.projectid = ?
+			    	AND pv.phase = ?
+			    	AND pv.task IN ('PROOF', 'FORMAT', 'LOAD')
+		        ORDER BY pv.pagename";
+        $args = [&$projectid, &$phase];
+		$pgs = $dpdb->SqlRowsPS($sql, $args);
+
 		$text = "";
 		foreach($pgs as $pg) {
-			$name = $pg['pagename'];
-			$vsn = $pg['version'];
-			$text .= (ExportPageHeader($pg['pagename']) . "\n");
-			$text .= PageVersionText($this->ProjectId(), $name, $vsn);
+            $name = $pg["pagename"];
+            $version  = (integer) $pg["version"];
+            if ($exact && $pg['state'] != "C") {
+                continue;
+            }
+            if($include == "nothing") {
+                $text .=  PageVersionText($this->ProjectId(), $name, $version) . "\n";
+                continue;
+            }
+
+            // $include is "separator" or "names"
+            $names = explode(",", $pg["proofernames"]);
+
+			$text .= ($include == "separator")
+                        ? ExportPageHeader($pg['pagename'], null) . "\n"
+                        : ExportPageHeader($pg['pagename'], $names) . "\n";
+            if($include == "pagetag") {
+                $text .= PageTag($pg['imagefile']);
+            }
+            $text .= PageVersionText($this->ProjectId(), $name, $version) . "\n";
 		}
 		return $text;
 	}
 
-	public function ExportText() {
+/*
+ * problem - excludes last versions not completed
+	public function ExportPPText() {
 		global $dpdb;
 		$projectid = $this->ProjectId();
-		$rows = $dpdb->SqlRows("
+		$sql = "
 			SELECT pagename, version
 			FROM page_last_versions
-			WHERE projectid = '$projectid'
-		");
+			WHERE projectid = ?
+			    AND state = 'C'";
+        $args = array(&$projectid);
+		$rows = $dpdb->SqlRowsPS($sql, $args);
 		$text = "";
 		foreach($rows as $row) {
 			$pagename = $row['pagename'];
 			$version  = $row['version'];
-			$text .= ExportPageHeader($pagename) . "\n";;
-			$text .= PageVersionText($projectid, $pagename, $version) . "\n";;
+			$text .= ExportPageHeader($pagename) . "\n";
+			$text .= PageVersionText($projectid, $pagename, $version) . "\n";
 		}
 		return $text;
 	}
 
-    public function RoundExportText($roundid, $proofers=false, $exact=false) {
+    public function ExportRoundText( $roundid ) {
 	    global $dpdb;
+
+        $projectid = $this->ProjectId();
+
 	    $sql = "SELECT
 					pagename,
 					version
-			    FROM page_last_versions
-			    WHERE projectid = '{$this->ProjectId()}'
+			    FROM page_versions
+			    WHERE projectid = ?
+			        AND phase = ?
+			        AND task IN ( 'PROOF', 'FORMAT' )
 		        ORDER BY pagename";
-	    $pgs = $dpdb->SqlRows($sql);
+        $args = array(&$projectid, &$roundid);
+	    $pgs = $dpdb->SqlRowsPS($sql, $args);
 	    $text = "";
 	    foreach($pgs as $pg) {
 		    $name = $pg['pagename'];
@@ -957,103 +1328,29 @@ class DpProject
 		    $text .= (ExportPageHeader($pg['pagename']) . "\n");
 		    $text .= PageVersionText($this->ProjectId(), $name, $vsn);
 	    }
-	    return $this->PhaseExportText($roundid, $proofers, $exact);
-//        global $dpdb;
-        /** @var DpProject $project */
-        // only people who can see names on the page details page
-        // can see names here.
-
-	    /*
-        if($exact) {
-            $textfield =
-                ($roundid == "OCR")
-                    ? "master_text"
-                    : ($roundid == "P1")
-                    ? "round1_text"
-                    : ($roundid == "P2")
-                        ? "round2_text"
-                        : ($roundid == "P3")
-                            ? "round3_text"
-                            : ($roundid == "F1")
-                                ? "round4_text"
-                                : "round5_text";
-        }
-        else {
-            switch($roundid) {
-                case "OCR":
-                    $textfield = "master_text";
-                    break;
-                case "P1":
-                    $textfield = "COALESCE(NULLIF(round1_text, ''),
-                                       master_text)";
-                    break;
-                case "P2":
-                    $textfield = "COALESCE(NULLIF(round2_text, ''),
-                                       NULLIF(round1_text, ''),
-                                       master_text)";
-                    break;
-                case "P3":
-                    $textfield = "COALESCE(NULLIF(round3_text, ''),
-                                       NULLIF(round2_text, ''),
-                                       NULLIF(round1_text, ''),
-                                       master_text)";
-                    break;
-                case "F1":
-                    $textfield = "COALESCE(NULLIF(round4_text, ''),
-                                       NULLIF(round3_text, ''),
-                                       NULLIF(round2_text, ''),
-                                       NULLIF(round1_text, ''),
-                                       master_text)";
-                    break;
-                case "F2":
-                case "PP":
-                case "newest":
-                case "":
-                    $textfield = "COALESCE( NULLIF(round5_text, ''),
-                                        NULLIF(round4_text, ''),
-                                        NULLIF(round3_text, ''),
-                                        NULLIF(round2_text, ''),
-                                        NULLIF(round1_text, ''),
-                                        master_text)\n";
-                    break;
-                default:
-                    die("Unanticipated round_id: $roundid");
-            }
-        }
-
-        $sql = "
-        SELECT  image,
-                round1_user,
-                round2_user,
-                round3_user,
-                round4_user,
-                round5_user,
-                $textfield AS pagetext
-        FROM {$this->ProjectId()}
-        ORDER BY fileid";
-
-        $rows = $dpdb->SqlRows($sql);
-
-        $text = "";
-        foreach($rows as $row) {
-            $text .= maybe_convert(rowtext($row, $proofers));
-        }
-        return $text;
-	    */
+	    return $this->PhaseExportText($roundid);
     }
 
     public function SavePPDownloadFile() {
         global $Context;
-//        $text = $this->RoundExportText("F2", TRUE, TRUE);
-	    $text = $this->PhaseExportText("F2", true, true) ;
+	    $text = $this->PhaseExportText("F2") ;
         if($this->IsPPDownloadFile()) {
             unlink( $this->PPDownloadPath() );
         }
         $Context->ZipSaveString($this->ProjectId() . ".txt", $text);
     }
+*/
 
-    private function PPDownloadPath() {
-        return $this->RoundsDownloadPath();
+//    private function PPDownloadPath() {
+//        return $this->RoundsDownloadPath();
+//    }
+
+    // will need to be modified to return the rounds specifically for this project
+    public function Rounds() {
+        global $dpdb;
+        return $dpdb->SqlValues("
+                SELECT roundid FROM rounds
+                ORDER BY round_index");
     }
 
     public function PPUploadPath() {
@@ -1067,34 +1364,10 @@ class DpProject
         return file_exists($this->PPUploadPath());
     }
 
-//    public function IsPPVUploadFile() {
-//        return file_exists($this->PPVUploadPath());
-//    }
-
     private function ImageFilesInProjectDirectory() {
         $path = $this->ProjectPath();
         return glob("$path/*");
     }
-
-/*
-    public function NonPageFiles() {
-        global $dpdb;
-        $path = $this->ProjectPath();
-        $allfiles = glob("$path/*");
-        $images = $dpdb->SqlValues("
-            SELECT imagefile FROM pages WHERE projectid = '{$this->ProjectId()}'
-            ORDER BY imagefile");
-
-        $ary = array();
-        foreach($allfiles as $fname) {
-            $bname = basename($fname);
-            if(! in_array($bname, $images)) {
-                $ary[] = $bname;
-            }
-        }
-        return $ary;
-    }
-*/
 
 	// delete a file from the project directory
     public function DeleteProjectFile($filename) {
@@ -1106,6 +1379,9 @@ class DpProject
     }
 
     // cached as $this->_pages
+    /*
+     * only used in cleanup.php and guiprep.php
+     */
     public function PageObjects() {
         global $dpdb;
 
@@ -1136,21 +1412,40 @@ class DpProject
         return $this->_pages;
     }
 
+    public function ImagePaths() {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        $sql = "SELECT imagefile FROM pages
+                WHERE projectid = ?
+                ORDER BY pagename";
+        $args = [&$projectid];
+        $names = $dpdb->SqlValuesPS($sql, $args);
+        $aret = [];
+        foreach($names as $a) {
+            $aret[] = build_path($this->ProjectPath(), $a);
+        }
+        return $aret;
+    }
+
     public function ImagePath($filename) {
         return $filename == ""
             ? ""
             : build_path($this->ProjectPath(), $filename);
     }
 
+    public function ImageUrl($imagefile) {
+        return build_path($this->ProjectUrl(), $imagefile);
+    }
     // queries single table only (pages, or "project" table)
-    // cached as $this->_pagerows
+    // cached as $_pagerows
     // returns old fieldnames (plus "active_text");
     public function PageRows($is_refresh = false) {
+        static $_pagerows;
         global $dpdb;
         $projectid = $this->_projectid;
 
-        if(! isset($this->_pagerows) || $is_refresh) {
-	        $this->_pagerows = $dpdb->SqlRows("
+        if(! isset($_pagerows) || $is_refresh) {
+	        $_pagerows = $dpdb->SqlRows("
                 SELECT
                 	pg.projectid,
                 	pv.phase,
@@ -1162,156 +1457,60 @@ class DpProject
 
                 FROM pages pg
 
-                LEFT JOIN page_last_versions pv
+                JOIN page_last_versions pv
                 	ON pg.projectid = pv.projectid
                 	AND pg.pagename = pv.pagename
 
 	            WHERE pg.projectid = '$projectid'
                 ORDER BY pg.pagename");
-	        /*
-            $this->_pagerows = $dpdb->SqlRows("
-                SELECT
-                	pp.projectid,
-                	ppp.phase,
-                	ppp.pagename,
-                	pp.imagefile,
-                	ppp.username,
-                	ppp.version_time
-                FROM pages pp
-                LEFT JOIN page_versions ppp
-                	ON pp.projectid = ppp.projectid
-                	AND pp.pagename = ppp.pagename
-
-	            LEFT JOIN page_versions ppp0
-                	ON ppp.projectid = ppp0.projectid
-                	AND ppp.pagename = ppp0.pagename
-                	AND ppp.id < ppp0.id
-
-	            WHERE pp.projectid = '$projectid'
-	            	AND ppp0.id IS NULL
-                ORDER BY pagename");
-	        */
         }
-        return $this->_pagerows;
+        return $_pagerows;
     }
-
-/*
-	public function PageRows2($is_refresh = false) {
-		global $dpdb;
-		$projectid = $this->_projectid;
-
-		if(! isset($this->_pagerows) || $is_refresh) {
-			$this->_pagerows = $dpdb->SqlRows("
-                SELECT
-                    projectid,
-                    status,
-                    pagename AS fileid,
-                    pagename,
-                    imagefile AS image,
-                    imagefile,
-                    round1_user,
-                    round2_user,
-                    round3_user,
-                    round4_user,
-                    round5_user,
-
-                    round1_time,
-                    round2_time,
-                    round3_time,
-                    round4_time,
-                    round5_time
-
-                FROM project_pages
-                WHERE projectid = '$projectid'
-                ORDER BY pagename");
-		}
-		return $this->_pagerows;
-	}
-*/
 
     public function ProjectRow() {
         return $this->_row;
     }
 
-	/*
-    public function ActivePageRows() {
-        global $dpdb;
-        static $_rows;
-        if(! isset($_rows)) {
-            $_rows = $dpdb->SqlRows("
-                SELECT 
-                    projectid,
-                    fileid AS pagename,
-                    image,
-                    COALESCE( round5_user, round4_user,
-                       round3_user, round2_user,
-                       round1_user, ''
-                    ) AS username,
-
-                    COALESCE( round5_time, round4_time,
-                       round3_time, round2_time,
-                       round1_time, ''
-                    ) AS round_time,
-
-                    COALESCE(
-                        NULLIF(round5_text, ''),
-                        NULLIF(round4_text, ''),
-                        NULLIF(round3_text, ''),
-                        NULLIF(round2_text, ''),
-                        NULLIF(round1_text, ''),
-                        master_text
-                    ) AS active_text
-                FROM $this->_projectid
-                ORDER BY fileid");
-        }
-        return $_rows;
-    }
-
-	public function SetVersionCRC($pagename, $version, $val) {
-		global $dpdb;
-		$projectid = $this->ProjectId();
-		$sql = "
-			UPDATE page_versions
-			SET crc32 = ?
-			WHERE projectid = ?
-				AND pagename = ?
-				AND version = ?
-				";
-		$args = array(&$val, &$projectid, &$pagename, &$version);
-		$dpdb->SqlExecutePS($sql, $args);
-	}
-	*/
-
-//    public function OCRText() {
-//	    return $this->RoundText("PREP");
-//    }
-
-//    public function PageOCRRows() {
-//        global $dpdb;
-//	    return $dpdb->SqlRows("
-//	        SELECT pagename, imagefile, 0
-//		    FROM pages pp
-//		    JOIN page_versions pv
-//		    	ON pp.projectid = pv.projectid
-//		    WHERE projectid = '{$this->ProjectId()}'
-//		    AND version = 0");
-//    }
-
 	public function OCRText() {
 		return $this->RoundText("PREP");
 	}
 
+    // Concatentate versions for the round.
+    // If the round is not available, uses last version
+    // which may not always be what's wanted.
     public function RoundText($phase) {
 	    global $dpdb;
 	    $projectid = $this->ProjectId();
-	    $sql = "SELECT pagename, IFNULL(pv.version, plv.version)
+        switch($phase) {
+            case "PREP":
+            case "P1":
+            case "P2":
+            case "P3":
+            case "F1":
+            case "F2":
+                break;
+
+            case "OCR":
+                $phase = "PREP";
+                break;
+
+            case "PP":
+            case "PPV":
+            case "POSTED":
+                $phase = "F2";
+                break;
+            default:
+                return "";
+        }
+	    $sql = "SELECT pv.pagename,
+						IFNULL(pv.version, plv.version) version
 	            FROM page_versions pv
 	            JOIN page_last_versions plv
 		    	ON pv.projectid = plv.projectid
 		    		AND pv.pagename = plv.pagename
-	            WHERE projectid = ?
-	            	AND phase = ?";
-	    $args = array(&$projectid, &$phase);
+	            WHERE pv.projectid = ?
+	            	AND pv.phase = ?";
+	    $args = [&$projectid, &$phase];
 	    $rows = $dpdb->SqlRowsPS($sql, $args);
 
 	    $text = "";
@@ -1338,7 +1537,6 @@ class DpProject
 		foreach($rows as $row) {
 			$txt .= ("[pgnum id='{$row['pagename']}']"
 					 . PageVersionText( $this->ProjectId(), $row['pagename'], $row['version'])
-			         . $row['active_text']
 			         . "\n");
 		}
 		return $txt;
@@ -1355,12 +1553,25 @@ class DpProject
 	}
 
 	public function ActivePageArray() {
-		return $this->PageActiveTextArray($this->Phase());
+		return $this->PagePhaseTextArray($this->Phase());
 	}
     // in the following, $roundid is the last text
     // to include if not null
-    public function PageActiveTextArray($phase = "") {
+    public function PagePhaseTextArray($phase = "") {
         global $dpdb;
+
+        switch($phase) {
+            case "PREP":
+            case "P1":
+            case "P2":
+            case "P3":
+            case "F1":
+            case "F2":
+                break;
+            default:
+                $phase = "";
+                break;
+        }
 
 	    if($phase == "") {
 			$sql = "
@@ -1407,82 +1618,16 @@ class DpProject
 
 	    }
 	    return $dpdb->SqlRows($sql);
-	    /*
-        $ary = array();
-        if($this->RoundId() == "OCR") {
-            $ary[] = "master_text";
-        }
-        else {
-            $rdx = RoundIndexForId($roundid);
-            for($i = $rdx; $i >= 0; $i--) {
-                $ary[] = "NULLIF(".TextFieldForRoundIndex($i).", '')";
-            }
-        }
-
-        $sql = "
-			SELECT fileid AS pagename,
-                image AS imagefile,
-                COALESCE(
-                ".implode(", ", $ary)."
-                ) AS text,
-                CONCAT(
-                    CASE WHEN round1_user IS NULL OR round1_user = ''
-                        THEN '' ELSE CONCAT('\\\\', round1_user) END,
-                    CASE WHEN round2_user IS NULL OR round2_user = ''
-                        THEN '' ELSE CONCAT('\\\\', round2_user) END,
-                    CASE WHEN round3_user IS NULL OR round3_user = ''
-                        THEN '' ELSE CONCAT('\\\\', round3_user) END,
-                    CASE WHEN round4_user IS NULL OR round4_user = ''
-                        THEN '' ELSE CONCAT('\\\\', round4_user) END,
-                    CASE WHEN round5_user IS NULL OR round5_user = ''
-                        THEN '' ELSE CONCAT('\\\\', round5_user) END,
-                    '\\\\'
-                ) AS proofers
-                FROM $this->_projectid
-                ORDER BY fileid";
-        return $dpdb->SqlRows($sql);
-	    */
     }
 
-	/*
-	 * A page is added when we hae an image file and text.
-	 *
-	 * 1. Copy the image file into the project directory
-	 * 2. Archive the image file
-	 * 3. Add a pages record
-	 * 4. Add a page_versions record, version 0
-	 * 5. Copy the text file to a version file
-	 * 6. Archive the text file
-	 * 7. delete the image file
-	 * 8. delete the text file
-	 */
-
-	//
-	// 2
-	//
-
-	//
-	// 3
-	//
-
-
-	//
-	// 4 add pages record
-	//
-
-	//
-	// 5 add pages record
-	//
-
-
-	//
-	// 6 add pages record
-	//
-
-
-	//
-	// 7 add pages record
-	//
+    public function IsPage($pagename) {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        return $dpdb->SqlOneValue("
+            SELECT COUNT(1) FROM pages
+            WHERE projectid = '$projectid'
+            AND pagename = '$pagename'") > 0;
+    }
 
     public function Page($pagename) {
         if(!empty($pagename))
@@ -1493,18 +1638,23 @@ class DpProject
         }
     }
 
+/*
     public function FirstPage() {
         $rows = $this->PageRows();
         $firstname = $rows[0]["fileid"];
         return new DpPage($this->ProjectId(), $firstname);
     }
+*/
 
+/*
+ *  only used in zip_images.php
+ *
     public function ProjectPages() {
         static $pgs ;
 
         if(! isset($pgs ) ) {
             $projectid = $this->ProjectId();
-            $pgs = array();
+            $pgs = [];
             foreach($this->PageRows() as $row) {
                 $pagename = $row['fileid'];
                 $pgs[$pagename] = new DpPage($projectid, $pagename);
@@ -1512,10 +1662,18 @@ class DpProject
         }
         return $pgs;
     }
+*/
 
-    public function AvailableCount() {
-	    return $this->StateCount("A");
-    }
+
+	public function PageCount() {
+		global $dpdb;
+		$projectid = $this->ProjectId();
+		$sql = "
+	        SELECT COUNT(1) FROM page_last_versions
+	        WHERE projectid = ?";
+		$args = [&$projectid];
+		return $dpdb->SqlOneValuePS($sql, $args);
+	}
 
 	protected function StateCount($state) {
 		global $dpdb;
@@ -1526,17 +1684,23 @@ class DpProject
 	        WHERE projectid = '$projectid'
 	        	AND state = '$state'");
 	}
+	public function AvailableCount() {
+		return $this->StateCount("A");
+	}
+	public function BadCount() {
+		return $this->StateCount("B");
+	}
     public function CompletedCount() {
 	    return $this->StateCount("C");
     }
+	public function CheckedOutCount() {
+		return $this->StateCount("O");
+	}
 
     public function UncompletedCount() {
         return $this->PageCount() - $this->CompletedCount();
     }
 
-    public function CheckedOutCount() {
-	    return $this->StateCount("O");
-    }
 
 	public function ReclaimableCount() {
 		global $dpdb;
@@ -1552,30 +1716,10 @@ class DpProject
         return $this->BadCount() > 0;
     }
 
-    public function BadCount() {
-	    return $this->StateCount("B");
-    }
 
     public function BackupTableName() {
         return $this->ProjectId() . "_backup";
     }
-
-//    public function IsBackupTable() {
-//        global $dpdb;
-//        return $dpdb->IsTable($this->BackupTableName());
-//    }
-
-	/* unneeded */
-
-//    public function CreateBackupTable() {
-//        global $dpdb;
-//        $projectid = $this->ProjectId();
-//        $bkuptable = $this->BackupTableName();
-//        if($this->IsBackupTable()) {
-//            $dpdb->SqlExecute("DROP TABLE $bkuptable");
-//        }
-//        $dpdb->SqlExecute("CREATE TABLE $bkuptable SELECT * FROM $projectid");
-//    }
 
     public function CloneProject() {
         global $Context;
@@ -1640,12 +1784,7 @@ class DpProject
         return $new_project_id;
     }
 
-//    public function CreateProjectTable() {
-//        global $Context;
-//        $Context->CreateProjectTable($this->ProjectId());
-//    }
-
-	public function IsActivePhase() {
+	public function IsRoundPhase() {
 		switch($this->Phase()) {
 			case "P1":
 			case "P2":
@@ -1658,13 +1797,6 @@ class DpProject
 		}
 	}
 
-    public function PageCount() {
-	    global $dpdb;
-	    return $dpdb->SqlOneValue("
-	        SELECT COUNT(1) FROM pages
-	        WHERE projectid = '{$this->ProjectId()}'");
-    }
-
     public function ProjectId() {
         return $this->_projectid;
     }
@@ -1673,16 +1805,32 @@ class DpProject
         return ProjectPath($this->ProjectId());
     }
 
+    public function IsRoundsComplete() {
+        switch($this->Phase()) {
+            case "PP":
+            case "PPV":
+            case "POSTED":
+                return true;
+            default:
+                return false;
+        }
+    }
+
     public function PostComments() {
         return trim($this->_row['postcomments']);
     }
+    
+    public function PrependPostComments($str) {
+        $str .= ("\n\n" . $this->PostComments());
+        $this->SetPostComments($str);
+    }
 
-    public function SetPostComments($str) {
+    private function SetPostComments($str) {
         global $dpdb;
         $projectid = $this->ProjectId();
         $sql = "UPDATE projects SET postcomments = ?
                 WHERE projectid = '$projectid'";
-        $args = array(&$str);
+        $args = [&$str];
         $dpdb->SqlExecutePS($sql, $args);
         $this->_row['postcomments'] = $str;
     }
@@ -1721,7 +1869,7 @@ class DpProject
 		$sql = "UPDATE projects
 				SET cp_comments = ?
 				WHERE projectid = ?";
-		$args = array(&$str, &$projectid);
+		$args = [&$str, &$projectid];
 		return $dpdb->SqlExecutePS($sql, $args);
 	}
 
@@ -1780,7 +1928,7 @@ class DpProject
         global $dpdb;
         $sql = "UPDATE projects SET {$fieldname} = ?
                 WHERE projectid = '{$this->ProjectId()}'";
-        $args = array(&$value);
+        $args = [&$value];
         $dpdb->SqlExecutePS($sql, $args);
     }
 
@@ -1931,6 +2079,12 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             : $Context->LatestTopicPostTime($this->ForumTopicId());
     }
 
+    public function MoveTopicToPhase($phase) {
+        global $Context;
+        $topicid = $this->ForumTopicId();
+        $Context->MoveTopicToPhaseForum($topicid, $phase);
+    }
+
     public function ForumTopicIsEmpty() {
         global $Context;
         return $this->ForumTopicId() == 0
@@ -1980,18 +2134,97 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->_row['extra_credits'] = $val;
     }
 
-	public function IsUserProjectNotify() {
+    public function TogglePostNotify() {
+        if($this->IsPublishUserNotify()) {
+            $this->ClearPublishUserNotify();
+        }
+        else {
+            $this->SetPublishUserNotify();
+        }
+    }
+    private function SetPublishUserNotify() {
+        global $dpdb, $User;
+        $username = $User->Username();
+        $projectid = $this->ProjectId();
+
+        $sql =  "REPLACE INTO notify
+                 (projectid, username, event, mode)
+                 VALUES
+                 (?, ?, 'post', 'pm')";
+        $args = [&$projectid, &$username];
+        $dpdb->SqlExecutePS($sql, $args);
+    }
+    private function ClearPublishUserNotify() {
+        global $dpdb, $User;
+        $username = $User->Username();
+        $projectid = $this->ProjectId();
+
+        $sql = "DELETE FROM notify
+             WHERE projectid = ? AND username = ?
+                AND event = 'post'";
+        $args = [&$projectid, &$username];
+        $dpdb->SqlExecutePS($sql, $args);
+    }
+
+	public function IsPublishUserNotify() {
 		global $User;
 		global $dpdb;
 
 		$username = $User->Username();
 		$projectid = $this->ProjectId();
 
-		return $dpdb->SqlExists("
-			SELECT id FROM notify
+		return $dpdb->SqlOneValue("
+			SELECT COUNT(1) FROM notify
              WHERE projectid = '$projectid'
-                   AND username = '$username'");
+                   AND username = '$username'
+                   AND event = 'post'") > 0;
 	}
+
+    public function ToggleSmoothNotify() {
+        if($this->IsSmoothUserNotify()) {
+            $this->ClearSmoothUserNotify();
+        }
+        else {
+            $this->SetSmoothUserNotify();
+        }
+    }
+    private function SetSmoothUserNotify() {
+        global $dpdb, $User;
+        $username = $User->Username();
+        $projectid = $this->ProjectId();
+
+        $sql =  "REPLACE INTO notify
+                 (projectid, username, event, mode)
+                 VALUES
+                 (?, ?, 'smooth', 'pm')";
+        $args = [&$projectid, &$username];
+        $dpdb->SqlExecutePS($sql, $args);
+    }
+    private function ClearSmoothUserNotify() {
+        global $dpdb, $User;
+        $username = $User->Username();
+        $projectid = $this->ProjectId();
+
+        $sql = "DELETE FROM notify
+             WHERE projectid = ? AND username = ?
+                AND event = 'smooth'";
+        $args = [&$projectid, &$username];
+        $dpdb->SqlExecutePS($sql, $args);
+    }
+
+    public function IsSmoothUserNotify() {
+        global $User;
+        global $dpdb;
+
+        $username = $User->Username();
+        $projectid = $this->ProjectId();
+
+        return $dpdb->SqlOneValue("
+			SELECT COUNT(1) FROM notify
+             WHERE projectid = '$projectid'
+                   AND username = '$username'
+                   AND event = 'smooth'") > 0;
+    }
 
     public function UserCheckedOutPageCount() {
         global $User;
@@ -2085,10 +2318,14 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 		LEFT JOIN page_versions ppv
 			ON pv.projectid = ppv.projectid
 			   AND pv.pagename = ppv.pagename
-				   AND ppv.version = pv.version - 1
+               AND ppv.version = pv.version - 1
 		WHERE p.projectid = '{$this->ProjectId()}'
 			AND pv.state = 'A'
-		   	AND IFNULL(ppv.username, '') != '$username'
+		   	AND
+		   	(
+		   	    IFNULL(ppv.username, '') != '$username'
+		   	    || p.phase = 'F1'       -- allow sequential users P3 -> F1
+            )
 		   	LIMIT 1
 			";
 
@@ -2104,20 +2341,25 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 	    $projectid = $this->ProjectId();
         $username = $User->Username();
 	    $sql = "
-			SELECT pv.pagename
+			SELECT pv.pagename, pv.version
 			FROM page_last_versions pv
-
+            LEFT JOIN page_versions ppv
+                ON pv.projectid = ppv.projectid
+                   AND pv.pagename = ppv.pagename
+				   AND ppv.version = pv.version - 1
 			WHERE pv.projectid = '$projectid'
 				AND pv.state = 'O'
 				AND pv.username != '$username'
+                AND
+                (
+                    IFNULL(ppv.username, '') != '$username'
+                    || pv.phase = 'F1'       -- allow sequential users P3 -> F1
+                )
 				AND pv.version_time < UNIX_TIMESTAMP() - 60 * 60 * 4
 			ORDER BY pv.version_time
 			LIMIT 1
 		";
         $pagename = $dpdb->SqlOneValue($sql);
-//	    if($User->Username() == 'dkretz') {
-//		    die();
-//	    }
 
         return ($pagename != "") 
             ? $this->Page($pagename)
@@ -2127,7 +2369,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     public function MostRecentUserProofDate() {
         global $dpdb;
         global $User;
-        $username = $User->UserName();
+        $username = $User->Username();
         return $dpdb->SqlOneValue ("
 			SELECT MAX(version_time) FROM page_versions
 			WHERE username = '$username'
@@ -2147,7 +2389,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 //    }
 
     private function NextRoundId() {
-        return NextRoundIdForRoundId($this->Roundid());
+        return NextRoundIdForRoundId($this->RoundId());
     }
 
     public function SetPosted($postednum = 0) {
@@ -2159,6 +2401,10 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 	    global $Context;
 	    $idx = $Context->PhaseIndex($this->Phase());
 	    return $Context->IndexPhase($idx - 1);
+    }
+
+    public function IsPosted() {
+        return $this->Phase() == "POSTED";
     }
 
     public function NextPhase() {
@@ -2174,11 +2420,11 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $newphase = $Context->PhaseBefore($oldphase);
 
 	    if(! $is_clear) {
-		    $this->SetUserHold( $newphase, "from reverting projecting from $oldphase" );
+		    $this->SetUserHold( $newphase, "from reverting project from $oldphase" );
 	    }
         $this->SetPhase($newphase);
-        $this->LogProjectEvent("revert", "$oldphase to $newphase");
-        $this->SetModifiedDate();
+        $this->LogProjectEvent(PJ_EVT_REVERT, "$oldphase to $newphase");
+//        $this->SetModifiedDate();
         $this->SetPhaseDate();
         $this->_row["phase"] = $newphase;
         if(! $this->IsPPHold()) {
@@ -2215,6 +2461,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->_row['phase'] = $newphase;
         $this->LogPhaseTransition($phase, $newphase);
         $this->SetPhaseDate();
+        $this->MoveTopicToPhase($newphase);
     }
 
     public function LogPhaseTransition($fromphase, $tophase) {
@@ -2247,11 +2494,13 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
         $this->_row["phase"] = 'DELETED';
         $this->_row["state"] = 'project_delete';
-        $this->SetModifiedDate();
+//        $this->SetModifiedDate();
         $this->SetPhaseDate();
     }
 
     public function DeletePages($pagenames) {
+        // Don't like instantiating in a loop, but ...
+        // Need a generator ...
         foreach($pagenames as $pagename) {
             $this->DeletePage($pagename);
         }
@@ -2288,7 +2537,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     public function PageNameBefore($pagename) {
         global $dpdb;
         $sql = "
-			SELECT MAX(pagename) FROM pages
+			SELECT MAX(pagename) FROM page_last_versions
 			WHERE projectid = '{$this->ProjectId()}'
 				AND pagename < '$pagename'";
 //            SELECT MAX(fileid) FROM $this->_projectid
@@ -2315,7 +2564,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     public function PageNameAfter($pagename) {
         global $dpdb;
         $sql = "
-            SELECT MIN(pagename) FROM pages
+            SELECT MIN(pagename) FROM page_last_versions
             WHERE projectid = '{$this->ProjectId()}'
             	AND pagename > '$pagename'";
         return $dpdb->SqlOneValue($sql);
@@ -2337,7 +2586,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $dpdb->SqlExecute($sql);
     }
 
-    public function LogProjectEvent( $event_type, $remark = null, $phase = null) {
+    private function LogProjectEvent( $event_type, $remark = null, $phase = null) {
         global $dpdb;
         global $User;
 
@@ -2350,7 +2599,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 						SET event_time   = UNIX_TIMESTAMP(),
 							projectid   = '{$projectid}',
 							phase       = '{$phase}',
-							username         = '{$User->Username()}',
+							username    = '{$User->Username()}',
 							event_type  = '$event_type',
 							details1    = '{$remark}'";
 	    $n = $dpdb->SqlExecute($sql);
@@ -2434,6 +2683,8 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return $dpdb->SqlOneValue($sql);
     }
 
+	// DATE_FORMAT(FROM_UNIXTIME(phase_change_date), '%b %e %Y %H:%i') phase_date,
+
     public function ProoferRoundImageFileAfter($imagefile, $roundid) {
         global $dpdb;
         $userfield = UserFieldForRoundId($roundid);
@@ -2509,10 +2760,10 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 			JOIN (
 				SELECT projectid,
 						PHASE,
-						COUNT(pv.state = 'A') n_avail,
-						COUNT(pv.state = 'O') n_out,
-						COUNT(pv.state = 'C') n_done,
-						COUNT(pv.state = 'B') n_bad,
+						SUM(pv.state = 'A') n_avail,
+						SUM(pv.state = 'O') n_out,
+						SUM(pv.state = 'C') n_done,
+						SUM(pv.state = 'B') n_bad,
 						COUNT(1) n_pgs
 				FROM page_last_versions pv
 				WHERE projectid = '$projectid'
@@ -2571,7 +2822,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
     public function Holds() {
         $rows = $this->HoldRows();
-        $aret = array();
+        $aret = [];
         foreach($rows as $row) {
             $aret[] = new DpHold($row);
         }
@@ -2604,10 +2855,10 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 	public function IsQCHold() {
 		global $dpdb;
 		$projectid = $this->ProjectId();
-		return $dpdb->SqlExists("
-			SELECT 1 FROM project_holds
+		return $dpdb->SqlOneValue("
+			SELECT COUNT(1) FROM project_holds
 			WHERE projectid = '$projectid'
-				AND hold_code = 'qc'");
+				AND hold_code = 'qc'") > 0;
 	}
 
     public function QCHoldId() {
@@ -2632,7 +2883,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return $this->PhaseHolds($this->Phase());
     }
     public function ValidUserActions() {
-        return array();
+        return [];
     }
 
     private function IsPhaseHold($phase, $holdcode) {
@@ -2640,11 +2891,11 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $projectid = $this->ProjectId();
 
         $sql = "
-            SELECT 1 FROM project_holds
+            SELECT COUNT(1) FROM project_holds
             WHERE projectid = '$projectid'
                 AND phase = '$phase'
                 AND hold_code = '$holdcode'";
-        $x = $dpdb->SqlExists($sql);
+        $x = $dpdb->SqlOneValue($sql) > 0;
         return $x;
     }
 
@@ -2653,12 +2904,12 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $projectid = $this->ProjectId();
 
         $sql = "
-            SELECT 1 FROM project_holds
+            SELECT COUNT(1) FROM project_holds
             WHERE projectid = '$projectid'
                 AND phase = '$phase'
                 AND hold_code = 'user'
                 AND set_by = '$username'";
-        $x = $dpdb->SqlExists($sql);
+        $x = $dpdb->SqlOneValue($sql) > 0;
         return $x;
     }
     public function SetUserHold($phase, $note = "") {
@@ -2698,7 +2949,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                     note      = ?,
                     set_by    = ?,
                     set_time  = UNIX_TIMESTAMP()";
-		$args = array(&$holdcode, &$projectid, &$phase, &$note, &$username);
+		$args = [&$holdcode, &$projectid, &$phase, &$note, &$username];
 		$dpdb->SqlExecutePS($sql, $args);
 		$this->LogProjectEvent(PJ_EVT_HOLD, "set $holdcode Hold");
 	}
@@ -2713,11 +2964,11 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $projectid = $this->ProjectId();
         $username  = $User->Username();
         // return $dpdb->SqlExecute("
-        if(! $dpdb->SqlExists("
-            SELECT 1 FROM project_holds
+        if($dpdb->SqlOneValue("
+            SELECT COUNT(1) FROM project_holds
             WHERE projectid = '{$this->ProjectId()}'
                 AND hold_code = '$holdcode'
-                AND phase = '$phase'")) {
+                AND phase = '$phase'") == 0) {
             $sql = "
                 INSERT INTO project_holds
                 SET hold_code = '$holdcode',
@@ -2728,7 +2979,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                     set_time  = UNIX_TIMESTAMP()";
             $dpdb->SqlExecute($sql);
             $this->LogProjectEvent(PJ_EVT_HOLD, "set $holdcode Hold");
-//            $this->MaybeAdvanceRound();
         }
     }
 
@@ -2753,16 +3003,16 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         }
         $bwa = array_unique($bwa);
         $this->WriteBadWordsArray($langcode, $bwa);
-        $this->RefreshSuggestedWordsArray($langcode);
+        $this->RefreshAcceptedWordsArray($langcode);
     }
 
     public function BadWordsArray($langcode) {
-        return bad_words_array($this->ProjectId(), $langcode);
+        return project_bad_words_array($this->ProjectId(), $langcode);
     }
 
     // no counts, unique list
     public function GoodWordsArray($langcode) {
-        return good_words_array($this->ProjectId(), $langcode);
+        return project_good_words_array($this->ProjectId(), $langcode);
     }
 
     public function GoodWordCount($langcode = "") {
@@ -2780,17 +3030,15 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     }
 
     public function AddGoodWord($langcode, $word) {
-	    global $Log;
-	    $Log->logWrite($langcode, $word);
-        $this->SubmitGoodWordsArray($langcode, array($word));
+        $this->SubmitGoodWordsArray($langcode, [$word]);
     }
 
     public function AddBadWord($langcode, $word) {
-        $this->SubmitBadWordsArray($langcode, array($word));
+        $this->SubmitBadWordsArray($langcode, [$word]);
     }
 
-    public function SuggestedWordsByCountAlpha($langcode) {
-        $a = $this->SuggestedWordCountArray($langcode);
+    public function AcceptedWordsByCountAlpha($langcode) {
+        $a = $this->AcceptedWordCountArray($langcode);
         $this->sort_words_by_count_alpha($a);
         return $a;
     }
@@ -2803,28 +3051,28 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     }
 
 
-    public function SuggestedWordCountArray($langcode) {
+    public function AcceptedWordCountArray($langcode) {
         return $this->WordCountArray(
-            $this->SuggestedWordsArray($langcode));
+            $this->AcceptedWordsArray($langcode));
     }
 
-    public function SuggestedWordCount($langcode = "") {
-        if($langcode == "") {
-            $langcode = $this->LanguageCode();
-        }
-        return count($this->SuggestedWordsArray($langcode));
-    }
+//    public function SuggestedWordCount($langcode = "") {
+//        if($langcode == "") {
+//            $langcode = $this->LanguageCode();
+//        }
+//        return count($this->AcceptedWordsArray($langcode));
+//    }
 
-	// for an array of words, annotate if theyare flagged, suggested, good, and/or bad
+	// for an array of words, annotate if theyare flagged, accepted, good, and/or bad
 	// by adding a dimension to the array $a[] = [w][c][a]
     private function AnnotateWordCountArray(&$words, $langcode, $notAnnotated = "") {
-        $fwa = $swa = $gwa = $bwa = array();
+        $fwa = $swa = $gwa = $bwa = [];
 
         if ("flagged" != $notAnnotated) {
             $fwa = $this->FlagWordsArray($langcode);
         }
         if ("suggested" != $notAnnotated) {
-            $swa = $this->SuggestedWordsArray($langcode);
+            $swa = $this->AcceptedWordsArray($langcode);
         }
         if ("good" != $notAnnotated) {
             $gwa = $this->GoodWordsArray($langcode);
@@ -2852,8 +3100,8 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     private function WriteWordsArray($code, $langcode, $warray) {
         assert(is_array($warray));
         $warray = array_unique($warray);
-        $warray = array_diff($warray, array(""));
-        _write_words_array(
+        $warray = array_diff($warray, [""]);
+        _write_project_words_array(
             $this->ProjectId(), $code, $langcode, $warray);
     }
 
@@ -2861,37 +3109,37 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->WriteWordsArray("good", $langcode, $w_array);
     }
 
-    public function WriteSuggestedWordsArray($langcode, $words) {
+    public function WriteAcceptedWordsArray($langcode, $words) {
         $this->WriteWordsArray("suggested", $langcode, $words);
     }
-
-    public function SuggestWordsArray($langcode, $w_array) {
-        $this->SubmitSuggestedWordsArray($langcode, $w_array);
+//
+    public function AcceptWordsArray($langcode, $w_array) {
+        $this->SubmitAcceptedWordsArray($langcode, $w_array);
     }
-
-    public function SubmitSuggestedWordsArray( $langcode, $w_array) {
+//
+    public function SubmitAcceptedWordsArray( $langcode, $w_array) {
         if(! is_array($w_array)) {
             return;
         }
-        $s = $this->SuggestedWordsArray($langcode);
+        $s = $this->AcceptedWordsArray($langcode);
         foreach($w_array as $w) {
             $s[] = $w;
         }
         $s = array_unique($s);
-        $this->WriteSuggestedWordsArray($langcode, $s);
-        $this->RefreshSuggestedWordsArray($langcode);
+        $this->WriteAcceptedWordsArray($langcode, $s);
+        $this->RefreshAcceptedWordsArray($langcode);
     }
 
-    public function DeleteSuggestedWordsArray($langcode, $awords) {
-        $ary = $this->SuggestedWordsArray($langcode);
-        $out = array();
+    public function DeleteAcceptedWordsArray($langcode, $awords) {
+        $ary = $this->AcceptedWordsArray($langcode);
+        $out = [];
         foreach($ary as $a) {
             if(in_array($a, $awords))
                 continue;
             $out[] = $a;
         }
-        $this->WriteSuggestedWordsArray($langcode, $out);
-        $this->RefreshSuggestedWordsArray($langcode);
+        $this->WriteAcceptedWordsArray($langcode, $out);
+        $this->RefreshAcceptedWordsArray($langcode);
     }
 
     // apply words to current good words list
@@ -2903,7 +3151,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         }
         $gwa = array_unique($gwa);
         $this->WriteGoodWordsArray($langcode, $gwa);
-        $this->RefreshSuggestedWordsArray($langcode);
+        $this->RefreshAcceptedWordsArray($langcode);
     }
 
     public function WriteGoodWordsList($langcode, $words) {
@@ -2911,12 +3159,12 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->WriteGoodWordsArray($langcode, $wary);
     }
 
-    public function RefreshSuggestedWordsArray($langcode) {
-        $s = $this->SuggestedWordsArray($langcode);
+    public function RefreshAcceptedWordsArray($langcode) {
+        $s = $this->AcceptedWordsArray($langcode);
         $g = $this->GoodWordsArray($langcode);
         $b = $this->BadWordsArray($langcode);
-
-        $map = $out = array();
+//
+        $map = $out = [];
         foreach($s as $word)
             $map[$word] = 1;
 
@@ -2932,14 +3180,14 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             if($ok)
                 $out[] = $word;
 
-        $this->WriteSuggestedWordsArray( $langcode, $out);
+        $this->WriteAcceptedWordsArray( $langcode, $out);
     }
 
     public function FlagWordCountArray($langcode) {
         return $this->WordCountArray(
             $this->FlagWordsArray($langcode));
     }
-
+//
     public function AdHocWordCountArray($langcode, $strwords) {
         $ary = text_to_words($strwords);
         $ary = $this->WordCountArray($ary);
@@ -2947,18 +3195,10 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->AnnotateWordCountArray($ary, $langcode);
         return $ary;
     }
-
-    public function PageByteOffsetArray() {
-        $ary = array();
-	    if(! $ary) {
-		    $netos = 0;
-		    foreach ( $this->_page_byte_offset_array as $pg => $os ) {
-			    $netos += $os;
-			    $ary[] = array( "page" => $pg, "offset" => $netos );
-		    }
-	    }
-        return $ary;
-    }
+//
+	public function PageByteOffsetArray() {
+        return $this->_page_byte_offset_array;
+	}
 
     public function PageNameForByteOffset($offset) {
         $ret = null;
@@ -2968,16 +3208,21 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             return "";
         }
 
-        foreach($a as $pg) {
-            $pgoffset = $pg["offset"];
-            if($offset < $pgoffset) {
-                return $pg["page"];
+        $ret = null;
+        foreach($a as $pgname => $data) {
+            if($offset < $data["offset"]) {
+                break;
             }
+            $ret = $pgname;
         }
-        return null;
+        return $ret;
+    }
+
+    public function VersionForPageName($pagename) {
+        return $this->_page_byte_offset_array[$pagename]["version"];
     }
     public function ByteOffsetForPageName($pagename) {
-        return $this->_page_byte_offset_array[$pagename];
+        return $this->_page_byte_offset_array[$pagename]["offset"];
     }
 
     public function PageForByteOffset($offset) {
@@ -2991,29 +3236,35 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
      * given a word and its character offset into project text,
      * locate the page and line # on page and return 5 adjacent lines
      */
-    public function ContextForOffset($word, $offset) {
-        $pg = $this->PageForByteOffset($offset);
-	    if(! $pg) {
-		    assert(false);
-		    dump($this->ProjectId());
-		    dump(" |$word|$offset");
-	    }
-        $pagename = $pg->PageName();
-        $pgtext = $pg->ActiveText();
+    function ContextForByteOffset($word, $offset) {
+        $projectid = $this->ProjectId();
+        $pagename = $this->PageNameForByteOffset($offset);
+        $version = $this->LastPageVersion($pagename);
+//        $imagefile = $this->ImageFileForPageName($pagename);
+        if(! $pagename) {
+            assert(false);
+            dump($projectid);
+            dump(" |$word|$offset");
+            exit();
+        }
+        $pgtext = PageVersionText($projectid, $pagename, $version);
         $pgoffset = $this->ByteOffsetForPageName($pagename);
         $pglines = text_lines($pgtext);
         $pgposn = $offset - $pgoffset;
-        $lineindex = RegexCount("\n", "u", bleft($pgtext, $pgposn));
+        $lineindex = RegexCount("\n", "u", bleft($pgtext, $pgposn)) + 1;
 
-        $ary = array();
+        $ary = [];
         $ary['offset'] = $offset;
+        $ary['pgoffset'] = $pgoffset;
+        $ary['pgposn'] = $pgposn;
         $ary['word'] = $word;
-        $ary['imageurl'] = $pg->ImageUrl();
+        $ary['imageurl'] = $this->ImageUrl($pagename);
+        $ary['projectid'] = $projectid;
         $ary['pagename'] = $pagename;
-        $ary['lineindex'] = $lineindex + 1;
+        $ary['lineindex'] = $lineindex;
         $ary['linecount'] = count($pglines);
         // back up 2 lines to first
-        $lstart = max(0, $lineindex - 2);
+        $lstart = max(0, $lineindex - 3);
         $ary['lstart'] = $lstart;
         $context = implode("\n", array_slice($pglines, $lstart, 5));
         $context = ReplaceRegex("(?<!\p{L})".$word."(?!\p{L})",
@@ -3021,15 +3272,50 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $ary['context'] = $context;
         return $ary;
     }
+    /*
+    public function ContextForByteOffset($word, $offset) {
+        $pg = $this->PageForByteOffset($offset);
+	    if(! $pg) {
+		    assert(false);
+		    dump($this->ProjectId());
+		    dump(" |$word|$offset");
+            exit();
+	    }
+        $pagename = $pg->PageName();
+        $pgtext = $pg->ActiveText();
+        $pgoffset = $this->ByteOffsetForPageName($pagename);
+        $pglines = text_lines($pgtext);
+        $pgposn = $offset - $pgoffset;
+        $lineindex = RegexCount("\n", "u", bleft($pgtext, $pgposn)) + 1;
+
+        $ary = [];
+        $ary['offset'] = $offset;
+        $ary['pgoffset'] = $pgoffset;
+        $ary['pgposn'] = $pgposn;
+        $ary['word'] = $word;
+        $ary['imageurl'] = $pg->ImageUrl();
+        $ary['pagename'] = $pagename;
+        $ary['lineindex'] = $lineindex;
+        $ary['linecount'] = count($pglines);
+        // back up 2 lines to first
+        $lstart = max(0, $lineindex - 3);
+        $ary['lstart'] = $lstart;
+        $context = implode("\n", array_slice($pglines, $lstart, 5));
+        $context = ReplaceRegex("(?<!\p{L})".$word."(?!\p{L})",
+            "<span class='wcontext'>{$word}</span>", "u", $context);
+        $ary['context'] = $context;
+        return $ary;
+    }
+    */
 
     public function StringContexts($str) {
-        $stroffsets  = RegexStringOffsets($str, $this->TextForWords());
-        $rsp         = array();
+        $stroffsets  = RegexStringByteOffsets($str, $this->TextForWords());
+        $rsp         = [];
         $rsp['str']  = $str;
-        $rsp['contexts'] = array();
+        $rsp['contexts'] = [];
         foreach($stroffsets as $oset) {
             $offset = $oset[1];
-            $wctxt = $this->ContextForOffset($str, $offset);
+            $wctxt = $this->ContextForByteOffset($str, $offset);
             $rsp['contexts'][] = $wctxt;
         }
         return $rsp;
@@ -3037,14 +3323,15 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
     public function WordContexts($word) {
         // get project positions for the word
-        $wdoffsets   = RegexWordOffsets($word, $this->TextForWords());
-        $rsp         = array();
+	    $tfw = $this->TextForWords();
+        $wdoffsets   = WordByteOffsets($word, $tfw);
+        $rsp         = [];
         $rsp['word'] = $word;
-        $rsp['contexts'] = array();
+        $rsp['contexts'] = [];
 
         foreach($wdoffsets as $oset) {
             $offset = $oset[1];
-            $wctxt = $this->ContextForOffset($word, $offset);
+            $wctxt = $this->ContextForByteOffset($word, $offset);
             $rsp['contexts'][] = $wctxt;
         }
         return $rsp;
@@ -3052,7 +3339,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
     public function RegexMatchArray($strfind, $isic) {
         if($strfind == "") {
-            return array();
+            return [];
         }
         $flags = $isic ? "ui" : "u";
         $n = RegexCount($strfind, $flags, $this->TextForWords());
@@ -3102,7 +3389,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
 	public function BadWordCountNotZero($langcode) {
 		$ary = $this->BadWordCountArray($langcode);
-		$bry = array();
+		$bry = [];
 		foreach($ary as $a => $c) {
 			if($c > 0) {
 				$bry[$a] = $c;
@@ -3113,7 +3400,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     public function BadWordsByCountAlpha($langcode) {
         $wds = $this->BadWordCountNotZero($langcode);
         $this->sort_words_by_count_alpha($wds);
-	    $b = array();
+	    $b = [];
 	    foreach($wds as $a => $c) {
 		   if($c > 0) {
 			   $b[$a] = $c;
@@ -3147,12 +3434,12 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 	// including varieties of case
 	// in form a[] = array(w, c);
     public function ActiveWordCounts() {
-        $ary = array();
+        $ary = [];
         foreach($this->ActiveTextWords() as $w) {
             $ary[$w] = isset($ary[$w]) ? $ary[$w] + 1 : 1;
         }
 	    // restate as array of arrays
-//	    $aret = array();
+//	    $aret = [];
 //	    foreach($ary as $w => $c) {
 //		    $aret[] = array($w, $c);
 //	    }
@@ -3162,7 +3449,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 	public function ActiveWordsByCount() {
 		$a = $this->ActiveWordCounts();
 		foreach($a as $w => $c) {
-			$ary[] = array($w, $c);
+			$ary[] = [$w, $c];
 		}
 		usort($ary,
 			function($a1, $a2) {
@@ -3177,9 +3464,9 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 	public function ActiveWordsAlpha() {
 		$a = $this->ActiveWordCounts();
 		// convert to array type for context page
-		$ary = array();
+		$ary = [];
 		foreach($a as $w => $c) {
-			$ary[] = array($w, $c);
+			$ary[] = [$w, $c];
 		}
 
 		usort($ary,
@@ -3209,14 +3496,14 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         }
 	    // get counts from array of all words for lookup
         $wds = $this->ActiveWordCounts();
-        $a = array();
+        $a = [];
         // for each queried word
         foreach($w_array as $w) {
             if(isset($wds[$w])) {
-                $a[] = array($w, $wds[$w]);
+                $a[] = [$w, $wds[$w]];
             }
             else {
-                $a[] = array($w, 0);
+                $a[] = [$w, 0];
             }
         }
         return $a;
@@ -3249,15 +3536,15 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return array_unique($ew->WordsArray());
     }
 
-    public function SuggestedWordsArray($langcode) {
-        return suggested_words_array($this->ProjectId(), $langcode);
+    public function AcceptedWordsArray($langcode) {
+        return project_accepted_words_array($this->ProjectId(), $langcode);
     }
 
     public function FlagWordsArray($langcode) {
         $s = $this->SpellWordsArray($langcode);
         $b =  $this->BadWordsArray($langcode);
         $g =  $this->GoodWordsArray($langcode);
-        $out = array();
+        $out = [];
 
         foreach($s as $a)
             if(! in_array($a, $g))
@@ -3282,7 +3569,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             WHERE phase = '$phase'
                 AND projectid = '$projectid'
                 AND hold_code = '$holdcode'");
-        $this->LogProjectEvent(PJ_EVT_HOLD, "release $holdcode Hold");
+        $this->LogProjectEvent(PJ_EVT_RELEASE, "release $holdcode Hold");
         $this->MaybeAdvanceRound();
     }
 
@@ -3297,11 +3584,11 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
     public function IsPPHold() {
         global $dpdb;
-        return $dpdb->SqlExists("
-            SELECT 1 FROM project_holds
+        return $dpdb->SqlOneValue("
+            SELECT COUNT(1) FROM project_holds
             WHERE projectid = '{$this->ProjectId()}'
                 AND hold_code = 'pp'
-                AND phase = 'PP'");
+                AND phase = 'PP'") > 0;
     }
 
     private function SetPPHold($note = "") {
@@ -3349,9 +3636,39 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $dpdb->SqlExecute("
             DELETE FROM project_holds
             WHERE id = $hold->id AND projectid = '{$hold->projectid}'");
-        $this->LogProjectEvent(PJ_EVT_HOLD,
+        $this->LogProjectEvent(PJ_EVT_RELEASE,
                 "release {$hold->hold_code} Hold");
         $this->MaybeAdvanceRound();
+    }
+
+    public function ExtraFilePaths() {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        $path = build_path($this->ProjectPath(), "*");
+        $filepaths = glob($path);
+
+        $images = $dpdb->SqlValues("
+            SELECT imagefile FROM pages
+            WHERE projectid = '$projectid'
+            ORDER BY pagename");
+
+        $notfiles = [];
+        $extrapaths = [];
+        foreach($images as $img) {
+            $notfiles[] = basename($img);
+        }
+        $notfiles[] = "wordcheck";
+        $notfiles[] = "text";
+
+        foreach ($filepaths as $filepath) {
+            $filename = basename($filepath);
+            if ( !in_array( $filename, $notfiles ) ) {
+                if(extension($filename) != "zip") {
+                    $extrapaths[] = $filepath;
+                }
+            }
+        }
+        return $extrapaths;
     }
 
     public function SendImageZipFile() {
@@ -3369,11 +3686,11 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 //        $Context->ZipSendString($zipstub, $this->ActiveText());
 //    }
 
-    static public function CreateProject($title, $author, $projectmanager = "") {
-        global $Context, $dpdb, $User;
+    public static function CreateProject($title, $author, $projectmanager = "", $cp="") {
+        global $Context, $dpdb ;
 
         $projectid = $Context->NewProjectId();
-	    $username = $User->Username();
+//	    $username = $User->Username();
 
         assert($projectid != "");
         $sql = "
@@ -3381,12 +3698,12 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             SET projectid           = ?,
                 nameofwork          = ?,
                 authorsname         = ?,
-                createdby           = ?,
                 username			= ?,
+                createdby           = ?,
                 phase               = 'PREP',
                 LANGUAGE 			= 'en',
                 createtime          = UNIX_TIMESTAMP()";
-        $args = array(&$projectid, &$title, &$author, &$username, &$projectmanager );
+        $args = [&$projectid, &$title, &$author, &$projectmanager, &$cp];
         $ret = $dpdb->SqlExecutePS($sql, $args);
 	    assert($ret == 1);
         
@@ -3394,8 +3711,8 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 //        $project->CreateProjectTable();
         $project->LogProjectEvent(PJ_EVT_CREATE);
         $project->SetAutoQCHold();
-        $project->SetQueueHold("P1", "released by QC Manager after inspection");
-        $project->SetAutoPMHold("PREP", "release to indicate project is ready for QC");
+        $project->SetQueueHold("P1", "P1 Queue Manager release");
+        $project->SetAutoPMHold("PREP", "PM release to QC manager");
         return $projectid;
     }
 }
@@ -3504,6 +3821,7 @@ class DpHold
 	}
 }
 
+/*
 function TestDpProject() {
 	global $dpdb;
 	$dpdb->SetEcho();
@@ -3532,6 +3850,6 @@ function TestDpProject() {
 	dump( $project->PhaseDateInt() );
 	dump( $project->UserIsPPVer() );
 	dump( $project->IsAvailable() );
-	dump( $project->SmoothUploadPath() );
-
+	dump( $project->SmoothZipUploadPath() );
 }
+*/

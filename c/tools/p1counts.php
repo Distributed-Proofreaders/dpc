@@ -11,7 +11,7 @@ $rows = $dpdb->SqlRows("
         SUM(n_available_pages) available,
         SUM(n_pages) - sum(n_available_pages) unavailable
     FROM projects
-    WHERE state LIKE 'P1%'
+    WHERE phase LIKE 'P1%'
     GROUP BY genre");
 
 if(count($rows) == 0) {
@@ -20,5 +20,9 @@ if(count($rows) == 0) {
 
 $tbl = new DpTable();
 $tbl->SetRows($rows);
+
+echo html_head("P1 Genres");
+echo "<h1 class='center'>P1 Genres</h1>\n";
 $tbl->EchoTable();
+echo html_end();
 

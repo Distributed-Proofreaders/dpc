@@ -1,5 +1,5 @@
 <?php
-include_once($relPath.'wordcheck_engine.inc');
+//include_once($relPath.'wordcheck_engine.inc');
 
 // Arguments:
 //   orig_text - original text to run through dictionary

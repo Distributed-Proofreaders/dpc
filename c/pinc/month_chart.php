@@ -20,7 +20,7 @@ function makeMonthlyChart($phase) {
     global $dpdb;
     $psql = monthly_sql($phase);
     $obj = $dpdb->SqlObjects($psql);
-    $data = array();
+    $data = [];
     foreach($obj as $o) {
         $moyr = "{$o->mo}/{$o->yr}";
         $data[$moyr] = $o->pages;
@@ -49,7 +49,8 @@ function echoMonthlyChart($phase, $data, $div_id) {
                 title: 'Monthly {$phase} Pages',
                 height: 300,
                 width:  700,
-                curveType: 'function'
+                curveType: 'function',
+                legend: 'none'
             };
             var chart_{$phase}
                 = new google.visualization.LineChart(document.getElementById('$div_id'));

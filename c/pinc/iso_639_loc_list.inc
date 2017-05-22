@@ -1,4 +1,4 @@
-<?PHP
+<?php
 $iso_639_loc=array(
 "hy"=>"", //Armenian
 "bg"=>"Български",

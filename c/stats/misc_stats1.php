@@ -1,8 +1,6 @@
 <?PHP
 $relPath='../pinc/';
 include_once($relPath.'dpinit.php');
-include_once($relPath.'dpsql.inc');
-include_once($relPath.'theme.inc');
 
 $phase = Arg("phase", Arg("roundid"))
 	or die("parameter 'roundid' is unset/empty");
@@ -47,7 +45,7 @@ else {
     $total = $dpdb->SqlOneValue("
         SELECT SUM(page_count)
         FROM total_user_round_pages
-        WHERE round_id = '$phase'");
+        WHERE phase = '$phase'");
     $total = number_format($total);
     echo _("<h3 class='center'>Total Round $phase Pages Proofread Since Statistics Were Kept</h3>");
 }
@@ -77,7 +75,7 @@ else {
                CONCAT(MONTH(dateval), '-', YEAR(dateval)) moyr,
                SUM(page_count) pages
         FROM user_round_pages
-        WHERE round_id = '{$phase}'
+        WHERE phase = '{$phase}'
         GROUP BY yr, mo
         order by yr, mo";
 }

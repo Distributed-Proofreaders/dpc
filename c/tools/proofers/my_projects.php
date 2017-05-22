@@ -1,13 +1,15 @@
 <?PHP
 $relPath='../../pinc/';
 include_once($relPath.'dpinit.php');
-//include_once($relPath.'stages.inc');
 
 $pcheckout      = ArgArray("checkout");     // checkout to PP
 $puncheckout    = ArgArray("uncheckout");   // return without upload
 $pupload        = ArgArray("upload");       // complete with upload
 $psetcomplete   = ArgArray("setcomplete");  // complete without upload
 $upload_action  = Arg("upload_action");
+
+$User->IsLoggedIn()
+	or RedirectToLogin();
 
 $error_message = "";
 
@@ -59,13 +61,6 @@ if(count($psetcomplete) > 0) {
 }
 
 
-//$theme_args = array();
-//if($User->IsNewWindow()) {
-//    $newProofWin_js = include($relPath.'js_newwin.inc');
-//    $theme_args['js_data'] = $newProofWin_js;
-//    $link_js = "onclick='newProofWin(\"%s\"); return false;'";
-//}
-
 if ( $User->IsSiteManager() || $User->IsProjectFacilitator() ) {
     $username = Arg("username", $User->Username() );
 }
@@ -74,14 +69,61 @@ else {
 }
 
 $no_stats = 1;
-//theme( _("My Projects"), 'header', $theme_args );
 theme( _("My Projects"), 'header');
+
+/*
+$smoothies = $dpdb->SqlRows("
+    SELECT
+        sr.username,
+        sr.projectid,
+        p.phase,
+        p.nameofwork,
+        p.authorsname,
+        p.username,
+        p.postproofer,
+        p.smoothread_deadline,
+        p.n_pages
+    FROM
+        smoothread sr
+        LEFT JOIN projects p
+            ON sr.projectid = p.projectid
+    WHERE phase IN ('PREP', 'P1', 'P2', 'P3', 'F1', 'F2', PP')
+        AND p.smoothread_deadline > UNIX_TIMESTAMP()
+        AND username = '$username'");
+
+if(count($smoothies) > 0) {
+    $tblsmooth = new DpTable("tblsmooth", "dptable", "Projects you volunteered to Smooth Read");
+    $tblsmooth->AddColumn("<Title", "nameofwork");
+    $tblsmooth->AddColumn("<Author", "authorsname");
+    $tblsmooth->AddColumn("^<PM", "username");
+    $tblsmooth->AddColumn("^<PPer", "postproofer");
+    $tblsmooth->SetRows($smoothies);
+}
+*/
+
+
+if ( $username == $User->Username() ) {
+    $heading_proof = _("My Projects");
+    $open_title = _("I have pages checked out for proofing in the following projects");
+    $open_heading = _("Projects I've helped format and/or proof");
+    $heading_reserved =  _("Projects reserved for me to post-process");
+}
+else {
+    $open_title = _("$username has pages checked out for proofing in the following projects");
+    $open_heading = _("Projects $username has helped format and/or proof");
+    $heading_reserved =  _("Projects reserved for $username to post-process");
+}
+
+
+
+
+// --------------------------------------------------------------
 
 echo link_to_my_diffs("P1", "My diffs", true);
 
 if($User->IsSiteManager() || $User->IsProjectFacilitator()) {
 	echo "
-	<form name='frmuser' id='frmuser' action=''>
+	<form name='frmuser' id='frmuser'>
 	<div class='left'>
 		<label> Username:
 		<input type='text' id='username' name='username' value='{$username}'>
@@ -91,125 +133,28 @@ if($User->IsSiteManager() || $User->IsProjectFacilitator()) {
 	</form>\n";
 }
 
-if ( $username == $User->Username() ) {
-    $head_title = $heading_proof = _("My Projects");
-    $open_title = _("I have pages checked out for proofing in the following projects");
-    $heading_proof = _("Projects I've helped format and/or proof");
-    $heading_reserved =  _("Projects reserved for me to post-process");
-}
-else {
-    $head_title = _("Projects for User $username");
-    $open_title = _("$username has pages checked out for proofing in the following projects");
-    $heading_proof = _("Projects $username has helped format and/or proof");
-    $heading_reserved =  _("Projects reserved for $username to post-process");
-}
-
-echo "<h2 class='center'>$head_title</h2>\n";
-
 $rows = open_page_counts($username);
 if(count($rows) > 0) {
     echo "
-    <hr>
-    <h3 class='center'>" . _("Proofing Pages") . "</h3>
-        <p class='center'>$open_title</p>\n";
-    show_open_page_counts($rows);
+    <div class='padded bordered margined w75'>
+    <h3 class='center'>" . _("My Open Proofing Pages") . "</h3>
+    <p class='center'>$open_title</p>\n";
+
+    $tbl = new DpTable();
+    $tbl->SetClass("dptable sortable w90");
+    $tbl->AddColumn("<Title", "nameofwork", "etitle");
+    $tbl->AddColumn("^Round", "phase", "ephase");
+    $tbl->AddColumn("^Pages", "pagecount");
+    $tbl->SetRows($rows);
+    $tbl->EchoTable();
+
+    echo "</div>\n";
 }
 
-if ( $username == $User->Username() ) {
-    $head_title = $heading_proof = _("Projects I have Helped Proof");
-}
-else {
-    $head_title = _("Proofing Projects for User $username");
-}
 
 echo_my_pp_projects($username);
 
-
-
-// -------------------------------------------------
-// My projects
-// -------------------------------------------------
-
-$tbl = new DpTable();
-
-$tbl->SetClass("dptable sortable w75");
-
-$tbl->SetId("tbl_my_projects");
-$tbl->AddColumn("<Title", "nameofwork", "eTitle");
-$tbl->AddColumn("<Current state", "phase", "eephase", "sortkey=roundseq");
-$tbl->AddColumn("<Worked in", "round_id", "eRound");
-$tbl->AddColumn("<Last activity", "max_time", "eLastTime", "sortkey=strtime");
-
-
-$sql = "
-    SELECT  pv.projectid,
-            GROUP_CONCAT(DISTINCT pv.phase
-            	ORDER BY ph.sequence
-            	SEPARATOR ', ') round_id,
-            pph.sequence roundseq,
-            DATE_FORMAT(MAX(FROM_UNIXTIME(pv.version_time)), '%b&nbsp;%d,&nbsp;%Y') AS max_time,
-            MAX(FROM_UNIXTIME(pv.version_time)) AS strtime,
-            p.nameofwork,
-            p.username,
-            p.phase,
-            p.state,
-            MIN(h.id) is_hold
-    FROM page_versions pv
-    JOIN projects p ON pv.projectid = p.projectid
-    JOIN phases ph ON pv.phase = ph.phase
-    JOIN phases pph ON p.phase = pph.phase
-    LEFT JOIN project_holds h ON p.projectid = h.projectid AND p.phase = h.phase
-    WHERE pv.username='$username'
-        AND pv.phase IN ('P1', 'P2', 'P3', 'F1', 'F2')
-    GROUP BY pv.projectid
-    ORDER BY strtime DESC
-    ";
-
-    /*
-    SELECT  pe.projectid,
-            GROUP_CONCAT(DISTINCT pe.phase) round_id,
-            DATE_FORMAT(MAX(FROM_UNIXTIME(pe.event_time)), '%M %d %Y') AS max_time,
-            MAX(FROM_UNIXTIME(pe.event_time)) AS strtime,
-            p.nameofwork,
-            p.username,
-            p.phase,
-            p.state,
-            (SELECT COUNT(1) FROM project_holds
-             WHERE projectid = p.projectid AND phase = p.phase) hold_count
-    FROM page_events pe
-    JOIN projects p ON pe.projectid = p.projectid
-    JOIN
-    WHERE pe.username='$username'
-        AND pe.event_type = 'saveAsDone'
-        AND p.archived = 0
-        AND p.phase IN ('P1', 'P2', 'P3', 'F1', 'F2', 'PP', 'PPV')
-    GROUP BY pe.projectid
-    ORDER BY strtime DESC";
-    */
-
-$dpdb->SetTiming();
-
-
-$rows = $dpdb->SqlRows($sql);
-
-echo "<!-- \n $sql \n
- {$dpdb->SqlTime()} \n -->\n";
-
-$dpdb->ClearTiming();
-
-$tbl->SetRows($rows);
-
-echo "<br><br><hr>
-    <h3 class='center'>$heading_proof</h3>\n";
-
-$tbl->EchoTable();
-
-//
-// Qual Projects
-//
-
-//if($User->HasQualProjects()) {
-//}
+echo_open_proofing_projects($username, $open_heading);
 
 theme( '', 'footer' );
 exit;
@@ -243,27 +188,9 @@ function open_page_counts($username) {
             ORDER BY pv.phase, p.nameofwork";
 
 
-	$dpdb->SetTiming();
     $rows = $dpdb->SqlRows($sql);
 
-	echo "<!-- \n $sql \n
-	{$dpdb->SqlTime()} \n -->\n";
-
-	$dpdb->ClearTiming();
-
 	return $rows;
-}
-
-function show_open_page_counts($rows) {
-
-    $tbl = new DpTable();
-    $tbl->SetClass("dptable sortable w50");
-    $tbl->AddColumn("<Title", "nameofwork", "etitle");
-    $tbl->AddColumn("^Round", "phase", "ephase");
-    $tbl->AddColumn("^Pages", "pagecount");
-    $tbl->SetRows($rows);
-    $tbl->EchoTable();
-	echo "<hr>\n";
 }
 
 function etitle($nameofwork, $row) {
@@ -276,27 +203,60 @@ function ephase($phase) {
     return $phase;
 }
 
-function eRound($roundid) {
-	return $roundid;
-//    $a = preg_split("/,\s*/", $roundid);
-//    if(count($a) == 1) {
-//        return $a[0];
-//    }
-//    $b = array();
-//    foreach(array("P1", "P2", "P3", "F1", "F2") as $rid) {
-//        if(array_search($rid, $a)) {
-//            $b[] = $rid;
-//        }
-//    }
-//    return implode(", ", $b);
-}
-
 function ePM($pm) {
     return link_to_pm($pm, $pm, true);
 }
 
 function eLastTime($ts) {
     return $ts;
+}
+
+function echo_open_proofing_projects($username, $heading) {
+    global $dpdb;
+    $tbl = new DpTable();
+
+    $tbl->SetClass("dptable sortable w90");
+
+    $tbl->SetId("tbl_my_projects");
+    $tbl->AddColumn("<Title", "nameofwork", "eTitle");
+    $tbl->AddColumn("<Current state", "phase", "eephase", "sortkey=roundseq");
+    $tbl->AddColumn("<Worked in", "round_id");
+    $tbl->AddColumn("<Last activity", "max_time", "eLastTime", "sortkey=strtime");
+
+
+    $sql = "
+        SELECT  pv.projectid,
+                GROUP_CONCAT(DISTINCT pv.phase
+                    ORDER BY ph.sequence
+                    SEPARATOR ', ') round_id,
+                pph.sequence roundseq,
+                DATE_FORMAT(MAX(FROM_UNIXTIME(pv.version_time)), '%b&nbsp;%d,&nbsp;%Y') AS max_time,
+                MAX(FROM_UNIXTIME(pv.version_time)) AS strtime,
+                p.nameofwork,
+                p.username,
+                p.phase,
+                p.state,
+                MIN(h.id) is_hold
+        FROM page_versions pv
+        JOIN projects p ON pv.projectid = p.projectid
+        JOIN phases ph ON pv.phase = ph.phase
+        JOIN phases pph ON p.phase = pph.phase
+        LEFT JOIN project_holds h ON p.projectid = h.projectid AND p.phase = h.phase
+        WHERE pv.username='$username'
+            AND pv.phase IN ('P1', 'P2', 'P3', 'F1', 'F2')
+        GROUP BY pv.projectid
+        ORDER BY strtime DESC
+        ";
+
+    $rows = $dpdb->SqlRows($sql);
+
+    $tbl->SetRows($rows);
+
+
+    echo "<div class='padded bordered margined w75'>\n";
+    echo "<h3 class='center'>$heading</h3>\n";
+    $tbl->EchoTable();
+    echo "</div>\n";
 }
 
 function echo_my_pp_projects($username) {
@@ -328,27 +288,25 @@ function echo_my_pp_projects($username) {
     }
 
     echo "
-    <div class='center w75'>
-    <h3 class='center'>Post-Processing (PPing) Projects</h3>
-        <p>I have checked out the following projects to Post-Process</p>
-    <p class='left'>Іn order to advance these projects to PP Verification, you need to<br/>
-    1. upload a zip file with the completed project, and<br/>
-    2. click the 'PP Complete' button,<br/>
-    3. wait until the smooth-reading period is over, if there is one open.
-    <br/>
-    The 'Uploaded file' column shows the status of that file, with a button to click if
-    you want to Upload. (It still works after uploading if you want to resend.<p>
-    <p class='left'>Once you have uploaded, and any smooth-reading periods are completed,
-    and when you click the 'PP Completed' button, the project
-    will advance to PP Verification.</p>
-    <p><a class='lfloat' href='/c/tools/pper.php'>See all your PP projects.</a></p>
-    </div>
+    <div class='w75 padded bordered margined'>
+        <h3 class='center'>Post-Processing (PPing) Projects</h3>
+        <ul class='clean left pct80'>
+            <li>Іn order to complete this task,</li>
+            <li><ol>
+                <li> upload a zip file with the completed project, and</li>
+                <li> click the 'PP Complete' button,</li>
+                <li> wait until the smooth-reading period is over, if there is one open.</li>
+            </ol></li>
+            <li>The 'Uploaded file' column shows the status of that file, with a button to click if
+            you want to Upload. (It still works after uploading if you want to resend.)</li>
+            <li>The project will advance to PPV when smooth-reading periods are completed, and you click
+            the 'PP Completed' button.</li>
+        </ul>
 
-    <form name='myform' action='' method='POST'>\n";
-
+    <form name='myform' method='POST'>\n";
 
     $tbl = new DpTable();
-    $tbl->SetClass("w75 dptable sortable");
+    $tbl->SetClass("w90 dptable sortable");
     $tbl->AddColumn("<Title", "nameofwork", "etitle");
     $tbl->AddColumn("<Author", "authorsname");
     $tbl->AddColumn("<Language", "langname", "elangname");
@@ -362,7 +320,9 @@ function echo_my_pp_projects($username) {
     $tbl->SetRows($rows);
 
     $tbl->EchoTable();
-    echo "</form>\n";
+    echo "</form>
+    <p><a class='lfloat' href='/c/tools/pper.php'>See all your PP projects.</a></p>
+    </div>\n";
 }
 
 function emanage($projectid, $row) {

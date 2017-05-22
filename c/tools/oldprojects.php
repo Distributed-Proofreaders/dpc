@@ -20,21 +20,59 @@ $User->IsLoggedIn()
 
 $username       = $User->Username();
 
+$submits = ArgArray("submit");
+$loads = array_keys($submits);
+
+if(count($loads) > 0) {
+	$pid = $loads[0];
+	$ok = ! $dpdb->SqlExists("
+				SELECT 1 FROM projects
+				WHERE projectid = '$pid'");
+	if($ok) {
+		$sql = "
+                INSERT INTO projects
+                (
+                    projectid , nameofwork , authorsname , language , seclanguage , username , comments
+                    , modifieddate , postednum , clearance , genre , difficulty , postproofer , ppverifier
+                    , postcomments , image_source , image_preparer , text_preparer , scannercredit
+                    , extra_credits , smoothread_deadline , phase , createdby , createtime
+                )
+                SELECT
+                  projectid , nameofwork , authorsname , language , seclanguage , username , comments
+                  , modifieddate , postednum , clearance , genre , difficulty , postproofer , ppverifier
+                  , postcomments , image_source , image_preparer , text_preparer , scannercredit
+                  , extra_credits , smoothread_deadline , 'PP' , username , UNIX_TIMESTAMP()
+                FROM oldprojects
+                WHERE projectid = ?";
+		$args = array(&$pid);
+		$dpdb->SqlExecutePS($sql, $args);
+	}
+
+	$from  = glob("/var/sftp/dpscans/*/$pid/*");
+	$todir = ProjectPath($pid);
+    if(! file_exists($todir)) {
+        @mkdir($todir);
+        @chmod($todir, 0777);
+    }
+	foreach($from as $frompath) {
+        $topath = build_path($todir, basename($frompath));
+		copy($frompath, $topath);
+	}
+
+}
+
+
 $tbl = new DpTable("tblproj", "dptable w100 lfloat");
 
-$tbl->AddColumn("proj id", "projectid", "w25");
-$tbl->AddColumn("<Title", "title", "w20");
-$tbl->AddColumn("<Author", "author", "w10");
-$tbl->AddColumn("<PM", "pm", "w05");
-$tbl->AddColumn("<modified", "modified", "w05");
-$tbl->AddColumn("<state", "state");
-$tbl->AddColumn("<Posted #", "postednum", "w05");
-$tbl->AddColumn("<Clearance", "clearance", "w05");
-$tbl->AddColumn("<PPer", "pper", "w05");
-$tbl->AddColumn("<PPVer", "ppver", "w05");
-$tbl->AddColumn("<imager", "imager", "w05");
-$tbl->AddColumn("<texter", "texter", "w05");
-$tbl->AddColumn("<extra", "extra", "w05");
+$tbl->AddColumn("proj id", "projectid", null, "w15");
+$tbl->AddColumn("<Title", "title");
+$tbl->AddColumn("<Author", "author", null, "w15");
+$tbl->AddColumn("<PM", "pm", null, "w10");
+//$tbl->AddColumn("<Modified", "modified", null, "w05");
+$tbl->AddColumn("<Posted #", "postednum", null, "w05");
+$tbl->AddColumn("<PPer", "pper", null, "w05");
+$tbl->AddColumn("<PPVer", "ppver", null, "w05");
+$tbl->AddColumn("^Load", "projectid", "eload");
 $sql = "
 	SELECT
 		projectid,
@@ -42,7 +80,7 @@ $sql = "
 		authorsname author,
 		username pm,
 		from_unixtime(modifieddate) modified,
-		state,
+		phase,
 		postednum,
 		clearance,
 		postproofer pper,
@@ -51,13 +89,21 @@ $sql = "
 		image_preparer imager,
 		text_preparer texter,
 		extra_credits extras
-	FROM oldprojects ORDER BY nameofwork";
+	FROM oldprojects
+	ORDER BY projectid";
 $rows = $dpdb->SqlRows($sql);
 
 $tbl->SetRows($rows);
 
 $no_stats = 1;
 theme("old projects", "header");
+echo "<form name='frmload' method='POST'>\n";
 $tbl->EchoTable();
+echo "</form>\n";
 
 theme("", "footer");
+exit;
+
+function eload($projectid) {
+	return "<input type='submit' name='submit[{$projectid}]' value='load'>";
+}

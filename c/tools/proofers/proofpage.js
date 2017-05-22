@@ -50,18 +50,27 @@ var _text;
 
 var _is_wordchecking = false;
 var _active_scroll_id = null;
+// var _sync_x, _sync_y;
+// var _img_top, _img_bottom;
 var _is_tail_space;
 
 var _ajax;
 var _ajaxActionFunc;
 var _rsp;
+// var _charpicker;
+// var _contexts;
 var _date = new Date();
 var _active_charselector;
 var _active_char;
+// var _active_context_index = -1;
 var _wc_wakeup = 0;
 var _wc_token = 0;
+// var _ajax_log = [];
 
+// for splitter
 var _is_resizing = false;
+// var _startX, _startY;
+// var _startTop, _startLeft;
 
 function $(id) {
     return doc.getElementById(id);
@@ -117,6 +126,13 @@ function eBodyLoad() {
     addEvent(divimage,      "scroll",    eScroll);
     addEvent(divsplitter,   "mousedown", eSplitterDown);
 
+    // scroll img controls to zoom
+//    if(imgpage.onMouseWheel) {
+//        addEvent(imgpage,       "mousewheel", eImgCtlWheel);
+//    }
+//    else {
+//        addEvent(imgpage,       "DOMMouseScroll", eImgCtlWheel);
+//    }
     addEvent(doc,            "mousemove", eMouseMove);
     addEvent($('linksync'),     "click",     eToggleSync);
     addEvent($('linkzoomin'),   "click",     eZoomIn);
@@ -153,6 +169,18 @@ function Layout() {
     return GetLayout();
 }
 
+//function eVerifyUnload() {
+//    var n;
+//    var prompt = "";
+//    if(tatext && _text && (tatext.value != _text)) {
+//        prompt = "The text has changed.\n";
+//    }
+//    if((n = accept_count()) > 0) {
+//        prompt = n.toString() + " words have been accepted.\n";
+//    }
+//    return true;
+//}
+
 function px(val) {
     return val ? val.toString() + "px" : "";
 }
@@ -175,6 +203,18 @@ function applylayout() {
 
     imgpage.style.width             = (GetZoom() * 10).toString() + 'px';
 
+    /*
+    if(isctls()) {
+        divcontrols.style.display = "block";
+        divcontrols.style.height  = "80px";
+    }
+    else {
+        divcontrols.style.display = "none";
+    }
+    */
+
+    // ======================================================================================
+
     // The box is the distance from the top of the body to the top of the status bar.
     // The width is the full body width.
     // Everything but the status bar goes inside.
@@ -185,13 +225,17 @@ function applylayout() {
 
     if(Layout() == 'horizontal') {
 
+        // splitter bar positioned to bar pct
         barpos                      = boxheight * barpct / 100;
 
+        // left is really top for horizontal layout. It extends all the way across,
+        // and from the top of the box to the splitter bar.
         divleft.style.top           = "0";
         divleft.style.left          = "0";
         divleft.style.height        = px(barpos);
         divleft.style.width         = "100%";
 
+        // format the splitter bar
         divsplitter.style.top       = px(barpos);
         divsplitter.style.left      = "0";
         divsplitter.style.height    = "4px";
@@ -230,7 +274,7 @@ function applylayout() {
 
         divFandR.style.top          = ctlpanel.style.bottom   = "0";
     }
-
+//    tatext_match_divpreview();
     divleft.style.visibility        = "visible";
     divcontrols.style.visibility    = "visible";
     divright.style.visibility       = "visible";
@@ -238,6 +282,19 @@ function applylayout() {
 
     setLayoutIcon();
 }
+
+//function tatext_match_divpreview() {
+//    var txt = divpreview.innerHTML;
+//    divpreview.innerHTML = "";
+//    divtext.style.height = "";
+//    divtext.style.width = "";
+//    tatext.style.height = "";
+//    divpreview.innerHTML = txt;
+//    divtext.style.height   = px(divpreview.scrollHeight);
+//    tatext.style.height    = px(divpreview.scrollHeight);
+//    divtext.style.width    = px(divpreview.scrollWidth);
+    // tatext.style.width     = px(divpreview.scrollWidth-1);
+//}
 
 function eCtlInit() {
     if($('divcharpicker')) {
@@ -280,6 +337,10 @@ function char_selectors() {
 }
 
 function char_pickers(cgroup) {
+    // var s = "<table class='tblpicker'>\n";
+    // s += char_selector_row("A E I O UY CD LN RS TZ αβγ ἄ ἒ ἠ ΐ ό ύ ώ ῤ Ћћ Ѡѡ");
+
+    // s += "</table><table class='tblpicker'>\n";
     var s = "<table class='tblpicker'>\n";
 
     switch (cgroup) {
@@ -313,6 +374,10 @@ function char_pickers(cgroup) {
         s += char_row('$¢£‰¤¥¡¿©® «»„“” ÐðÞþßǶƕÑñĝĥĵ†‡™•⁂');
         s += char_row('′″‴¦§¨ªº¯° ‹›‚‘’ ±¹²³´¶·¸¼½¾×÷ȣƺ‿−');
         break;
+
+        //    case 'Y':
+        //        s += char_row('Ýý&#255;');	// (ATB) NOW SUBSUMED ABOVE
+        //        break;
 
     case 'CD':
         s += char_row('ÇĆĈĊČƆƇÐĎĐƉƊĜĤĴ');
@@ -389,6 +454,7 @@ function char_pickers(cgroup) {
 
     }
 
+
     s += '</table>\n';
     return s;
 }
@@ -416,6 +482,8 @@ function eCharClick(e) {
         }
         _active_charselector = t;
         _active_charselector.style.border = "2px solid red";
+        // _charpicker.innerHTML = char_pickers(c);
+        // pickers.innerHTML = char_pickers(c);
         $('pickers').innerHTML = char_pickers(c);
         return true;
     }
@@ -1287,6 +1355,11 @@ function eCloseFandR() {
     var _div = $('divFandR');
     if(_div.style.display == "block") {
         _div.style.display = "none";
+        // imgpage.style.top = "0";
+        // if(Layout() == 'vertical') {
+            // divright.style.top = 0;
+        // }
+        // applylayout();
     }
 }
 

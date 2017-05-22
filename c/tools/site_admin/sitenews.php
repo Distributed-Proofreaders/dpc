@@ -2,7 +2,6 @@
 $relPath="./../../pinc/";
 include_once($relPath.'dpinit.php');
 include_once($relPath.'theme.inc');
-//include_once($relPath.'user_is.inc');
 include_once($relPath.'site_news.inc');
 
 // require_login();
@@ -71,7 +70,6 @@ function handle_any_requested_db_updates( $news_page_id, $item_id, $action, $con
 	    case 'add':
 		    // Save a new site news item
 		    // $content = strip_tags($content, $allowed_tags);
-		    // $date_posted = time();
 		    if ( ! $dpdb->SqlExists( "
 				SELECT 1 FROM news_items WHERE news_page_id = '$news_page_id'" )
 		    ) {
@@ -81,7 +79,7 @@ function handle_any_requested_db_updates( $news_page_id, $item_id, $action, $con
 					SELECT 1,
                        ?,
                        'current',
-                       CURRENT_TIMESTAMP(),
+                       UNIX_TIMESTAMP(),
                        ?
 			   ";
 		    } else {
@@ -91,7 +89,7 @@ function handle_any_requested_db_updates( $news_page_id, $item_id, $action, $con
                 SELECT MAX(ni.ordering) + 1,
                        ni.news_page_id,
                        'current',
-                       CURRENT_TIMESTAMP(),
+                       UNIX_TIMESTAMP(),
                        ?
                 FROM news_items AS ni
                 WHERE ni.news_page_id = ?";
@@ -218,7 +216,8 @@ function show_all_news_items_for_page( $news_page_id ) {
         array(
             'status'   => 'current',
             'title'    => _('Sticky News Items'),
-            'blurb'    => _("All of these items are shown every time the page is loaded. Most important and recent news items go here, where they are guaranteed to be displayed."),
+            'blurb'    => _("All of these items are shown every time the page is loaded.
+                Most important and recent news items go here, where they are guaranteed to be displayed.<br/>"),
             'order_by' => 'ordering DESC',
             'actions'  => array(
                 'hide'     => _('Make Random'),
@@ -231,7 +230,8 @@ function show_all_news_items_for_page( $news_page_id ) {
         array(
             'status'   => 'recent',
             'title'    => _('Random/Recent News Items'),
-            'blurb'    => _("This is the pool of available random news items for this page. Every time the page is loaded, a randomly selected one of these items is displayed."),
+            'blurb'    => _("This is the pool of available random news items for this page.
+                    Every time the page is loaded, a randomly selected one of these items is displayed.<br/>"),
             'order_by' => 'ordering DESC',
             'actions'  => array(
                 'display' => _('Make Sticky'),
@@ -254,7 +254,13 @@ function show_all_news_items_for_page( $news_page_id ) {
         $status = $category['status'];
 
         $rows = $dpdb->SqlRows("
-            SELECT * FROM news_items
+            SELECT id,
+                   date_posted,
+                   FROM_UNIXTIME(date_posted) sdate_posted,
+                   ordering,
+                   status,
+                   content
+            FROM news_items
             WHERE news_page_id = '$news_page_id' 
                 AND status = '$status'
             ORDER BY {$category['order_by']} ");
@@ -266,6 +272,8 @@ function show_all_news_items_for_page( $news_page_id ) {
         echo "{$category['title']}";
         if ($status == 'current') {
             $date_changed = get_news_page_last_modified_date( $news_page_id );
+            if($date_changed == 0)
+                $date_changed = now();
             $last_modified = strftime(_("%A, %B %e, %Y"), $date_changed);
             echo "&nbsp;&nbsp; ("._("Last modified:")." ".$last_modified.")";
         }
@@ -280,7 +288,8 @@ function show_all_news_items_for_page( $news_page_id ) {
 
         foreach($rows as $news_item) {
         echo "<hr align-'center' width='75%' size='5'>\n";
-            $date_posted = strftime(_("%A, %B %e, %Y"),$news_item['date_posted']);
+//            $date_posted = strftime(_("%A, %B %e, %Y"), $news_item['date_posted']);
+//            $date_posted = $news_item['sdate_posted'];
             foreach ( $actions as $action => $label ) {
                 $url = "sitenews.php"
                     ."?news_page_id=$news_page_id"
@@ -288,8 +297,8 @@ function show_all_news_items_for_page( $news_page_id ) {
                     ."&amp;action=$action";
                 echo "[<a href='$url'>$label</a>]\n";
             }
-            echo " &mdash; ($date_posted)";
-            echo "\n";
+            echo " &mdash; ({$news_item['sdate_posted']})";
+            echo "<br/>\n";
             echo $news_item['content'];
             echo "\n";
         }

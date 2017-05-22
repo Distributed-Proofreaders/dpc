@@ -1,4 +1,4 @@
-<?PHP
+<?
 //
 //
 // The Default Template
@@ -17,7 +17,7 @@ $project_gutenberg['body_link'] = "#0000ff";
 $project_gutenberg['body_vlink'] = "#990099";
 $project_gutenberg['body_alink'] = "#ff0000";
 
-$project_gutenberg['image_logo'] = "/graphics/dpclogo.png";
+$project_gutenberg['image_logo'] = "/graphics/logo.gif";
 $project_gutenberg['image_curve_right'] = "/graphics/r_curve.gif";
 $project_gutenberg['image_curve_left'] = "/graphics/l_curve.gif";
 $project_gutenberg['image_gold_star'] = "/graphics/gold_star.gif";

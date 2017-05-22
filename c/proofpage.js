@@ -280,6 +280,7 @@ function eInit() {
     lineheight      = $("rdoLineHeight");
     rdoeditor       = $("rdoEditor");
 
+    addEvent(doc.body,      "resize",    eResize);
     addEvent(doc,           "keydown",   eKeyDown);
     addEvent(doc,           "keyup",     eKeyUp);
     addEvent(doc,           "keypress",  eKeyPress);
@@ -327,7 +328,7 @@ function eInit() {
     addEvent($('divcharpicker'), "mouseover", ePickerOver);
     addEvent($('divcharpicker'), "click",     eCharClick);
 
-    applylayout();
+    // applylayout();
     // copy text to detect changes
     _text = tatext.value;
     setSyncButton();
@@ -1794,7 +1795,7 @@ function eSplitterUp(e) {
         //pct = 100 * e.clientX / doc.body.offsetWidth;
     }
     //SaveBarPct(pct);
-    applylayout();
+    // applylayout();
 }
 
 // mouse is moving and is_resizing
@@ -1810,7 +1811,7 @@ function eSplitterMove(e) {
 
 // resize body
 function eResize() {
-    applylayout();
+    // applylayout();
 }
 
 //function ePanelResize() {
@@ -2126,7 +2127,7 @@ function eSwitchLayout() {
     else {
         SaveLayout("horizontal");
     }
-    applylayout();
+    // applylayout();
     setLayoutIcon();
     return false;
 }
@@ -2415,7 +2416,7 @@ function setSyncButton() {
 
 function eToggleCtls() {
     SaveIsCtls(! IsCtls());
-    applylayout();
+    // applylayout();
 }
 
 // event for linksync click

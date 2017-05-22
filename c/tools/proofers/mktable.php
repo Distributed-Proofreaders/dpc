@@ -1,6 +1,6 @@
 <html>
 <head>
-<?PHP
+<?
 $charset="UTF-8";
 
 define("ARRAY_PAD_FRONT", -1);
@@ -30,7 +30,7 @@ $trim=($_POST['trim']=="on")?TRUE:FALSE;
 <table>
 <tr>
 <td>&nbsp;</td>
-<?PHP
+<?
 
 if(isset($_POST['clear'])) {
 	for($i=0;$i<$row;$i++) {
@@ -114,7 +114,7 @@ for($i=0;$i<$row;$i++) {
 <td><textarea name="<? echo $name; ?>" wrap="off">
 <? echo htmlspecialchars($_POST[$name]); ?>
 </textarea></td>
-<?PHP
+<?
 	}
 	echo "</tr>";
 }
@@ -125,7 +125,7 @@ for($i=0;$i<$row;$i++) {
 </form>
 <form>
 <textarea rows="20" cols="80" wrap="off">
-<?PHP
+<?
 if($bord) hline();
 
 for($i=0;$i<$row;$i++) {
@@ -148,7 +148,7 @@ for($i=0;$i<$row;$i++) {
 ?>
 </textarea>
 </form>
-<?PHP
+<?
 function hline()
 {
 global $col,$lng,$bord;

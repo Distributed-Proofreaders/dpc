@@ -5,6 +5,9 @@ error_reporting(E_ALL);
 $relPath = "../c/pinc/";
 include_once $relPath . 'dpinit.php';
 
+$User->IsAdmin()
+	or RedirectToLogin();
+
 $goals = ArgArray("goal");
 
 foreach($goals as $phase => $goal) {
@@ -14,11 +17,12 @@ foreach($goals as $phase => $goal) {
                 (phase, goal_date, goal)
             VALUES
                 ('$phase', CURRENT_DATE(), $goal)");
+
         $dpdb->SqlExecute("
             UPDATE phase_goals
             SET goal = '$goal'
             WHERE phase = '$phase'
-                AND goal_date > CURRENT_DATE()");
+                AND goal_date >= CURRENT_DATE()");
     }
 }
 

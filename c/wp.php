@@ -1,4 +1,4 @@
-<?PHP
+<?php
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -7,9 +7,34 @@ include_once $relPath . 'dpinit.php';
 
 $w = new WpPost(367281);
 
-$lines = RegexSplit("[\\n\\r]", "u", $w->ActiveText());
-dump(count($lines));
+$t = $w->ActiveText();
+footnotes($t);
 exit;
+$lines = preg_split("/[\\n\\r]/u", $t);
+// $lines = RegexSplit("[\\n\\r]", "u", $w->ActiveText());
+unravel($lines);
+
+
+exit;
+
+function footnotes($t) {
+    $a = multimatch("\[Footnote.*?\][\\r\\n]", "mui", $t);
+    $b = multimatch("\[\d+\]", "u", $t);
+    dump(count($a));
+    dump(count($b));
+    for($i = 0; $i < count($a); $i++) {
+        dump($a[$i]);
+        dump($b[$i]);
+    }
+}
+
+function unravel($lines) {
+    $stack  = array();
+
+    foreach($lines as $line) {
+        dump($line);
+    }
+}
 
 class WpPost {
     private $_id;
@@ -25,15 +50,15 @@ class WpPost {
             WHERE ID = $id";
         $this->_row = $dpdb->SqlOneRow($sql);
 
-        $this->_active_row = $dpdb->SqlOneRow("
-            SELECT COALESCE(p0.post_content, p.post_content) post_content,
-            *
+        $sql = "
+            SELECT COALESCE(p0.post_content, p.post_content) post_content
             FROM wordpress.wp_posts p
             LEFT JOIN wordpress.wp_posts p0
                 ON p.ID = p0.post_parent
             WHERE p.ID = $id
             ORDER BY p0.post_date DESC
-            LIMIT 1");
+            LIMIT 1";
+        $this->_active_row = $dpdb->SqlOneRow($sql);
     }
 
     public function ID() {

@@ -16,7 +16,7 @@ class DpZip
     }
 
     public function FileNames() {
-        $ary = array();
+        $ary = [];
         for($i = 0; $i < $this->_zip->numFiles; $i++) {
             $ary[] = $this->FileName($i);
         }

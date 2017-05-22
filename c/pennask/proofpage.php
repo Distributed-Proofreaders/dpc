@@ -14,7 +14,7 @@ global $site_abbreviation, $ajax_url, $site_url;
 $User->IsLoggedIn()
 	or RedirectToLogin();
 
-$projectid      = ArgProjectId();
+$projectid      = ArgProjectid();
 $pagename       = ArgPageName();
 
 if(! $projectid)
@@ -58,7 +58,7 @@ $iswordcheck  = CookieArg("iswordcheck", "1");
 
 $prooftext      = h(rtrim($page->ActiveText())) . "\n";
 $pagename       = $page->PageName();
-$tweettext      = "";
+$tweet          = $page->Tweet();
 $imgurl         = $page->ImageUrl();
 $previmgurl     = $page->PrevImageUrl();
 $nextimgurl     = $page->NextImageUrl();
@@ -88,7 +88,10 @@ $title              = "{$site_abbreviation}: "
             ."[{$project->RoundId()}] "
             ."{$project->Title()}";
 
-$jslink                 = "<script src='proofpage.js?ver=.125' charset='UTF-8'></script>";
+//<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
+$jslink                 = "
+                <script src='proofpage.js?ver=.125' charset='UTF-8'></script>
+                \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 // $jslink  = link_to_url("proofpage.js");
 // $csslink = link_to_url("proofpage.css"); 
@@ -106,6 +109,7 @@ $quit_prompt            = _("Quit proofing without saving");
 $save_prompt            = _("Save text and quit proofing");
 $next_prompt            = _("Save text done - request another page");
 $return_prompt          = _("Return page");
+$tweet_prompt           = _("View or edit page message");
 
 $prompt_return_quit     = _("Return Page and Quit");
 $prompt_prompt          = _("Click for options...");
@@ -130,7 +134,10 @@ $langpicker             = LanguagePicker("pklangcode", $langcode,
 
 $wcclass = ($iswordcheck ? "block" : "hide");
 $wcchecked = ($iswordcheck ? "checked" : "");
-//$puncchecked = ($ispunc ? "checked" : "");
+
+$proofers = $page->Proofers();
+$page_info =  _("Page: ") . $page->PageName() . " &mdash; " . $proofers;
+
 
 echo
 "<!DOCTYPE HTML>
@@ -147,6 +154,7 @@ $csslink
 
 <body id='pfbody' onresize='eResize()' onload='eInit()'>
 
+<form accept-charset='UTF-8' name='formedit' id='formedit' method='POST' action='processpage.php'>
 <div id='divGear' class='hide'>
 <fieldset id='fsSpacing'>
   <legend>Line Spacing</legend>
@@ -156,8 +164,8 @@ $csslink
 </fieldset>
 <fieldset id='fsCmd'>
   <legend>Commands</legend>
-    <label><input type='radio' name='rdoEditor' id='rdopennask' value='pennask'> Icons </label><br>
-    <label><input type='radio' name='rdoEditor' id='rdoahmic' value='ahmic'> Menu </label>
+    <label><input type='radio' name='rdoEditor' id='rdoicons' value='icons'> Icons </label><br>
+    <label><input type='radio' name='rdoEditor' id='rdomenu' value='menu'> Menu </label>
 </fieldset>
 <fieldset id='fsWC'>
   <legend>WordCheck</legend>
@@ -168,50 +176,54 @@ $csslink
 </div>
 
 <div id='divFandR'>
-<table id='tblFandR'>
-  <tr>
-    <td>Find</td>
-    <td class='r'>
-      <input type='text' name='txtfind' id='txtfind' size='16'>
-    </td>
-    <td class='r'>
-      <input type='checkbox' name='chki' id='chki' title='ignore case'/>
-      ignore case
-    </td>
-    <td rowspan='2'>
-      <input type='button' value='Find'
-                title='Find next' id='btnfind'/>
-      <input type='button' value='Repl'
-                title='Replace' id='btnrepl'/>
-      <input type='button' value='Repl+Find'
-                title='Repl+Find' id='btnreplnext'/>
-      <input type='button' value='Repl All'
-                title='Repl All' id='btnreplall'/>
-      <input type='button' value='Close' title='Close find'
-                name='btnclose' id='btnclose'/>
-    </td>   
-  </tr>
-  <tr>
-    <td>Replace</td>
-    <td class='r'>
-      <input type='text' name='txtrepl' id='txtrepl' size='16'>
-    </td>
-    <td class='r'>
-      <input type='checkbox' name='chkm' id='chkm' title='multiline'/>
-      multiline
-    </td>
-  </tr>
-  <tr>
-    <td colspan='4' class='r'>
-      <input type='checkbox' name='chkr' id='chkr' title='regex'/>
-    </td>
-  </tr>
-</table>
-</div> <!-- divFandR -->\n"
+    <table id='tblFandR'>
+      <tr>
+        <td>Find</td>
+        <td class='r'>
+          <input type='text' name='txtfind' tabindex=1 id='txtfind' size='20'>
+        </td>
+        <td class='r'>
+          <input type='checkbox' name='chki' id='chki' title='ignore case'/>
+          ignore case
+        </td>
+        <td rowspan='2'>
+          <input type='button' value='Find' tabindex=3
+                    title='Find next' id='btnfind'/>
+          <input type='button' value='Repl'
+                    title='Replace' id='btnrepl'/>
+          <input type='button' value='Repl+Find' tabindex=4
+                    title='Repl+Find' id='btnreplnext'/>
+          <input type='button' value='Repl All' tabindex=5
+                    title='Repl All' id='btnreplall'/>
+          <input type='button' value='Close' title='Close find' tabindex=6
+                    name='btnclose' id='btnclose'/>
+        </td>
+      </tr>
+      <tr>
+        <td>Replace</td>
+        <td class='r'>
+          <input type='text' name='txtrepl' id='txtrepl' tabindex=2 size='20'>
+        </td>
+        <td class='r'>
+          <input type='checkbox' name='chkm' id='chkm' title='multiline'/>
+          multiline
+        </td>
+      </tr>
+      <tr>
+        <td colspan='4' class='r'>
+          <input type='checkbox' name='chkr' id='chkr' title='regex'/>
+        </td>
+      </tr>
+    </table>
+</div> <!-- divFandR -->
+<div id='divtweet'>
+   <textarea id='tweet' name='tweet'>$tweet</textarea>
+</div>   <!-- divtweet -->
+\n"
 
-. upload_widget_iframe($projectid, $pagename) . "
+//. upload_widget_iframe($projectid, $pagename) . "
 
-<div id='divleft'>
+. "<div id='divleft'>
     <div id='divprevimage'>
         <img id='imgprev' src='$previmgurl' alt=''>
     </div> <!-- divprevimage -->
@@ -225,7 +237,6 @@ $csslink
 
 <div id='divsplitter'> </div>
 
-<form accept-charset='UTF-8' name='formedit' id='formedit' method='POST' action='processpage.php'>
 <div id='divright'>
     <input type='hidden' name='is_sync' id='is_sync' value='0'>
     <input type='hidden' name='projectid' value='$projectid'>
@@ -238,17 +249,11 @@ $csslink
   <div id='divfratext'>
     <div id='divtext'>
       <pre id='prepreview' class='lh10'><span id='spanpreview'>{$prooftext}</span><br></pre>
-      <textarea name='tatext' id='tatext' class='lh10' wrap='off'>
+      <textarea name='tatext' id='tatext' class='lh10' wrap='soft'>
 {$prooftext}</textarea>
     </div>
   </div> <!-- divfratext -->
-<!--
-  <div id='divtweet'>
-    <textarea name='tatweet' id='tatweet' class='tweet' >
-{$tweettext}</textarea>
-  </div>
--->
-  </div> <!-- divright -->
+</div> <!-- divright -->
 	  <div id='ctlpanel'>
         <a id='hidectls'>
             <img id='imghidectls' src='gfx/a1_down.png' title='"._("Hide controls")."' alt=''>
@@ -266,27 +271,17 @@ $csslink
 		EchoFontFaceCombo($fontface);
 		EchoFontSizeCombo($fontsize);
 
-		$proofers = $page->Proofers();
-//		$proofers = array();
-//		foreach(array("P1", "P2", "P3", "F1", "F2") as $rnd) {
-//		if($rnd == $page->Phase()) {
-//			break;
-//		}
-//		$proofer = $page->RoundUser($rnd);
-//		$proofers[] = $rnd . ": " .link_to_pm($proofer);
-//}
-		$page_info =  _("Page: ") . $page->PageName() . " &mdash; " . $proofers;
-
 		echo "
-			<input id='btnFandR' type='button' title='$fr_prompt' value='F&amp;R'>\n";
+			<input id='btnFandR' type='button' title='$fr_prompt' value='F&amp;R'>
+            <img id='imgtweet' src='/graphics/tweet2.png' alt='$tweet_prompt' title='$tweet_prompt'>\n";
 		if($is_foofing) {
 			echo "
-			<img id='imgpvw' src='/graphics/search.png' alt='$preview_prompt' title='$preview_prompt'>\n";
+			<img id='imgpvw' src='/graphics/preview_off.png' alt='$preview_prompt' title='$preview_prompt'>\n";
 		}
 
 	echo "</div> <!-- divctlimg -->\n";
 
-	if(! $is_foofing) {
+//	if(! $is_foofing) {
 		echo "
 			<div id='divctlwc' class='{$wcclass}'>
 				<a id='linkwc'>
@@ -295,32 +290,20 @@ $csslink
 				<span id='span_wccount' class='ctlcombo'> 0 </span>
 					$langpicker
 			</div> <!-- divctlwc -->\n";
-	}
+//        }
 	echo "
 		<div id='divctlnav'>\n";
-//	if($editor == "pennask") {
-//		$iconsclass = "block";
-//		$menuclass  = "hide";
-//	}
-//	else {
-//		$iconsclass = "hide";
-//		$menuclass  = "block";
-//	}
 	echo "
         <img id='imggear' title='$prompt_gear' alt='$prompt_gear' src='gfx/gear.png'>
+
 		<div id='divicons' class='block'>
-			<input type='image' id='opt_submit_continue' name='opt_submit_continue'
-				title='$prompt_submit_continue' alt='$prompt_submit_continue' src='gfx/savenxt.png'>
-			<input type='image' id='opt_submit_quit' name='opt_submit_quit'
-				src='gfx/savequit.png' title='$prompt_submit_quit' alt='$prompt_submit_quit'>
-			<input type='image' id='opt_draft_continue' name='opt_draft_continue' title='$prompt_draft_continue' alt='$prompt_draft_continue'
-				src='gfx/save2.jpg'>
-			<input type='image' id='opt_draft_quit' name='opt_draft_quit' title='$prompt_draft_quit' alt='$prompt_draft_quit'
-				src='gfx/quit.png'>
-			<input type='image' id='opt_return_quit' name='opt_return_quit'
-				src='gfx/returnpage.png' alt='$prompt_return_quit'  title='$prompt_return_quit'>
-			<input type='image' id='opt_mark_bad' name='opt_mark_bad'
-				title='$prompt_mark_bad' alt='$prompt_mark_bad' src='$bad_icon'>
+			<input type='image' id='opt_submit_continue' name='opt_submit_continue'  src='gfx/savenxt.png'      title='$prompt_submit_continue'  alt='$prompt_submit_continue'>
+			<input type='image' id='opt_submit_quit'     name='opt_submit_quit'      src='gfx/savequit.png'     title='$prompt_submit_quit'     alt='$prompt_submit_quit'>
+			<input type='image' id='opt_draft_continue'  name='opt_draft_continue'   src='gfx/save2.jpg'        title='$prompt_draft_continue'  alt='$prompt_draft_continue'>
+			<input type='image' id='opt_draft_quit'      name='opt_draft_quit'       src='gfx/quit.png'         title='$prompt_draft_quit'      alt='$prompt_draft_quit'>
+			<input type='image' id='opt_return_quit'     name='opt_return_quit'      src='gfx/returnpage.png'   title='$prompt_return_quit'     alt='$prompt_return_quit'>
+			<input type='image' id='opt_mark_bad'        name='opt_mark_bad'         src='$bad_icon'            title='$prompt_mark_bad'        alt='$prompt_mark_bad'>
+
 		</div> <!-- divicons -->\n";
 
 	echo "
@@ -398,7 +381,7 @@ $csslink
             <button title='nowrap' onclick='return top.eSetNoWrap()'>
                  /* */ </button>
 
-            <button title='blockquote'
+            <button title='block quote'
                 onclick='return top.eSetBlockQuote()'>
                  /# #/ </button>";
 		}
@@ -436,22 +419,25 @@ $csslink
                 onclick='return top.eSetSidenote()'>
                                [Sidenote: ]</button>";
 		}
+
 		echo "
+            <button id='dehyphen' name='dehyphen' onclick='return top.eDeHyphen()'
+                title='Dehyphenate across line break. Be sure to include trailing space.'>
+				&gt;-&lt;</button>
             <button title='note' onclick='return top.eSetNote()'>
                 [** ]</button>
 
             <button title='Blank Page'
                 onclick='return top.eSetBlankPage()'>
-                                        [Blank Page]</button>";
+                                        [Blank Page]</button>
 
-
-		echo "
         </div> <!-- ctl_tags_bottom -->
       </div> <!-- ctl_right -->
     </div> <!-- divmarkup -->
 </div>  <!-- divcontrols -->
+
 <div id='divstatusbar'>
-	  <div>$page_info</div>
+	  <div>$page_info</div>    <!-- proofers etc. -->
 		<div style='float:right'>
 		({$User->Username()})
 		<a href='".url_for_help()."' target='_blank'> " . _("Help")."</a>
@@ -459,7 +445,7 @@ $csslink
 	" . ($page->UserMayManage()
 			? "<div><a id='linkupload' class='likealink'>". _("Replace image")."</a></div>\n"
 			: "")
-		 . "<div><a target='_blank' href='"  . url_for_project($page->projectId())  . "'> " . _("Project comments") . "</a></div>
+		 . "<div><a target='_blank' href='"  . url_for_project($page->ProjectId())  . "'> " . _("Project comments") . "</a></div>
 	   <div><a href='$url_guidelines' target='_blank'>" . _("Guidelines") . "</a></div>
 </div> <!-- divstatusbar -->
   </form>

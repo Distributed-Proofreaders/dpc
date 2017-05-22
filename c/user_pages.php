@@ -13,8 +13,7 @@ else {
 $pagenum        = Arg("pagenum", "1");
 $rowsperpage    = Arg("rowsperpage", "100");
 $roundid1       = Arg("roundid", "P1");
-$phase          = $roundid1;
-//$roundid2       = RoundIdAfter($roundid1);
+$phase          = Arg("phase", $roundid1);
 $cmdPgUp        = IsArg("cmdPgUp");
 $cmdPgDn        = IsArg("cmdPgDn");
 $cmdquery       = IsArg("cmdquery");
@@ -24,7 +23,7 @@ if($cmdquery) {
 }
 
 $title = "DPC User Pages Proofed With Diffs";
-$subtitle = "Round $roundid1 Pages for $username";
+$subtitle = "Round $phase Pages for $username";
 
 $title = "DPC User Pages Proofed With Diffs";
 if($phase != "" && $username != "") {
@@ -34,6 +33,9 @@ if($phase != "" && $username != "") {
 		SELECT  p.projectid,
 				p.nameofwork,
 				pv1.version version1,
+				pv2.version version2,
+				pv1.textlen textlen1,
+				pv2.textlen textlen2,
 				FROM_UNIXTIME(pv1.version_time) time1,
 				FROM_UNIXTIME(pv2.version_time) time2,
 				pv1.pagename,
@@ -59,35 +61,44 @@ if($phase != "" && $username != "") {
         ORDER BY pv1.version_time DESC";
 
 	$rows = $dpdb->SqlRows($sql);
-	$phase2 = $rows[0]['phase2'];
+    if(count($rows) > 0) {
+        $phase2 = $rows[0]['phase2'];
 
-    if($cmdPgUp) {
-        $pagenum = max($pagenum - 1, 1);
-    }
-    if($cmdPgDn) {
-        $pagenum = min($pagenum + 1, ceil(count($rows) / $rowsperpage));
-    }
+        if($cmdPgUp) {
+            $pagenum = max($pagenum - 1, 1);
+        }
+        if($cmdPgDn) {
+            $pagenum = min($pagenum + 1, ceil(count($rows) / $rowsperpage));
+        }
 
 
 
-    $tbl = new DpTable("tblDiffs", "dptable sortable w95 right em90");
-    $tbl->AddColumn("<Title", "projectid", "eprojectid", "w40");
-    $tbl->AddColumn("<Page", "image", "epage");
-    $tbl->AddColumn("^{$phase}", "time1", null, "w40");
-    $tbl->AddColumn("^{$phase} proofer", "user1", "euser", "sortkey=u1sort");
-    $tbl->AddColumn("^{$phase2}", "time2", null, "w40");
-    $tbl->AddColumn("^{$phase2} proofer", "user2", "euser", "sortkey=u2sort");
-    $tbl->AddColumn("^Diff", "image", "ediff");
+        $tbl = new DpTable("tblDiffs", "dptable sortable w95 right em90");
+        $tbl->AddColumn("<Title", "projectid", "eprojectid", "w40");
+        $tbl->AddColumn("<Page", "image", "epage");
+        $tbl->AddColumn("^{$phase}", "version1", "eversion1");
+        $tbl->AddColumn("^{$phase}", "time1", null, "w40");
+        $tbl->AddColumn("^{$phase} proofer", "user1", "euser", "sortkey=u1sort");
+        $tbl->AddColumn("^{$phase}", "version2", "eversion2");
+        $tbl->AddColumn("^{$phase2}", "time2", null, "w40");
+        $tbl->AddColumn("^{$phase2} proofer", "user2", "euser", "sortkey=u2sort");
+        $tbl->AddColumn("^Diff", "image", "ediff");
 
-    $tbl->SetRowCount(count($rows));
+        $tbl->SetRowCount(count($rows));
 
-    $tbl->SetPaging($pagenum, $rowsperpage);
+        $tbl->SetPaging($pagenum, $rowsperpage);
 //    dump($reprows);
 //    die();
-    $tbl->SetRows($rows);
+        $tbl->SetRows($rows);
+    }
+    else {
+        $pagenum = 1;
+        $rowsperpage = 1;
+    }
 }
 else {
     $subtitle = "Select username and round to view list of pages.";
+    $phase2 = "";
 }
 $no_stats = 1;
 theme($title, "header");
@@ -138,6 +149,19 @@ echo "</form>\n";
 
 theme("", "footer");
 exit;
+
+function eversion1($version, $row) {
+	$projectid = $row['projectid'];
+	$pagename = $row['pagename'];
+	$len = $row['textlen1'];
+	return link_to_version_text($projectid, $pagename, $version, $len, true);
+}
+function eversion2($version, $row) {
+	$projectid = $row['projectid'];
+	$pagename = $row['pagename'];
+	$len = $row['textlen2'];
+	return link_to_version_text($projectid, $pagename, $version, $len, true);
+}
 
 function epage($image, $row) {
     $projectid = $row['projectid'];

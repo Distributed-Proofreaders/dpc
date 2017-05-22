@@ -116,6 +116,7 @@ class DpEnchantedWords  {
 	    }
 
         file_put_contents($txtpath, $text);
+//	    die($txtpath);
         chmod($txtpath, 0777);
         $this->_cmd = "enchant -L -l -d $langcode $txtpath";
 
@@ -131,10 +132,10 @@ class DpEnchantedWords  {
 
 
         // convert it to array and store items in _words_lines
-        $tl = array_diff(text_lines($enchanted), array(""));
+        $tl = array_diff(text_lines($enchanted), [""]);
 
 
-        $this->_words_lines = array();
+        $this->_words_lines = [];
         foreach($tl as $t) {
             list($l, $w) =  RegexSplit(" ", "u", $t);
             if(RegexCount("[\d\-\_]", "u", $w) == 0
@@ -143,7 +144,7 @@ class DpEnchantedWords  {
             }
         }
 
-        $this->_words = array_unique(array_diff($tl, array("")));
+        $this->_words = array_unique(array_diff($tl, [""]));
     }
 
     public function Input() {
@@ -174,10 +175,10 @@ class DpEnchantedWords  {
 
     // transform word => array(lines) to array(word, line)
     public function WordLineArray() {
-        $a = array();
+        $a = [];
         foreach($this->_words_lines as $word => $lines) {
             foreach($lines as $line) {
-                $a[] = array($word, $line);
+                $a[] = [$word, $line];
             }
         }
         return $a;
@@ -185,9 +186,9 @@ class DpEnchantedWords  {
 
     // transform word => array(lines) to array( word, array(lines))
     public function WordLinesArray() {
-        $a = array();
+        $a = [];
         foreach($this->_words_lines as $word => $lines) {
-            $a[] = array($word, $lines);
+            $a[] = [$word, $lines];
         }
         return $a;
     }
@@ -196,4 +197,3 @@ class DpEnchantedWords  {
         return text_lines($this->_text);
     }
 }
-?>

@@ -31,13 +31,22 @@ if(count($revokes) > 0) {
 }
 
 if($username != '') {
-    $sql = "SELECT  r.role_code,
-                    r.description, 
-                    ifnull(ur.id, '') AS urid
-            FROM roles r
-            LEFT JOIN user_roles ur
-            ON r.role_code = ur.role_code
-                AND ur.username = '$username'";
+    $sql = "
+	SELECT  u.username,
+            r.role_code,
+            ur.id urid,
+            r.description
+
+    FROM users u
+
+    CROSS JOIN roles r
+
+    LEFT JOIN user_roles ur
+        ON u.username = ur.username
+        AND r.role_code = ur.role_code
+
+    WHERE u.username = '$username'
+    ";
     $rows = $dpdb->SqlRows($sql);
 
     $tbluser = new DpTable("tbluser");
@@ -50,44 +59,45 @@ if($username != '') {
 
 
     $sql = "
-        SELECT  urp.round_id, 
+		SELECT  urp.phase,
                 DATE(FROM_UNIXTIME(MIN(urp.count_time))) first_date,
                 DATEDIFF(CURRENT_DATE, DATE(FROM_UNIXTIME(MIN(urp.count_time)))) days_in_round,
                 SUM(urp.page_count) page_count
         FROM user_round_pages urp
-        JOIN rounds r ON urp.round_id = r.roundid
-        WHERE urp.username = '$username'
-        GROUP BY urp.round_id
-        ORDER BY r.round_index";
+        JOIN rounds r ON urp.phase = r.roundid
+        WHERE urp.username = 'dkretz'
+        GROUP BY urp.phase
+        ORDER BY r.round_index
+        ";
 
     $round_stats = $dpdb->SqlRows($sql);
-    $rows = array();
-    foreach($round_stats as $rstat) {
-        switch($rstat["round_id"]) {
-            case "P1":
-                $rows[1] = $rstat;
-                break;
-            case "P2":
-                $rows[2] = $rstat;
-                break;
-            case "P3":
-                $rows[3] = $rstat;
-                break;
-            case "F1":
-                $rows[4] = $rstat;
-                break;
-            case "F2":
-                $rows[5] = $rstat;
-                break;
-        }
-    }
+//    $rows = array();
+//    foreach($round_stats as $rstat) {
+//        switch($rstat["round_id"]) {
+//            case "P1":
+//                $rows[1] = $rstat;
+//                break;
+//            case "P2":
+//                $rows[2] = $rstat;
+//                break;
+//            case "P3":
+//                $rows[3] = $rstat;
+//                break;
+//            case "F1":
+//                $rows[4] = $rstat;
+//                break;
+//            case "F2":
+//                $rows[5] = $rstat;
+//                break;
+//        }
+//    }
 
     $tblstats = new DpTable("tblstats", "dptable bordered padded");
-    $tblstats->AddColumn("<Round", "round_id");
+    $tblstats->AddColumn("<Round", "phase");
     $tblstats->AddColumn("^Since", "first_date");
     $tblstats->AddColumn("^Days", "days_in_round");
     $tblstats->AddColumn(">Pages", "page_count");
-    $tblstats->SetRows($rows);
+    $tblstats->SetRows($round_stats);
 }
 else if($role != "") {
 	$sql = "SELECT  r.role_code,
@@ -142,7 +152,7 @@ if($username) {
 
     echo "
     <hr>
-    <h2>Roundwork</h2>\n";
+    <h2>Round Work</h2>\n";
     $tblstats->EchoTable();
 }
 else if($role) {

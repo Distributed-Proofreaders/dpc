@@ -21,7 +21,7 @@ if(lower($roundid) == "all") {
     $where = "";
 }
 else {
-    $where = "WHERE round_id = '$roundid'\n";
+    $where = "WHERE phase = '$roundid'\n";
 }
 $rows = $dpdb->SqlRows("
       SELECT IF(u.u_privacy != 0, 'Anonymous', p.username) username,

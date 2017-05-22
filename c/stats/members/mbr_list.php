@@ -4,12 +4,12 @@ error_reporting(E_ALL);
 
 $relPath = "./../../pinc/";
 require_once($relPath.'dpinit.php');
-//require_once($relPath.'privacy.inc');
-//require_once('../members/member.inc');
 
 $username       = Arg("username");
 
 if($username != "") {
+    if(! $Context->UserExists($username))
+        die("Searching for invalid username");
 	$usr = new DpUser($username);
 //    $rows = $dpdb->SqlRows("
 //        SELECT username, date_created, u_privacy

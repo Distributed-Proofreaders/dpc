@@ -2,9 +2,7 @@
 /**
  *
  */
-var formcontext;
 var tblcontext;
-
 var _active_context_index = -1;
 var _active_ctl;
 
@@ -41,30 +39,38 @@ function set_scroll_pct(ctl, pct) {
 // we have projectid, language, and which list type.
 // need to pull list and select first word and context.
 function eContextInit() {
-    formcontext = $("formcontext");
+    tblcontext  = $("tblcontext");
 
-    addEvent(formcontext.btnremove,  "click", eRemoveWordClick);
-    addEvent(formcontext.btngood,    "click", eGoodWordClick);
-    addEvent(formcontext.btnbad,     "click", eBadWordClick);
-    addEvent(formcontext.btnrefresh, "click", eRefreshClick);
-    addEvent(formcontext.btnreplace, "click", eReplaceWordClick);
+    addEvent(tblcontext,       "change", eTblContextChange);
+    addEvent($("btnremove"),   "click", eRemoveWordClick);
+    addEvent($("btngood"),     "click", eGoodWordClick);
+    addEvent($("btnbad"),      "click", eBadWordClick);
+    addEvent($("btnrefresh"),  "click", eRefreshClick);
+    addEvent($("btnreplace"),  "click", eShowReplace);
+    addEvent($("doreplace"),   "click", eDoReplace);
+    addEvent($("doreplaceall"),   "click", eDoReplaceAll);
+    addEvent($("doreplnext"),  "click", eDoReplaceNext);
+    addEvent($("donereplace"), "click", eDoneReplace);
+    addEvent($("btnadhocfind"),"click", eAdHocFind);
+    addEvent($("imgcontext"),  "load",  eContextImgLoad);
 
-    formcontext.btnremove.style.display =
+    $("btnremove").style.display =
         ['good', 'bad', 'suggested']
             .indexOf($("mode").value) >= 0
         ? "inline-block" 
         : "none";
-    formcontext.btngood.style.display =
+    $("btngood").style.display =
         ['bad', 'suggested', 'adhoc', 'flagged', 'regex']
             .indexOf($("mode").value) >= 0
         ? "inline-block"
         : "none";
-    formcontext.btnbad.style.display = 
+    $("btnbad").style.display =
         ['good', 'suggested', 'adhoc', 'flagged', 'regex']
             .indexOf($("mode").value) >= 0
         ? "inline-block"
         : "none";
-    formcontext.btnreplace.style.display = "inline-block";
+    //$("btnreplace.style.display = "inline-block";
+    /*
     switch($("mode").value) {
         default:
             $('command-section').style.height = "25%";
@@ -77,91 +83,110 @@ function eContextInit() {
             $('divtblcontext').style.height = "50%";
             break;
     }
+    */
 
-    sync_context();
+    refresh_context();
 }
-/*
- 1. Delete BOM
- 2. EOL spaces
- 3.
-*/
 
-
-function eReplaceWordClick() {
-
+function retext_active_word() {
+    var opt = tblcontext.options[tblcontext.selectedIndex];
+    opt.text = context_word() + " (" + _contexts.length.toString() + ")";
 }
-function eGoodWordClick(e) {
-    var i = formcontext.tblcontext.selectedIndex;
+
+function active_word_index() {
+    return tblcontext.selectedIndex;
+}
+
+function context_word() {
+    return tblcontext.value.substring(2);
+}
+function eTblContextChange() {
+    refresh_context();
+}
+
+function eGoodWordClick() {
+    var i = active_word_index();
     if(i >= 0) {
         switch($("mode").value) {
             case "good":
                 break;
             case "bad":
-                awcBadToGoodWord(i);
-                break;
-            //case "suggested":
-            //    awcSuggestedToGoodWord(i);
-            //    break;
+            case "suggested":
             case "flagged":
             case "adhoc":
-                awcAddGoodWord(i);
+                awcAddGoodWord();
                 break;
         }
-        formcontext.tblcontext.remove(i);
-        formcontext.tblcontext.selectedIndex = i;
-        sync_context();
+        tblcontext.remove(i);
+        refresh_context();
+        //tblcontext.selectedIndex = i;
     }
 }
 
-function eRefreshClick(e) {
-    sync_context();
+function eRefreshClick() {
+    refresh_context();
+}
+function eShowReplace() {
+    $("txtreplace").value = context_word();
+    $("buttonbox").className = "none";
+    $("replacebox").className = "block";
+}
+function eDoReplace() {
+     awcDoReplace();
+}
+function eDoReplaceAll() {
+    awcDoReplaceAll();
 }
 
-// user clicks a list word to choose a context set
-// the option element for the word has value w_ + the word
-function eTblContextChange(e) {
-    //_active_context_index = -1;
-    sync_context();
-    return true;
+function eDoReplaceNext(e) {
+
 }
 
-function eBadWordClick(e) {
-    var i = formcontext.tblcontext.selectedIndex;
+function eAdHocFind() {
+
+}
+function eDoneReplace() {
+    $("buttonbox").className = "block";
+    $("replacebox").className = "none";
+}
+
+function eBadWordClick() {
+    var i = active_word_index();
     if(i >= 0) {
         switch($("mode").value) {
             case "good":
-                awcGoodToBadWord(i);
+                awcGoodToBadWord();
                 break;
             case "bad":
                 break;
             case "suggested":
-                awcSuggestedToBadWord(i);
+                awcSuggestedToBadWord();
                 break;
             case "flagged":
             case "adhoc":
-                awcAddBadWord(i);
+                awcAddBadWord();
                 break;
         }
-        formcontext.tblcontext.remove(i);
-        formcontext.tblcontext.selectedIndex = i;
-        sync_context();
+        tblcontext.remove();
+        //tblcontext.selectedIndex = i;
+        refresh_context();
     }
 }
 
 function eRemoveWordClick() {
-    var i = formcontext.tblcontext.selectedIndex;
+    var i = active_word_index();
     if(i < 0) {
         return;
     }
     switch($("mode").value) {
         case "good":
-            awcRemoveGoodWord(i);
+            awcRemoveGoodWord();
             break;
         case "bad":
-            awcRemoveBadWord(i);
+            awcRemoveBadWord();
             break;
         case "suggested":
-            awcRemoveSuggestedWord(i);
+            awcRemoveSuggestedWord();
             break;
         case "flagged":     // Remove meaningless
             return;
@@ -169,9 +194,9 @@ function eRemoveWordClick() {
         case "adhoc":
             break;
     }
-    formcontext.tblcontext.remove(i);
-    formcontext.tblcontext.selectedIndex = i;
-    sync_context();
+    tblcontext.remove(i);
+    //tblcontext.selectedIndex = i;
+    refresh_context();
 }
 
 function eContextImgLoad() {
@@ -183,18 +208,39 @@ function eContextImgLoad() {
     set_scroll_pct($('div_context_image'), context_image_scroll_pct);
 }
 
-// consequence of word table item onclick
-function eSetContextWordIndex(index) {
-    if(index == _active_context_index) {
+function divcontext() {
+    return _active_context_index >= 0
+        ? $('divctxt_' + _active_context_index.toString())
+        : null;
+}
+
+function check_div_index_context(i) {
+    var _cdiv;
+    var t1, t2;
+
+    if(! (_cdiv = divcontext())) {
         return;
     }
+    if(_cdiv.children.length > 1) {
+        t1 = _cdiv.children[1].innerText;
+        t2 = _contexts[i].context;
+        t2 = t2.replace(/<span[^>]*>(.*?)<\/span>/g, "$1");
+        if(t1 != t2) {
+            window.alert(_cdiv.innerText);
+        }
+    }
+}
+// consequence of word table item onclick
+function eSetContextWordIndex(index) {
     // if a current item is active, un-hilite it
-    if(_active_context_index >= 0) {
-        $('divctxt_' + _active_context_index.toString()).style.backgroundColor = "#EEEEEE";
+    // and deal with any changes
+    if(divcontext()) {
+        divcontext().style.backgroundColor = "#EEEEEE";
+        check_div_index_context(_active_context_index);
     }
 
     _active_context_index = index;
-    $('divctxt_' + _active_context_index.toString()).style.backgroundColor = "white";
+    divcontext().style.backgroundColor = "white";
 
     $('imgcontext').src =  active_context().imageurl.replace(/\s/g, "").replace(/&amp;/g, "&");
     eSetImageScroll();
@@ -210,29 +256,6 @@ function eSetImageScroll() {
     set_scroll_pct($('div_context_image'), context_image_scroll_pct);
 }
 
-/*
-function SetAllCheck(val) {
-    var i;
-    var row;
-    var tbl = pf$('tblcontext');
-    for (i = 0; i < tbl.rows.length; i++) {
-        row = tbl.rows[i];
-        c = row.getElementsByTagName('input')[0];
-        if(c) {
-            c.checked = val;
-        }
-    }
-}
-
-function eCheckAll() {
-    SetAllCheck(true);
-}
-
-function eUncheckAll() {
-    SetAllCheck(false);
-}
-*/
-
 // json response handler for wordcontext
 // fills top box with contexts from json
 // response has array of pagename, lineindex, linecount, context
@@ -243,6 +266,7 @@ function ajxDisplayWordContextList(rsp) {
     if(! $("div_context_list")) {
         return;
     }
+    //noinspection JSUnresolvedVariable
     _contexts = rsp.contextinfo.contexts;
     if(_contexts.length < 1) {
         return;
@@ -257,7 +281,7 @@ function ajxDisplayWordContextList(rsp) {
         + "<br>line " + ctxt.lineindex.toString()
         + " of " + ctxt.linecount.toString()
         + "</div>"
-        + "<div class='ctxt-right'>"
+        + "<div class='ctxt-right' contenteditable='true'>"
         + ctxt.context + "</div>  <!-- ctxt-right -->"
         + "</div>\n";
     }
@@ -284,7 +308,7 @@ function ajxDisplayContextWords(rsp) {
                 + wrd + "</td><td>" + n + "</td></tr>\n";
     }
     str += "</tbody>\n";
-    formcontext.tblcontext.innerHTML = str;
+    tblcontext.innerHTML = str;
 }
 
 // json response handler for regexcontext
@@ -297,11 +321,13 @@ function ajxDisplayRegexContextList(rsp) {
     if(! $("div_context_list")) {
         return;
     }
+    //noinspection JSUnresolvedVariable
     _contexts = rsp.contextinfo.contexts;
     if(_contexts.length < 1) {
+        $("div_context_list").innerHTML = "";
         return;
     }
-    // DisplayRegexList(_rsp.word, _contexts.length);
+    // DisplayRegexList(rsp.word, _contexts.length);
     for(i = 0; i < _contexts.length; i++) {
         var ctxt = _contexts[i];
         var id = i.toString();
@@ -321,23 +347,21 @@ function ajxDisplayRegexContextList(rsp) {
     eSetContextWordIndex(0);
 }
 
-function sync_context() {
-    var w = "";
-    var t = $("tblcontext");
-    if(! t) {
+function refresh_context() {
+    if(! tblcontext) {
         return;
     }
     if($('mode').value == "regex") {
 
     }
     else {
-        if (t.value.length <= 2) {
+        if (tblcontext.value.length <= 2) {
             return;
         }
 
-        var w = t.value.substring(2);
+        var w = context_word();
     }
-    qry = {};
+    var qry = {};
     qry['querycode'] = 'wordcontext';
     qry['projectid'] = $("projectid").value;
     qry['word']      = w;
@@ -364,114 +388,159 @@ function requestContext() {
     awcContext();
 }
 
+// send target word and replacement string
+// host will make all replacements
+// when response comes back, refresh
+function eReplaceWordClick() {
+    awcReplaceAll();
+}
+
 // -----------------------------------------------------------------
 // ajax calls
 // -----------------------------------------------------------------
 
-function awcAddGoodWord(i) {
+function awcDoReplace() {
+    var qry = {};
+    if(! active_context()) {
+        return;
+    }
+    qry['querycode'] = "doreplace";
+    qry['projectid'] = active_context().projectid;
+    qry['pagename'] = active_context().pagename;
+    qry['lineindex'] = active_context().lineindex;
+    qry['word'] = active_context().word;
+    qry['repl'] = $("txtwith").value;
+    if(qry['repl'] == "") {
+        return;
+    }
+    writeAjax(qry);
+}
+
+function awcDoReplaceAll() {
+    var qry = {};
+    if(! active_context()) {
+        return;
+    }
+    qry['querycode'] = "doreplaceall";
+    qry['projectid'] = active_context().projectid;
+    qry['word'] = active_context().word;
+    qry['repl'] = $("txtwith").value;
+    if(qry['repl'] == "") {
+        return;
+    }
+    writeAjax(qry);
+}
+
+function awcAddGoodWord() {
     var qry = {};
 
     // hide now-defunct contexts
     $("div_context_list").style.visibility = "hidden";
 
     qry['querycode']    = "addgoodword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
-    //writeAjax(qry);
-    myAjax(qry);
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
+    writeAjax(qry);
+    //myAjax(qry);
 }
 
-function awcAddBadWord(i) {
+function awcAddBadWord() {
     var qry = {};
     qry['querycode']    = "addbadword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
     writeAjax(qry);
 }
 
-function awcRemoveGoodWord(i) {
+function awcRemoveGoodWord() {
     var qry = {};
     qry['querycode']    = "removegoodword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
     writeAjax(qry);
 }
 
-function awcRemoveBadWord(i) {
+function awcRemoveBadWord() {
     var qry = {};
     qry['querycode']    = "removebadword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
     writeAjax(qry);
 }
-
-function awcRemoveSuggestedWord(i) {
+function awcRemoveSuggestedWord() {
     var qry = {};
     qry['querycode']    = "removesuggestedword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
     writeAjax(qry);
 }
 
-function awcGoodToBadWord(i) {
+function awcGoodToBadWord() {
     var qry = {};
     qry['querycode']    = "goodtobadword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
     writeAjax(qry);
 }
 
-function awcBadToGoodWord(i) {
+function awcBadToGoodWord() {
     var qry = {};
     qry['querycode']    = "badtogoodword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
     writeAjax(qry);
 }
 
-function awcSuggestedToBadWord(i) {
+function awcSuggestedToBadWord() {
     var qry = {};
     qry['querycode']    = "suggestedtobadword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
     writeAjax(qry);
 }
-
-function awcSuggestedToGoodWord(i) {
-    var qry = {};
-    qry['querycode']    = "suggestetogoodword";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
-    qry['word']         = formcontext.tblcontext.options[i]
-                            .value.substring(2);
-    writeAjax(qry);
-}
-
 
 function awcContext() {
     var qry = {};
     qry['querycode']    = "wccontext";
-    qry['projectid']    = formcontext.projectid.value;
-    qry['langcode']     = formcontext.langcode.value;
+    qry['projectid']    = $("projectid").value;
+    qry['langcode']     = $("langcode").value;
     qry['mode']         = $("mode").value;
     writeAjax(qry);
+}
 
+function awcReplaceAll() {
+    var qry = {};
+    qry['querycode']    = "wcreplace";
+    qry['projectid']    = $('projectid').value;
+    qry['word']         = context_word();
+    //qry['word']         = tblcontext.options[i]
+    //                        .value.substring(2);
+    qry['replace']         = $("txtreplace").value;
+    writeAjax(qry);
 }
 
 // -----------------------------------------------------------------
@@ -480,20 +549,29 @@ function awcContext() {
 
 // handler for responses returning from web service
 function eWCMonitor(msg) {
-    _rsp = JSON.parse(msg);
-    console.log('response arrived for ' + _rsp.querycode );
-    switch (_rsp.querycode) {
+    var rsp = JSON.parse(msg);
+    console.log('response arrived for ' + rsp.querycode );
+    switch (rsp.querycode) {
 
         case 'wccontext':
-            ajxDisplayContextWords(_rsp.wordarray);
+        case 'wcreplace':
+            //noinspection JSUnresolvedVariable
+            ajxDisplayContextWords(rsp.wordarray);
             break;
 
         case 'wordcontext':
-            ajxDisplayWordContextList(_rsp);
+            ajxDisplayWordContextList(rsp);
+            retext_active_word();
             break;
 
         case 'regexcontext':
-            ajxDisplayRegexContextList(_rsp);
+            ajxDisplayRegexContextList(rsp);
+            break;
+
+        case 'doreplace':
+            // needs to decrement count, reestablish context list
+            console.log("confirmed " + rsp.querycode);
+            refresh_context();
             break;
 
         case 'addgoodword':
@@ -504,9 +582,10 @@ function eWCMonitor(msg) {
         case 'badtogoodword':
         case 'goodtobadword':
         case 'suggestedtobadword':
-        case 'suggestedtogoodword':
+        case 'doreplaceall':
             // all these send stuff off to wc.php to be disposed of and only get ACK back
-
+            console.log("confirmed " + rsp.querycode);
+            refresh_context();
             $("div_context_list").style.visibility = "visible";
             break;
 
@@ -521,59 +600,7 @@ function eWCMonitor(msg) {
 // -----------------------------------------------------------------
 
 var _ajax;
-//var _ajaxActionFunc;
 
-function myAjax(args) {
-    var _ajax;
-    if(window.XMLHttpRequest) {
-        _ajax = new XMLHttpRequest();
-    }
-    else {
-        _ajax = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    //_ajaxActionFunc = eWCMonitor;
-    _ajax.onreadystatechange = function() {
-        var msg;
-        var errstr, jsonrsp;
-        if(_ajax.responseText == "") {
-            return;
-        }
-        console.log("readAjax: " + _ajax.responseText.substring( 0, 200));
-        if(_ajax.readyState == 4 && _ajax.status == 200) {
-            msg = _ajax.responseText;
-            errstr = "";
-            try {
-                errstr = "err decodeURI msg: ";
-                msg = decodeURIComponent(msg);
-                errstr = "err parse msg: ";
-                //jsonrsp = JSON.parse(msg);
-                JSON.parse(msg);
-                errstr = "";
-                //console.log("readAjax success: " + msg.substring(0, 200));
-            }
-            catch(err) {
-                //console.log("readAjax FAILED: " + errstr + msg);
-                window.alert(errstr + msg);
-                return;
-            }
-
-            eWCMonitor(msg);
-            //if(_ajaxActionFunc) {
-            //    _ajaxActionFunc(msg);
-            //}
-        }
-    };
-    function write(a_args) {
-        var jq = JSON.stringify(a_args);
-        console.log("ajax.write: " + jq.substring( 0, 200));
-        jq = "jsonqry=" + encodeURIComponent(jq);
-        _ajax.open("POST", AJAX_URL, true);
-        _ajax.setRequestHeader("Content-type",
-            "application/x-www-form-urlencoded");
-        _ajax.send(jq);
-    }
-    write(args);
-}
 function initAjax() {
     if(_ajax) {
         return;
@@ -584,14 +611,12 @@ function initAjax() {
     else {
         _ajax = new ActiveXObject("Microsoft.XMLHTTP");
     }
-    //_ajaxActionFunc = eWCMonitor;
     _ajax.onreadystatechange = readAjax;
 }
 
 // NOTE: DP-IT has different code, apparently to deal with queue overload
 function writeAjax(a_args) {
     // php end will rawurldecode this to recover it
-    //var jq = 'jsonqry=' + encodeURIComponent(JSON.stringify(a_args));
     var jq = JSON.stringify(a_args);
     console.log("writeAjax: " + jq.substring( 0, 200));
     jq = "jsonqry=" + encodeURIComponent(jq);
@@ -605,20 +630,22 @@ function writeAjax(a_args) {
 // NOTE: DP-IT has different code, apparently to deal with queue overload
 function readAjax() {
     var msg;
-    var errstr, jsonrsp;
+    var errstr;
     if(_ajax.responseText == "") {
         return;
     }
-    console.log("readAjax: " + _ajax.responseText.substring( 0, 200));
     if(_ajax.readyState == 4 && _ajax.status == 200) {
         msg = _ajax.responseText;
+        //noinspection JSUnusedAssignment
         errstr = "";
         try {
+            //noinspection JSUnusedAssignment
             errstr = "err decodeURI msg: ";
             msg = decodeURIComponent(msg);
+            //noinspection JSUnusedAssignment
             errstr = "err parse msg: ";
-            //jsonrsp = JSON.parse(msg);
             JSON.parse(msg);
+            //noinspection JSUnusedAssignment
             errstr = "";
             //console.log("readAjax success: " + msg.substring(0, 200));
         }
@@ -628,10 +655,8 @@ function readAjax() {
             return;
         }
 
+        console.log("readAjax: " + msg.substring( 0, 400));
         eWCMonitor(msg);
-        //if(_ajaxActionFunc) {
-        //    _ajaxActionFunc(msg);
-        //}
     }
 }
 

@@ -3,7 +3,7 @@ $relPath='./../pinc/';
 require_once $relPath . "dpinit.php";
 include_once($relPath.'project_states.inc');
 include('statestats.inc');
-include_once($relPath.'gettext_setup.inc');
+//include_once($relPath.'gettext_setup.inc');
 
 
 // Not translating this file since it is not used by end-users

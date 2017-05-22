@@ -1,4 +1,4 @@
-<?PHP
+<?php
 $relPath='../pinc/';
 include_once($relPath.'dpinit.php');
 
@@ -84,3 +84,4 @@ function eUsername($name, $row) {
 						? ($User->IsAdmin() ? "{$name}*" : "anonymous")
 						: $name;
 }
+?>

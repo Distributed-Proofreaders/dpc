@@ -2,23 +2,25 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 global $relPath;
-$mtime = explode(" ", microtime());
-$starttime = $mtime[1] + $mtime[0];
 
-$time_comment = array();
+//$mtime = explode(" ", microtime());
+//$starttime = $mtime[1] + $mtime[0];
+//
+//$time_comment = [];
 
-//global $User;
 
 /** @var DpThisUser $username */
-//$username = $User->Username();
 
 include_once($relPath.'gettext_setup.inc');
 include_once($relPath.'stats.php');
-//include_once($relPath."templates/theme.tpl");
 
-function theme($nameofpage, $location, $extra_args = array()) {
+function theme($nameofpage, $location, $extra_args = []) {
     global $User, $code_url; // $theme, $theme_name;
+    global $Context;
     global $no_stats;
+
+    $t = [];
+    $t[] = $Context->TimerInit();
 
 	if(! $User->IsLoggedIn()) {
 		$no_stats = 1;
@@ -32,19 +34,13 @@ function theme($nameofpage, $location, $extra_args = array()) {
 
             if ($location == "header") {
 
-/*
-    -------------------------------------------------
-    header when NOT $no_stats and stats bar on left
-    -------------------------------------------------
-*/
-
                 html_header($nameofpage, $extra_args);
-                html_logobar($nameofpage);
+                html_logobar();
                 echo "
     <table id='tbl1'>
     <tr>
     <td class='left top navback w25'>\n";
-                html_statsbar($nameofpage);
+                html_statsbar();
                 echo "
     </td>
     <td class='right top mainbody'>
@@ -71,7 +67,7 @@ function theme($nameofpage, $location, $extra_args = array()) {
 // -------------------------------------------------
 
                 html_header($nameofpage, $extra_args);
-                html_logobar($nameofpage);
+                html_logobar();
                 echo "
     <table id='tbl2' class='w100'>
     <tr>
@@ -86,10 +82,10 @@ function theme($nameofpage, $location, $extra_args = array()) {
                 echo "
     </td>
     <td id='tbl2c2' class='right top'>
-        <img src='$code_url/graphics/r_curve.gif' style='position: relative; top: -3px;' alt=''>
+        <img src='$code_url/graphics/r_curve.gif' style='position: relative; top: -1px;' alt=''>
     </td>
     <td id='tbl2c3' class='navbar w25 left top'>\n";
-                html_statsbar($nameofpage);
+                html_statsbar();
                 echo "</td></tr></table>\n";
                 html_footer();
             }
@@ -104,7 +100,7 @@ function theme($nameofpage, $location, $extra_args = array()) {
 // -----------------------------------------------------
 
             html_header($nameofpage, $extra_args);
-            html_logobar($nameofpage);
+            html_logobar();
             echo "
     <table id='tbl3' class='w100'>
     <tr>
@@ -123,7 +119,7 @@ function theme($nameofpage, $location, $extra_args = array()) {
     }
 }
 
-function html_header($nameofpage, $extra_args = array()) {
+function html_header($nameofpage, $extra_args = []) {
     global $code_url;
 
     $incl = "";
@@ -178,15 +174,12 @@ echo "
 }
 
 function html_logobar() {
+    global $Context;
     global $code_url;
-    global $dpdb;
     global $User;
     global $completed_books_offset;
 
-//    $username = $User->Username();
-    $numproj = $dpdb->SqlOneValue("
-        SELECT COUNT(distinct postednum) FROM projects
-        WHERE phase = 'POSTED'");
+    $numproj = $Context->PostedCount();
 
     echo "
 	<table id='tbl_logobar' class='w100'>
@@ -226,22 +219,21 @@ function html_logobar() {
 
     if (! $User->IsLoggedIn()) {
 	    $link_to_forums_login = "<a href='http://www.pgdpcanada.net/forumdpc/ucp.php?mode=login'>Forums</a>";
-	    $items = array( link_to_site("DPC"));
+	    $items = [link_to_site("DPC")];
 	    $items[] = $link_to_forums_login;
 	    echo implode($divider, $items);
         echo "
        <td class='right'>ID:
-            <input type='hidden' name='destination' id='destionation' value='".ThisFullUrl()."'>
             <input type='text' name='userNM' size='10' tabindex='1' maxlength='50'> &nbsp;" . _("Password:") . "
             <input type='password' name='userPW' size='10' tabindex='2'
             maxlength='50'> &nbsp;
-            <input type='submit' value='" . _("Sign In") ."' style='color: black;'>\n";
+            <input type='submit' name='submit_login' id='submit_login' value='" . _("Sign In") ."' style='color: black;'>\n";
 	    echo link_to_registration();
         echo "&nbsp;
         </td>\n";
     }
     else {
-	    $items = array( link_to_site("DPC"));
+	    $items = [link_to_site("DPC")];
 	    $items[] = link_to_activity_hub();
 	    $items[] = link_to_search("Project Search");
 	    $items[] = link_to_my_projects();
@@ -272,52 +264,12 @@ function html_logobar() {
 	echo "</form>\n";
 }
 
-function login_form() {
-    global $code_url;
-    $password   = _("Password: ");
-    $signin     = _("Sign In: ");
-    return "
-        <form name='frmlogin' action='$code_url/accounts/login.php' method='POST'>
-            ID:
-            <input type='text' name='userNM' size='10'>
-            $password
-            <input type='text'  name='userPW' size='10'>
-            <input type='submit'  value='$signin' size='10'>\n"
-        . link_to_registration()
-        . link_to_help()
-        . "</form>\n";
-}
-
-//function headerbar_text($text, $link = '', $with_divider = false) {
-//    $out = "";
-//
-//    if ($with_divider) {
-//        $out .= " · ";
-//    }
-//
-//    if(!empty($link)) {
-//        $out .= "<a href='$link'>$text</a>\n";
-//    }
-//    else {
-//        $out .= $text;
-//    }
-//
-//    return $out;
-//}
-
 function html_statsbar() {
     global $User;
+    global $Context, $t;
     global $code_url;
-    global $pagename;
 
-    // Show statistics that are pertinent to the particular request.
-    // (i.e., to the main content of the page).
-
-    if(isset($pagename) && $pagename == "activityhub") {
-        // show_backlogs();
-    }
-    //$round_id = Arg('round_id', Arg('tally_name'));
-    $round_id = Arg('roundid', Arg('round_id', Arg('tally_name')));
+    $round_id = Arg('roundid');
 
     if($round_id == "") {
         show_completed_projects();
@@ -325,6 +277,7 @@ function html_statsbar() {
     else {
         show_round_specific_stats( $round_id );
     }
+    $t[] = $Context->TimerGet();
 
     if($User->IsLoggedIn()) {
         echo "
@@ -333,73 +286,41 @@ function html_statsbar() {
         ". _("More Statistics")."</a>
         </div>\n";
 
+        if(Arg("sr")) {
+            show_sr_projects();
+        }
 
         echo "<hr class='w75 center'>\n";
         show_user_teams();
+        $t[] = $Context->TimerGet();
 
         echo "<hr class='w75 center'>\n";
-        show_key_help_links();
+        show_help_links();
 	    echo "<hr class='w75 center'>\n";
+        show_admin_sidebar();
+        $t[] = $Context->TimerGet();
+        echo "<hr class='w75 center'>\n";
+        echo "\n<!-- Statsbar Timer: " . implode("  ", $t) . "-->\n";
     }
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-/*
-function maybe_show_language_selector() {
-    global $code_url, $intlang;
-    $instl=installed_langs();
-    $uninstl=uninstalled_langs();
-    if(!(count($instl)>1||count($uninstl)>0))
-        return;
-
-    if (empty($userP) || (!(empty($userP)) && !($userP['u_intlang']))) {
-        ?>
-        <script language="JavaScript" type="text/javascript"><!--
-            function submitLang() {
-                top.document.getElementForId("langform").submit();
-            }
-        // --></script>
-        <?
-
-        echo "<form name=langform action='$code_url/tools/setlangcookie.php' method=POST>\n<input type=submit value='"._("Set language:")."'>\n<select name=lang onChange='submitLang(this)'>\n";
-        foreach($instl as $v)
-            echo "<option value='".$v."'".(($v==$intlang)?" selected":"").">".bilingual_name($v)."</option>\n";
-        if(count($uninstl)>0) {
-            echo "<option value='en_EN' disabled>-------------------</option>\n";
-            echo "<option value='en_EN' disabled>(To be translated:)</option>\n";
-            foreach($uninstl as $v)
-                echo "<option value='"."en_EN"."' disabled>".bilingual_name($v)."</option>\n";
-        }
-        echo "</select><input type=hidden name=returnto value='".$_SERVER['REQUEST_URI']."'>\n</form>\n";
-        echo "Languages below the line are planned to be added to the site, but currently are not; visit <a href='$code_url/faq/translate.php'>this page</a> if you can help us with translating the site into one of them.<hr>\n";
-    }
-}
-*/
-
-// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-// This parallels the Activity Hub.
 function show_quick_links() {
     global $User;
 
     if (! $User->IsLoggedIn())
         return;
 
-    $items = array();
+    $items = [];
 
     if ($User->IsProjectManager() || $User->IsSiteManager()) {
         $items[] = link_to_project_manager("PM");
     }
 
-//	foreach(array("P1", "P2", "P3", "F1", "F2", "PP", "PPV") as $phs) {
-	foreach(array("P1", "P2", "P3", "F1", "F2") as $phs) {
+	foreach(["P1", "P2", "P3", "F1", "F2"] as $phs) {
         if($User->MayWorkInRound($phs)) {
 	        $items[] = link_to_round($phs);
-//	        $title = PhaseCaption($phs);
-//	        $link = link_to_round($phs);
-//	        echo headerbar_text("<span title='$title'>$text</span>", "$code_url/$rel_url", $divider);
-//            $links[] = array(link_to_round($phs), $phs, $phs);
         }
     }
 	if($User->MayWorkInRound("PP")) {
@@ -412,23 +333,13 @@ function show_quick_links() {
 
 	$divider        = "\n · ";
 	echo implode($divider, $items);
-
-//    if ( count($links) > 0 ) {
-//        while ( list($i, list($rel_url, $text, $title)) = each($links) ) {
-//            $divider = ($i > 0)
-//                    ? true
-//                    : false;
-//
-//                echo headerbar_text("<span title='$title'>$text</span>", "$code_url/$rel_url", $divider);
-//            echo "\n";
-//        }
-//    }
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 function show_round_specific_stats( $round_id ) {
     global $User;
+    global $Context, $t;
 
     // Put the whole thing in a table, just so we can put a box around it.
     echo "
@@ -438,18 +349,22 @@ function show_round_specific_stats( $round_id ) {
 
     // Show the site statistics
 
-    global $dpdb;
     echo "
         <h5 class='center'>" . _("Pages completed in $round_id") . "</h5>
-        <h5 class='center'>" . _("Site Statistics:") . "</h5>
-        <pre>\n";
+        <h5 class='center'>" . _("Site Statistics:") . "</h5>\n";
 
     $todaygoal      = number_format(PhaseGoalToday($round_id));
+    $t[] = $Context->TimerGet();
     $yesterdaygoal  = number_format(PhaseGoalYesterday($round_id));
+    $t[] = $Context->TimerGet();
     $monthgoal      = number_format(PhaseGoalMonth($round_id));
+    $t[] = $Context->TimerGet();
     $todaycount     = number_format(PhaseCountToday($round_id));
+    $t[] = $Context->TimerGet();
     $yesterdaycount = number_format(PhaseCountYesterday($round_id));
+    $t[] = $Context->TimerGet();
     $monthcount     = number_format(PhaseCountMonth($round_id));
+    $t[] = $Context->TimerGet();
     $monthpct       = PhaseGoalMonth($round_id) == 0
                         ? 0
                         : PhaseCountMonth($round_id) / PhaseGoalMonth($round_id) * 100;
@@ -459,35 +374,23 @@ function show_round_specific_stats( $round_id ) {
     $strpct         = number_format($monthpct, 1);
 
     // Today's Numbers
-    echo _("Today's Goal: $todaygoal\n")
-       . _("Today's Total: $todaycount ($strnow)\n\n")
+    echo "<ul class='clean'>\n";
+    echo _("<li>Today's Goal: $todaygoal</li>\n")
+       . _("<li>Today's Total: $todaycount ($strnow)</li>\n\n")
 
-       . _("Yesterday's Goal: $yesterdaygoal\n")
-       . _("Yesterday's Total: $yesterdaycount\n\n")
+       . _("<li>Yesterday's Goal: $yesterdaygoal</li>\n")
+       . _("<li>Yesterday's Total: $yesterdaycount</li>\n\n")
 
-       . _("$strmonthgoal: $monthgoal\n")
-       . _("$strmonthcount: $monthcount ({$strpct}%)\n")
+       . _("<li>$strmonthgoal: $monthgoal</li>\n")
+       . _("<li>$strmonthcount: $monthcount ({$strpct}%)</li>\n")
 
-       . "</pre>\n";
-
-    // Number of users
-    $num_users = $dpdb->SqlOneValue("
-        SELECT COUNT(1) FROM users" );
-
-    $num_pagers = $dpdb->SqlOneValue("
-        SELECT COUNT(DISTINCT username) npagers FROM user_round_pages
-        WHERE phase = '$round_id'");
-
-    echo sprintf( _("<p>%s registered users</p>\n"), number_format($num_users) );
-    echo sprintf( _("<p>%s users with one page or more</p>\n"), number_format($num_pagers));
-
-    echo "
-    <hr class='w75 center'>\n";
-    // ---------------------------------------------------------------------
+       . "</ul>\n";
 
     if ($User->IsLoggedIn()) {
         $rankname = honorific_for_count($round_id, $User->RoundPageCount($round_id));
 
+        $t[] = "Start Personal";
+        $t[] = $Context->TimerGet();
         echo "<h5>" . _("Personal Statistics:") ."</h5>
             <span> "
                 . _("Pages Today: "). number_format($User->RoundTodayCount($round_id))
@@ -502,11 +405,15 @@ function show_round_specific_stats( $round_id ) {
              .link_to_member_stats($User->Username(), $round_id, "Details")
                     . "</a>
             </div>\n";
+        $t[] = $Context->TimerGet();
 
         // -------------------------------------------------------------
         //Show the Neighbor table if the user has requested so
         if($User->NeighborRadius()) {
+            $t[] = "Neighborhood";
+            $t[] = $Context->TimerGet();
             $neighbors = $User->RoundNeighborhood($round_id, $User->NeighborRadius());
+            $t[] = $Context->TimerGet();
             echo "
             <br>
             <hr class='w75 center'>
@@ -524,6 +431,28 @@ function show_round_specific_stats( $round_id ) {
 
     echo "<br>";
     echo "</td></tr></table>";
+}
+
+function show_sr_projects() {
+    global $dpdb;
+    // ---------------------------------------------------------------------
+
+    $sql = "SELECT  nameofwork,
+                    authorsname,
+                    DATEDIFF(DATE(FROM_UNIXTIME(smoothread_deadline)), CURRENT_DATE()) days_left
+            FROM projects
+            WHERE DATE(FROM_UNIXTIME(smoothread_deadline)) >= CURRENT_DATE()
+            ORDER BY smoothread_deadline";
+    $rows = $dpdb->SqlRows($sql);
+
+    echo "<div id='divsr' class='sidebar'>
+          <h5>" . _("Available Smooth Reading Projects:") ."</h5>
+    <ul>\n";
+    foreach($rows as $row) {
+        echo "<li><i>{$row['nameofwork']}</i> by {$row['authorsname']}</li>\n";
+    }
+    echo "</ul></div>\n";
+
 }
 
 function honorific_for_count($round_id, $count) {
@@ -549,27 +478,23 @@ function ename($name) {
 
 function show_user_teams()
 {
-    global $code_url;
-    global $dpdb;
     global $User;
 
-    $rows = $dpdb->SqlRows("
-        SELECT teamname, id FROM user_teams
-        WHERE id IN ({$User->Team1()}, {$User->Team2()}, {$User->Team3()})");
+    echo "<div id='divteams' class='sidebar margined padded'>
+          <h5>" . _("Your Teams") ."</h5>
+        <ul class='clean'>\n";
 
-    echo "
-    <div id='divteams' class='center sidebar'>
-    <h5>" .  _("Your Teams:") . "</h5>\n";
-
-    foreach($rows as $row) {
-        echo "
-    <a href='$code_url/stats/teams/tdetail.php?tid=".$row['id']."'>".$row['teamname']."</a><br/>\n";
-
+    foreach($User->Teams() as $team) {
+        /** @var DpTeam $team */
+        echo "<li>" . link_to_team($team->Id(), $team->TeamName(), true) . "</li>\n";
     }
-    echo "
-    <br/>
-    <a href='$code_url/stats/teams/teamlist.php'>"._("View all teams")."</a>
+
+    echo "</ul>
     </div>\n";
+
+    echo "<div class='center'>
+    " . link_to_team_list("View all teams", true)
+    . "</div>\n";
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -605,7 +530,7 @@ function show_completed_projects() {
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-function show_key_help_links() {
+function show_help_links() {
     global $wiki_url;
 
     echo "
@@ -613,10 +538,53 @@ function show_key_help_links() {
         <h5>"._("Key Help Documents:")."</h5>
 		<a href='{$wiki_url}/FAQ_Central'>"._("Frequently Asked Questions")."</a>
 		<br>
-		<a href='{$wiki_url}/Proofreading_Guidelines'>"._("Proofreading Guidelines")."</a>
+		".link_to_proofing_guidelines()."
 		<br>
-		<a href='{$wiki_url}/Formatting_Guidelines'>"._("Formatting Guidelines")."</a>
+		".link_to_formatting_guidelines()."
 		</div>\n";
+}
+
+function show_admin_sidebar() {
+    global $User;
+    echo "
+    <div id='admin_sidebar' class='sidebar center'>
+    <h5>Admin Links</h5>
+    <pre class='left'>
+    <a href='http://www.pgdpcanada.net/c/tools/prep.php'>Projects Before P1</a>
+    <a href='http://www.pgdpcanada.net/c/tools/p1counts.php'>P1 Genre Counts</a>
+    <a href='http://www.pgdpcanada.net/c/tools/active_projects.php'>Active Project List</a>
+    <a href='http://www.pgdpcanada.net/c/tools/holds.php'>Active Projects On Hold</a>
+    <a href='http://www.pgdpcanada.net/c/tools/qc.php'>Projects On QC Hold</a>
+    <a href='http://www.pgdpcanada.net/c/search2.php'>Extended Project Search</a>
+    <a href='http://www.pgdpcanada.net/c/user_pages.php'>Diffs for a Round</a>
+    <a href='http://www.pgdpcanada.net/c/tools/bad.php'>Bad Pages</a>
+    <a href='https://docs.google.com/spreadsheets/d/1Ut-t3zDouO5eSJShQsreG0LTjvFP2dszgXHGa-CUWcY/edit#gid=0'>DoD Spreadsheet</a>
+    <a href='https://docs.google.com/spreadsheets/d/1lU5VeCLMIPhkqqGc-g0iE7Ld5EU5b-sI7DcoKiUwZPo/edit#gid=0'>Clearance Spreadsheet</a>\n";
+        if($User->IsSiteManager() || $User->IsProjectFacilitator() || $User->IsProjectManager()) {
+            echo "
+    <a href='http://www.pgdpcanada.net/c/tools/site_admin/user_roles.php'>Manage Roles for a User</a>
+    <a href='http://www.pgdpcanada.net/c/tools/p1release.php'>Project P1 Release</a>
+    <a href='http://www.pgdpcanada.net/c/tools/pper.php'>Post Processor Report</a>
+    <a href='http://www.pgdpcanada.net/c/tools/site_admin/sitenews.php'>Site News Central</a>\n";
+        }
+        echo "
+    </pre>\n";
+//        if($User->IsSiteManager()
+//            || $User->IsProjectFacilitator()
+//            || $User->IsProjectManager()
+//            || $User->IsProjectManager()) {
+//            echo "
+//        <form id='frmadmin' name='frmadmin' action='' method='POST'>
+//        <div class='lfloat'>
+//             <p>Project Page for project ID:
+//            <input type='text' name='link_projectid' id='link_projectid'>
+//            <input type='submit' name='cmdprojectid' id='cmdprojectid' value='Submit'></p>
+//		</div>
+//        </form>\n";
+//        }
+        echo "
+    </div>
+    <hr class='left clear hidden' />\n";
 }
 
 function show_backlogs() {
@@ -630,25 +598,27 @@ function show_backlogs() {
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 function timer_string() {
-    global $starttime;
-    $mtime = explode(" ", microtime());
-    $endtime = $mtime[1] + $mtime[0];
-    $totaltime = ($endtime - $starttime);
-    return left($totaltime, 5);
+    global $Context;
+    return (string) $Context->TimerGet();
+//    global $starttime;
+//    $mtime = explode(" ", microtime());
+//    $endtime = $mtime[1] + $mtime[0];
+//    $totaltime = ($endtime - $starttime);
+//    return left($totaltime, 5);
 }
 
-function timer_array() {
-    global $time_comment;
-    return $time_comment;
-}
+//function timer_array() {
+//    global $time_comment;
+//    return $time_comment;
+//}
 
-function timer_milestone($remark) {
-    global $time_comment;
-    $time_comment[] = "$remark : " . timer_string();
-}
+//function timer_milestone($remark) {
+//    global $time_comment;
+//    $time_comment[] = "$remark : " . timer_string();
+//}
 
 function html_footer() {
-    global $User;
+//    global $User;
     global $code_version;
 
     $strtime = timer_string();
@@ -658,9 +628,9 @@ function html_footer() {
         . _(" (Page Build Time: {$strtime} ")
         . _(" Version $code_version")
         . "</div> <!-- divfooter -->\n";
-    if($User->Username() == 'dkretz') {
-        echo implode("<br>\n", timer_array());
-    }
+//    if($User->Username() == 'dkretz') {
+//        echo implode("<br>\n", timer_array());
+//    }
 
     echo "\n</body>\n";
     echo "</html>\n";

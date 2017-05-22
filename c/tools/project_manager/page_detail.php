@@ -7,22 +7,74 @@ $projectid          = Arg("projectid")
 
 $username = Arg("username", $User->Username());
 
-//$show_image_size    = Arg("show_image_size", 0);
 $select_by_user     = Arg("select_by_user");
 $is_my_pages        = IsArg("select_by_user");
-//$chkfile            = ArgArray("chkfile");
 
 /** @var $User DpThisUser */
 $User->IsLoggedIn()
     or redirect_to_home();
 
 $project = new DpProject($projectid);
+$projphase = $project->Phase();
 
+$tbl = new DpTable("tblpages", "dptable bordered em90 margined");
+$tbl->AddCaption("^", 4, "center b-left b-bottom b-top");
+$tbl->AddColumn("^Page", "pagename", "epage");
+$tbl->AddColumn("^Page<br />state", "state", "estate", "b-right");
+$tbl->AddColumn("^Image", "imagefile", "eimage");
+$tbl->AddColumn(">OCR<br>Text", "P0", "etext", "b-right");
+
+$colclass = false;
+
+if($projphase != "PREP") {
+    foreach(array("P1", "P2", "P3", "P4", "P5") as $phase) {
+        $colclass = ! $colclass;
+        // Note: for AddCaption, the third aargument, class, can bd executable.
+        // If it is, the !caption text! executes it.
+        $tbl->AddCaption(ephasecaption($phase), 4, "b-all center");
+        $tbl->AddColumn("^Diff", $phase, "ediff", "b-left");
+        $tbl->AddColumn("^Date", $phase, "edate", "em80");
+        $tbl->AddColumn("<User", $phase, "euser");
+        $tbl->AddColumn(">Text", $phase, "etext", "b-right");
+        if(lower($phase) == lower($projphase)) {
+            break;
+        }
+    }
+}
+
+$ncol = 0;
+if($project->IsInRounds()) {
+    $ncol++;
+    $tbl->AddColumn("^Edit", "pagename", "eedit", "b-right");
+}
+
+if ($project->UserMayManage()) {
+    $tbl->AddColumn("^Clear", "pagename", "eclear", "b-right");
+    $ncol ++;
+
+    if( ($projphase == 'PREP' || $project->IsInRounds())) {
+        $ncol++;
+        $tbl->AddColumn("^Delete", "pagename", "edelete", "b-right");
+    }
+}
+if($ncol > 0) {
+    $tbl->AddCaption("Manage", $ncol, "center b-all");
+}
+
+
+$sql = table_sql($projectid);
 
 
 // ====================================================================================
 // display
 // ====================================================================================
+
+if($project->UserMayManage()) {
+    echo "
+        <form id='pagesform' name='pagesform' method='post'
+                action='$code_url/tools/project_manager/edit_pages.php'>
+            <input type='hidden' name='projectid' value='$projectid'>\n";
+}
 
 $title = $project->Title();
 $page_title = _('Page details: ').$title;
@@ -96,7 +148,7 @@ function echo_pagetable($project, $is_my_pages, $username) {
 
     $tbl->AddColumn("^"._("Page"), "pagename", "imagelink", "skinny");
     $tbl->AddColumn("^"._("OCR"), "pagename", "mastertextlink");
-    $tbl->AddColumn("^"._("Status"), "versionstate", "eState", "w4em");
+    $tbl->AddColumn("^"._("Status"), "pagestate", "eState", "w4em");
 
 	$projphase = $project->Phase();
 
@@ -116,6 +168,10 @@ function echo_pagetable($project, $is_my_pages, $username) {
         }
     }
 
+	if($project->IsInRounds()) {
+		$tbl->AddCaption("^");
+		$tbl->AddColumn("^Edit", "pagename", "eedit");
+	}
     $tbl->SetRows($tblrows);
     $tbl->EchoTableNumbered();
 }
@@ -139,11 +195,13 @@ function page_table_rows($project, $is_my_pages, $username) {
 
 	$sql = "
 		SELECT
+			p.username pm,
 			pg.projectid,
 			pg.pagename,
 			pg.imagefile,
-			plv.state versionstate,
+			plv.state pagestate,
 			plv.phase pagephase,
+			plv.username lastuser,
 		    phv.phase,
 			phv.version,
 			pv.username,
@@ -154,30 +212,36 @@ function page_table_rows($project, $is_my_pages, $username) {
 
 		FROM pages pg
 
-		LEFT JOIN page_last_versions plv
-		ON pg.projectid = plv.projectid
-			AND pg.pagename = plv.pagename
+		JOIN projects p ON pg.projectid = p.projectid
 
+        -- one row per page, most recent version
+		LEFT JOIN page_last_versions plv
+            ON pg.projectid = plv.projectid
+                AND pg.pagename = plv.pagename
+
+        -- one row per page I have proofed
 		LEFT JOIN page_versions pvu
-		ON pg.projectid = pvu.projectid
-			AND pg.pagename = pvu.pagename
-			AND pvu.username = '$username'
+            ON pg.projectid = pvu.projectid
+                AND pg.pagename = pvu.pagename
+                AND pvu.username = '$username'
 
 		LEFT JOIN (
 				SELECT 	projectid,
 						pagename,
-						PHASE,
-						MAX(VERSION) VERSION
+						phase,
+						MAX(version) version
 				FROM page_versions
-				GROUP BY projectid, pagename, PHASE
+				WHERE projectid = '$projectid'
+				GROUP BY projectid, pagename, phase
 		) phv
-		ON pg.projectid = phv.projectid
-	    	AND pg.pagename = phv.pagename
+            ON pg.projectid = phv.projectid
+                AND pg.pagename = phv.pagename
+
 		LEFT JOIN page_versions pv
-        ON phv.projectid = pv.projectid
-            AND phv.pagename = pv.pagename
-            AND phv.phase = pv.phase
-            AND phv.version = pv.version
+            ON phv.projectid = pv.projectid
+                AND phv.pagename = pv.pagename
+                AND phv.phase = pv.phase
+                AND phv.version = pv.version
 
 		LEFT JOIN phases ON phv.phase = phases.phase
 
@@ -186,6 +250,8 @@ function page_table_rows($project, $is_my_pages, $username) {
 		GROUP BY pv.projectid, pv.pagename, phv.phase
 		ORDER BY pg.pagename, phases.sequence
 	";
+
+    echo(html_comment($sql));
 
 
 	/*
@@ -203,17 +269,21 @@ function page_table_rows($project, $is_my_pages, $username) {
 		/**  @var $pagename String */
 		/**  @var $imagefile String */
 		/**  @var $phase String */
+		/**  @var $lastuser String */
 		/**  @var $version Int */
 		/**  @var $version_time String */
 		/**  @var $crc32  String*/
 		/**  @var $textlen  String*/
-		/**  @var $versionstate  String*/
+		/**  @var $pagestate  String*/
 		/**  @var $pagephase  String*/
+		/**  @var $pm  String*/
+		$a[$pagename]["pm"]                      = $pm;
 		$a[$pagename]["projectid"]               = $projectid;
 		$a[$pagename]["pagename"]                = $pagename;
 		$a[$pagename]["imagefile"]               = $imagefile;
-		$a[$pagename]["versionstate"]            = $versionstate;
+		$a[$pagename]["pagestate"]            = $pagestate;
 		$a[$pagename]["pagephase"]               = $pagephase;
+		$a[$pagename]["lastuser"]               = $lastuser;
 		$a[$pagename][$phase]["phase"]           = $phase;
 		$a[$pagename][$phase]["version"]         = $version;
 		$a[$pagename][$phase]["version_time"]    = $version_time;
@@ -236,18 +306,35 @@ function imagelink($pagename, $pagerow) {
     return link_to_view_image($projectid, $pagename, $pagename);
 }
 
-function ephasetime($phase) {
-	return $phase["version_time"];
+function eedit($pagename, $pagerow) {
+	global $User;
+	$projectid = $pagerow['projectid'];
+	$proofer = $pagerow['lastuser'];
+	if(lower($proofer) == lower($User->Username())
+	   || lower($pagerow['pm']) == lower($User->Username()) ) {
+		return link_to_proof_page($projectid, $pagename, "Edit", true);
+	}
+	return "";
+}
+
+function ephasetime($phase, $pagerow) {
+    if(! isset($phase["phase"]))
+        return "nada phase";
+	return $phase['phase'] == $pagerow['pagephase'] && $pagerow['pagestate'] == 'A'
+			? ""
+			: $phase["version_time"];
 }
 
 function mastertextlink($pagename, $pagerow) {
 //    global $pm_url;
     $projectid = $pagerow['projectid'];
 	$pagelen  = $pagerow['PREP']['textlen'];
-    return link_to_page_text($projectid, $pagename, "PREP", $pagelen, true);
+    return link_to_version_text($projectid, $pagename, 0, $pagelen, true);
 }
 
 function textlink($phase, $pgrow) {
+    if(! isset($phase["textlen"]))
+        return "nada phase";
 	$prompt = $phase['textlen'];
 //    global $User;
 //    $idx = substr($idx, 1);
@@ -256,16 +343,6 @@ function textlink($phase, $pgrow) {
     $pagename = $pgrow['pagename'];
 	$version = $phase['version'];
 	return link_to_version_text($projectid, $pagename, $version, $prompt, true);
-//    $key = "textlength_{$idx}";
-//    if(! isset($pagerow[$key]))
-//        return "";
-//	 c/textsrv.php
-//    $url = url_for_page_text($projectid, $pagename, $roundid);
-//    $userval = $pagerow["user_{$rindex}"];
-//    $myclass = ($User->NameIs($userval)
-//            ? " class='red'"
-//            : " ");
-//    return "<a $myclass target='_blank' href='$url'>".$pagerow[$key]."</a>";
 }
 
 function eState($state) {
@@ -312,6 +389,8 @@ function xfixlink($pagerow) {
 }
 
 function ediff($phase, $pagerow) {
+    if(! isset($phase["phase"]))
+       return "nada phase";
 	switch($phase["phase"]) {
 		case "PREP":
 			$phase0 = null;
@@ -351,6 +430,8 @@ function usrlnk($phase) {
     global $User;
 	global $projphase;
 
+    if(! isset($phase["username"]))
+        return "nada phase";
 	$proofername = $phase['username'];
 //    $proofername = $page[$key];
     // index for current round
@@ -394,7 +475,7 @@ function echo_js($rows) {
     var avail_pages = [
     <?php
     foreach($rows as $row) {
-        if(pagestate($row) == 'avail') {
+        if(pagestate($row) == 'A') {
             echo "'{$row['pagename']}', ";
             // echo "avail_pages.push('{$row['pagename']}')\n";
         }
@@ -487,6 +568,7 @@ function echo_js($rows) {
         return true;
     }
 
+    /*
     function CheckAll() {
         if(document.pagesform.ckall.checked) {
             eSelectAll();
@@ -495,6 +577,7 @@ function echo_js($rows) {
             eClearAll();
         }
     }
+    */
 
     function SetCheckboxes(val) {
         val = val ? 'checked' : '';

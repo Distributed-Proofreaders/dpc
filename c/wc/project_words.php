@@ -67,24 +67,24 @@ if(isset($applwords)) {
     }
 
     if($isToDelete) {
-        $project->DeleteSuggestedWordsArray($langcode, $applwords);
+        $project->DeleteAcceptedWordsArray($langcode, $applwords);
     }
-
-    $project->RefreshSuggestedWordsArray($langcode);
+//
+    $project->RefreshAcceptedWordsArray($langcode);
 }
 
 if ($isSaveAndProject || $isSave ) {
-    // dump("save");
-    // dump($txtgood);
     $project->WriteGoodWordsList($langcode,      $txtgood);
     $project->WriteBadWordsList($langcode,       $txtbad);
-    // $project->WriteSuggestedWordsList($langcode, $suggested_words);
     if ($isSaveAndProject) {
         redirect_to_project($projectid);
     }
-    // else if ($isSaveAndPM) {
-        // redirect_to_pm();
-    // }
+}
+
+if ($isSaveAndPM) {
+    $project->WriteGoodWordsList($langcode,      $txtgood);
+    $project->WriteBadWordsList($langcode,       $txtbad);
+    redirect_to_project_manager();
 }
 
 
@@ -104,7 +104,7 @@ if($isflagged) {
 }
 
 else {
-    $asrc = $project->SuggestedWordsByCountAlpha($langcode);
+    $asrc = $project->AcceptedWordsByCountAlpha($langcode);
     $asug = array();
     foreach($asrc as $wc) {
         $asug["w_{$wc[0]}"] = "{$wc[0]} ({$wc[1]})";
@@ -147,6 +147,7 @@ function submitform() {
 //  (I don't know if .value.length applies and how the '[]' in the name
 //  disturbs the test). ))
 
+/*
 function eSetTextMovers(e) {
     e = e ? e : window.event;
     document.wcform.btnleft.disabled =
@@ -172,6 +173,7 @@ function eWordsToBad() {
         DeleteSelection(document.wcform.suggested_words);
     }
 }
+*/
 
 function DeleteSelection(ctl) {
     if (document.selection) {
@@ -239,7 +241,7 @@ echo "
 <form name='wcform' method='post' enctype='multipart/form-data' accept-charset='UTF-8'>\n";
 
 echo "<div id='div_words_menu' class='center divwords w100'>"
-	. _("Language")
+	. _("Language ")
 	. LanguagePicker("pklang", $langcode, "", "submitform()",  "code_and_name") . "<br>\n";
 
 	echo link_to_adhoc_words($projectid, 'Ad hoc words (context)') . "<br>\n";
@@ -293,7 +295,7 @@ echo "
         . $wordpick
         ."
     </div>   <!-- div_suggested_words -->\n";
-//<td>\n";
+// echo "<td>\n";
 
 //<td>
 echo "

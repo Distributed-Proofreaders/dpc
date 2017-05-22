@@ -6651,11 +6651,9 @@ $other_regex = array(
 
 //  'Find a comma at the end of a line with the next line starting with an upper case character.',
 //',("?\n\s*"?\p{Upper})' => '.$1',
-',("?\ns*"?[A-Z])' => '.$1',
 
 //  'Find a comma followed by a space and an upper-case character (except I) and replace with a period.',
 //',(?=\s\p{IsUpper}\S)|,(?=\s[A-HJ-Z]\s)' => '.',
-',(?=\s[A-Z]\S)|,(?=\s[A-HJ-Z]\s)' => '.',
 
 // '<(\/?)(\p{IsUpper}+)>' => 'Find upper-case HTML markup and convert it to lower-case.',
 //'<(\/?)(\p{IsUpper}+)>' => '<$1\L$2\E>',
@@ -6725,15 +6723,3 @@ $other_regex = array(
 );
 
 
-$begins = array(
-	"hl" => "bl",
-	"hr" => "br",
-	"rn" => "m",
-	"wb" => "wh",
-	"tb" => "th",
-	"tli" => "th"
-};
-
-$mids = array(
-	"rnp" => "mp"
-);

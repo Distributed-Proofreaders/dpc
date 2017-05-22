@@ -1,4 +1,4 @@
-<?PHP
+<?php
 /*
  *  wpinsert.php - test adding a nwe post (type project)
 */

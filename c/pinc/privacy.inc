@@ -1,28 +1,24 @@
 <?PHP
 include_once($relPath.'prefs_options.inc'); // PRIVACY_*
 
-function can_reveal_details_about( $username, $user_privacy)
-// Can we reveal (to the requestor) details about the given user?
-{
-    global $pguser; // the "requestor"
+function can_reveal_details_about( $username, $user_privacy) {
+    global $User;
 
-    switch ($user_privacy)
-    {
+    switch ($user_privacy) {
         case PRIVACY_PUBLIC:
             // Details are visible to all.
             return TRUE;
 
         case PRIVACY_PRIVATE:
             // Details are visible to anyone logged in.
-            return !is_null($pguser);
+            return $User->IsLoggedIn();
 
         case PRIVACY_ANONYMOUS:
             // Details are visible to the user him/herself and to Site Admins.
-            return !is_null($pguser) && ( $pguser == $username || user_is_a_sitemanager() );
+            return $username == $User->Username() || $User->IsSiteManager();
 
         default:
-            // Shouldn't happen.
-            die( "can_reveal_details_about(): bad privacy : '$user_privacy'" );
+            return false;
     }
 }
 

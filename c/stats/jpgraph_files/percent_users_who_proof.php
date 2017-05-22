@@ -1,4 +1,4 @@
-<?PHP
+<?
 $relPath="./../../pinc/";
 require_once $relPath . "dpinit.php";
 include_once($relPath.'page_tally.inc');

@@ -5,7 +5,9 @@ error_reporting(E_ALL);
 
 $relPath="./../pinc/";
 include_once($relPath . 'dpinit.php');
-//include_once $relPath . "site_news.inc";
+
+$User->IsLoggedIn()
+	or RedirectToLogin();
 
 $pcheckout      = ArgArray("checkout");     // checkout to PP
 
@@ -66,7 +68,7 @@ the wiki</a> to find out more.</p>
 
 <?php
 
-//show_news_for_page("PP");
+show_news_for_page("PP");
 
 echo "
 

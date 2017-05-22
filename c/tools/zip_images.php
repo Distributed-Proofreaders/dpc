@@ -3,6 +3,8 @@
 // Download a generated-on-demand zip of the
 // image files in a given project directory.
 
+die("I think this is defunct");
+
 $relPath = '../pinc/';
 require_once $relPath."dpinit.php";
 

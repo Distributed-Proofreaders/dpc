@@ -65,21 +65,17 @@ function echoChartFunction($phase, $div_id) {
 }
 
 function sql($phase) {
-    return "
-        SELECT
-            CONCAT(MONTH(FROM_UNIXTIME(count_time))
-                , YEAR(FROM_UNIXTIME(count_time))) moyr
-            , SUM(page_count) val
-        FROM
-            user_round_pages
-        WHERE round_id = '$phase'
-            AND count_time < UNIX_TIMESTAMP(CAST(DATE_FORMAT(NOW() ,'%Y-%m-01') as DATE))
-        GROUP BY 
-            round_id, 
-            MONTH(FROM_UNIXTIME(count_time)), 
-            YEAR(FROM_UNIXTIME(count_time))
-        ORDER BY 
-            round_id,
-            YEAR(FROM_UNIXTIME(count_time)),
-            MONTH(FROM_UNIXTIME(count_time))";
+	return "
+        SELECT  CONCAT(MONTH(FROM_UNIXTIME(version_time)) ,
+                    YEAR(FROM_UNIXTIME(version_time))) moyr,
+                COUNT(1) val
+        FROM page_versions pv
+        JOIN days d
+        ON pv.version_time >= d.min_unixtime
+            AND pv.version_time <= d.max_unixtime
+        WHERE pv.phase = '$phase'
+            AND d.dateval > CAST(DATE_FORMAT(NOW(), '%Y-%m-01') AS DATE)
+        GROUP BY PHASE, d.monthval, d.yearval
+        ORDER BY PHASE, d.yearval, d.monthval
+        ";
 }

@@ -22,7 +22,11 @@ function utf8_uriencode($str) {
 }
 */
 
-/** @var String $str */
+
+/**
+ * @param $str
+ * @return string
+ */
 function maybe_convert($str) {
     // $re = "/([Ã‡|Ã¦|Ã€Â]Ãƒ|Ã©|Â£|Å“|eÌ)/u";
 
@@ -187,8 +191,8 @@ function tempdir($dir = null, $prefix = null) {
 
 function DefaultLocale() {
     global $User;
-    return $User->Language()
-        ? $User->Language()
+    return $User->InterfaceLanguage()
+        ? $User->InterfaceLanguage()
         : "en";
 }
 
@@ -198,7 +202,7 @@ function LanguageName($lang) {
 }
 
 function SimpleHeader($title = "") {
-    return NotSoSimpleHeader(array("title" => $title));
+    return NotSoSimpleHeader(["title" => $title]);
 }
 
 function SimpleFooter() {
@@ -346,8 +350,15 @@ function endswith($str, $sfx) {
 	return right($str, mb_strlen($sfx)) == $sfx;
 }
 
+function TextRows($text) {
+    return text_lines($text);
+}
 function text_lines($text) {
     return preg_split('/\r?\n/u', $text);
+}
+
+function empty_line($text) {
+    return trim($text) == "";
 }
 
 /**
@@ -558,7 +569,7 @@ function pdump($val) {
     </pre>\n";
 }
 
-function dumpstr($val) {
+function strdump($val) {
     return pdump($val);
 }
 
@@ -601,21 +612,20 @@ function IsMe() {
 
 
 function StackDump() {
-	dump(debug_backtrace());
-//    array_walk(debug_backtrace(),
-//        create_function('$a,$b','print "{$a[\'function\']}()(".basename($a[\'file\']).":{$a[\'line\']}); ";'));
+	$e = new Exception;
+	var_dump($e->getTraceAsString());
 }
 
 function LogMsg($msg) {
     global $dpdb;
     global $User;
-    $user = ($User == null  ? "(logging in)" : $User->Username() );
+    $username = ($User == null  ? "(logging in)" : $User->Username() );
     $sql = "
         INSERT INTO log (username, eventtime, logtext)
-        VALUES ('$user', 
-                UNIX_TIMESTAMP(), 
-                '${msg}')";
-    $dpdb->SqlExecute($sql);
+        VALUES (?, UNIX_TIMESTAMP(), ?)
+        ";
+	$args = [&$username, &$msg];
+    $dpdb->SqlExecutePS($sql, $args);
 }
 
 function dump_memory_size() {
@@ -718,7 +728,7 @@ function ReplaceLastRegex($ptn, $repl, $flags, $text) {
 }
 
 // returns offset from $start, or -1 for not found.
-function RegexOffset($regex, $flags, $text, $start = 0) {
+function RegexByteOffset($regex, $flags, $text, $start = 0) {
     $regex = "~".$regex."~".$flags;
     $n = preg_match(
             $regex, $text, $match, PREG_OFFSET_CAPTURE, $start);
@@ -730,7 +740,7 @@ function regex_offset($regex, $flags, $text, $start = 0) {
     // say($regex);
     $n = preg_match(
             $regex, $text, $match, PREG_OFFSET_CAPTURE, $start);
-    return $n > 0 ? $match : array();
+    return $n > 0 ? $match : [];
 }
 
 function regex_offsets($regex, $flags, $text) {
@@ -767,7 +777,7 @@ function RegexMatches($regex, $flags, $text) {
     $regex = "~".$regex."~".$flags;
     preg_match_all($regex, $text, $matches);
 	$nsubs = count($matches);
-	$ary = array();
+	$ary = [];
 	// matches[0] is full string matches
 	// matches[1] is first substring matches
 	for($i = 0; $i < $nsubs; $i++) {
@@ -788,7 +798,7 @@ function RegexMatch($regex, $flags, $text, $index = 0, $offset = 0) {
     // $matches is an array if there are submatches - else it's a string.
 	$i = preg_match( $regex, $text, $matches, PREG_OFFSET_CAPTURE, $offset);
 	if($i > 0) {
-		return $matches[$index];
+		return $matches[$index][$offset];
 	}
 	return null;
 	    // if there is no match, $matches is null
@@ -813,7 +823,7 @@ function RegexSplit($regex, $flags, $text) {
     return preg_split($regex, $text);
 }
 
-function RegexWordOffsets($word, &$text) {
+function WordByteOffsets($word, &$text) {
     $edge1 = "(?<!\p{L})";
     $edge2 = "(?!\p{L})";
     $ptn = "~{$edge1}$word{$edge2}~u";
@@ -821,7 +831,7 @@ function RegexWordOffsets($word, &$text) {
     return $m[0];
 }
 
-function RegexOffsets($word, $flags, &$text) {
+function RegexByteOffsets($word, $flags, &$text) {
     $ptn = "~$word~$flags";
     try {
         preg_match_all( $ptn, $text, $m, PREG_OFFSET_CAPTURE );
@@ -833,6 +843,9 @@ function RegexOffsets($word, $flags, &$text) {
     return $m[0];
 };
 
+function set_timeout_seconds($sec) {
+    set_time_limit($sec);
+}
 
 /**
  * date and time
@@ -1008,38 +1021,6 @@ function TimeStampString() {
     return date('m-d-y H:i:s');
 }
 
-/** 
-    timer
-*/
-
-function init_timer() {
-    _timer(true);
-}
-
-function get_timer() {
-    return number_format(_timer(), 3);
-}
-
-function say_timer() {
-    say("<br>time: ".get_timer()."<br>");
-}
-
-function _timer($is_init = false) {
-    static $_start;
-    if($is_init) {
-        $_start = microtime(true);
-        return 0.0;
-    }
-    else if(! isset($_start)) {
-        say("default timer init");
-        _timer(true);
-        return 0.0;
-    }
-    else {
-        return microtime(true) - $_start;
-    }
-}
-
 /**
  * file transfers
  * @param string $filename
@@ -1047,32 +1028,40 @@ function _timer($is_init = false) {
  */
 
 function send_string($filename, $str) {
+    header('Content-Description: File Transfer');
     header("Content-Type: application/octet-stream");
     header("Content-Disposition: attachment; filename={$filename}");
+    header('Expires: 0');
+    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+    header('Pragma: public');
+    header('Content-Length: ' . strlen($str));
     echo $str;
     exit;
 }
 
-function send_file($path) {
+function send_file($path, $filename = null) {
 
     if(! file_exists($path)) {
         dump("request to send phantom file $path.");
         return;
     }
 
-    header('Content-Description: File Transfer');
-    header('Content-Type: application/octet-stream');
-    header('Content-Disposition: attachment; filename='.basename($path));
-    header('Content-Transfer-Encoding: binary');
-    header('Expires: 0');
-    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-    header('Pragma: public');
-    header('Content-Length: ' . filesize($path));
-    ob_clean();
-    flush();
-	ignore_user_abort(true);
+    if(! $filename) {
+        $filename = basename($path);
+    }
+
+    header("Content-Description: File Transfer");
+    header("Content-Type: application/octet-stream");
+    header("Content-Disposition: attachment; filename=$filename");
+//    header("Content-Transfer-Encoding: binary");
+    header("Expires: 0");
+    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+    header("Pragma: public");
+    header("Content-Length: " . filesize($path));
+//    ob_clean();
+//    flush();
+//	ignore_user_abort(true);
     readfile($path);
-	unlink($path);
     exit;
 }
 
@@ -1098,6 +1087,9 @@ function ProjectImageFilePath($projectid, $imagefile) {
     return build_path(ProjectPath($projectid), $imagefile);
 }
 
+/*
+ * Filename suffix without the period
+ */
 function FileNameExtension($filename) {
     return pathinfo($filename, PATHINFO_EXTENSION);
 }
@@ -1152,17 +1144,105 @@ function ProjectArchivePath($projectid) {
     return $path;
 }
 
-function ProjectSmoothDownloadUrl($projectid) {
-	return build_path(ProjectUrl($projectid), $projectid . "_smooth_avail.zip");
+//function SmoothZipFileName($projectid) {
+//    return $projectid . "_smooth_avail.zip";
+//}
+//function SmoothZipFilePath($projectid) {
+//    return build_path(ProjectPath($projectid), SmoothZipFileName($projectid));
+//}
+function SmoothDirectoryPath($projectid) {
+    return build_path(ProjectPath($projectid), "smooth");
 }
 
-function ProjectSmoothDownloadPath($projectid) {
-    return build_path(ProjectPath($projectid), $projectid . "_smooth_avail.zip");
+/*
+function UnzipSmoothZipFile($projectid) {
+    $dest = SmoothDirectoryPath($projectid);
+    if(file_exists($dest)) {
+        return;
+    }
+    mkdir($dest);
+    chmod($dest, 0777);
+    $zip = new ZipArchive();
+    $zip->open(SmoothZipFilePath($projectid));
+    $zip->extractTo($dest);
+
+    fix_smooth_paths($dest);
 }
-function ProjectSmoothUploadPath($projectid, $username) {
-    return build_path(ProjectPath($projectid), $projectid
-                    . "_smooth_done_{$username}.zip");
+*/
+
+function fix_smooth_paths($dest) {
+    $paths = glob("$dest/*");
+    foreach($paths as $path) {
+        $pre = rootname($path);
+        $fixed = nice_filename($pre);
+        $ext = extension($path);
+        $newpath = build_path($dest, "$fixed.$ext");
+        switch($ext) {
+            case "txt":
+            case "epub":
+            case "html":
+            case "pdf":
+            case "mobi":
+                if($path != $newpath) {
+                    rename($path, $newpath);
+                    dump("$path $newpath");
+                }
+                break;
+            default:
+                break;
+        }
+    }
 }
+
+function nice_filename($filename) {
+    return preg_replace(
+            ["/[ \-\.]/", "/[^_A-Za-z0-9\-\+=]/", "/_{2,}/"],
+            ["_",        "", "_"],
+            $filename);
+}
+
+function ProjectSmoothDownloadUrls($projectid) {
+    $dir = build_path(SmoothDirectoryPath($projectid), "*");
+    $ary = glob("$dir");
+    $rslt = [];
+    $smoothurl = build_path(ProjectUrl($projectid), "smooth");
+    foreach($ary as $path) {
+        if(is_dir($path)) {
+            continue;
+        }
+        $filename = basename($path);
+        $type = extension($path);
+        $url = build_path($smoothurl, $filename);
+        $rslt[$type] = $url;
+    }
+    return $rslt;
+}
+/*
+function ProjectSmoothDownloadPaths($projectid) {
+    $dir = build_path(ProjectPath($projectid), "smooth");
+    $ary = glob($dir);
+    $rslt = array();
+    foreach($ary as $path) {
+        if(is_dir($path)) {
+            continue;
+        }
+        $type = extension($path);
+        $rslt[$type] = $path;
+    }
+    return $rslt;
+}
+
+// only for zip files
+function ProjectSmoothDownloadPath($projectid, $extension) {
+    return build_path(ProjectPath($projectid), $projectid . "_smooth_avail.$extension");
+}
+*/
+//function ProjectSmoothZipUploadPath($projectid, $username) {
+//    return build_path(ProjectPath($projectid), $projectid
+//    return build_path(ProjectPath($projectid), $projectid
+//                    . "_smooth_done_{$username}.zip");
+//                    . "_smooth_done_{$username}.zip");
+//}
 
 function ProjectSmoothUploadFilename($projectid) {
 	global $User;
@@ -1183,11 +1263,13 @@ function ProjectPagePath($projectid, $pagename) {
 }
 
 function ExportPageHeader($pagename, $proofers = null) {
-	if(is_null($proofers)) {
-		$proofers = array( "", "", "", "", "");
-	}
-	$str = implode(" \\ ", $proofers);
-	$str = "-----File: $pagename ($str) ---";
+//	if(is_null($proofers)) {
+//		$proofers = array( "", "", "", "", "");
+//	}
+    $str = is_array($proofers)
+        ? "(" . implode(" \\ ", $proofers) . ")"
+        : "";
+	$str = "-----File: $pagename $str ---";
 	$str = str_pad($str, 75, "-", STR_PAD_RIGHT);
 	return $str;
 }
@@ -1213,29 +1295,25 @@ function PageVersionPath($projectid, $pagecode, $version_number) {
 }
 
 function PageVersionText($projectid, $pagename, $version_number) {
-//	if(is_null($version_number)) {
-//		return "null";
-//	}
 	assert(file_exists(PageVersionPath($projectid, $pagename, $version_number)));
 	return file_get_contents(PageVersionPath($projectid, $pagename, $version_number));
 }
 
+/*
 function SetPageVersionText($projectid, $pagecode, $version_number, $text) {
 	assert(! is_null($version_number));
-	return file_put_contents(PageVersionPath($projectid, $pagecode, $version_number), urtrim($text));
+	return file_put_contents(PageVersionPath($projectid, $pagecode, $version_number), trim_blank_lines($text));
 }
+*/
 
 function norm($str) {
-	return urtrim(preg_replace("/\R/u", "\n", $str));
+	$ptn = ["/\R/u",           // normalize newline
+				 "/\t+/",           // any tabs to one space
+				 "/[”‟““]/u",        // curly double-quotes to not
+				 "/[‘‘’‛]/u"];        // curly single-quotes to not
+	$rpl = ["\n", " ", '"', "'"];
+	return trim_blank_lines(preg_replace($ptn, $rpl, $str));
 }
-
-//function split_language_names($langnames) {
-//    if(empty($langnames)) {
-//        return "English";
-//    }
-//    return preg_split("/ +?with +?/", $langnames);
-//}
-
 
 /**
  * Args and other globals
@@ -1245,7 +1323,7 @@ function norm($str) {
 
 function FileArg($name) {
     return isset($_FILES[$name])
-            ? array($_FILES[$name]['name'], $_FILES[$name]['tmp_name']): null;
+            ? [$_FILES[$name]['name'], $_FILES[$name]['tmp_name']] : null;
 }
 
 function Arg($code, $default = "") {
@@ -1283,9 +1361,8 @@ function IsArg($arg, $default = false) {
 
 // we only take positive integers
 function ArgInt($arg, $default = 0) {
-    return preg_match("/[^0-9]/", trim($arg))
-        ? $default
-        : $arg;
+    $value = Arg($arg, $default);
+    return (int) $value;
 }
 
 function ArgBoolean($arg, $default = false) {
@@ -1306,13 +1383,38 @@ function ArgBoolean($arg, $default = false) {
     }
 }
 
-function ArgRoundId($default = "") {
-    return Arg("round_id", $default);
+function PhaseRound($phase) {
+    switch($phase) {
+        case "PREP":
+            return "OCR";
+        case "P1":
+        case "P2":
+        case "P3":
+        case "F1":
+        case "F2":
+            return $phase;
+        default:
+            return "F2";
+    }
+}
+
+function ArgRound($default = "") {
+    $round = Arg("round_id");
+    switch($round) {
+        case "P1":
+        case "P2":
+        case "P3":
+        case "F1":
+        case "F2":
+            return $round;
+        default:
+            return $default;
+    }
 }
 
 function ArgsLike($pfx) {
     $len = mb_strlen($pfx);
-    $ary = array();
+    $ary = [];
     foreach($_REQUEST as $key => $value) {
         $key = trim($key);
         if( left($key, $len) == $pfx) {
@@ -1328,16 +1430,16 @@ function ArgArray($name, $default = "") {
         return $a;
     }
     if($a != "") {
-        return array($a);
+        return [$a];
     }
 
     if($default == "") {
-        return array();
+        return [];
     }
 
     return is_array($default)
         ? $default
-        : array($default);
+        : [$default];
 }
 
 function ArgArrayFirst($aarg)
@@ -1363,6 +1465,10 @@ function ArgPageName($default = "") {
     return Arg("pagename", $default);
 }
 
+function ArgPhase($default = "") {
+    return Arg("pagename", $default);
+}
+
 function ArgImageFile($default = "") {
     return Arg("imagefile", $default);
 }
@@ -1375,7 +1481,8 @@ function ArgLangCode($default = "") {
     return Arg("langcode", $default);
 }
 
-function urtrim($str) {
+// trim whitepsace at end of string (including blank lines)
+function trim_blank_lines($str) {
 	return preg_replace("/[\pZ\pC]+$/u", "", $str);
 }
 
@@ -1418,19 +1525,19 @@ function is_utf8($string) {
     return ($string == Encoding::toUTF8($string));
 }
 
-$charsets = array(
+$charsets = [
     "UTF-8",
     "UTF-16",
     "ISO-8859-1",
     "ISO-8859-15",
     "Windows-1252",
     "Windows-1251",
-);
+];
 
 
 class Encoding {
 
-    protected static $win1252ToUtf8 = array(
+    protected static $win1252ToUtf8 = [
         128 => "\xe2\x82\xac",
 
         130 => "\xe2\x80\x9a",
@@ -1463,9 +1570,9 @@ class Encoding {
 
         158 => "\xc5\xbe",
         159 => "\xc5\xb8"
-    );
+    ];
 
-    protected static $brokenUtf8ToUtf8 = array(
+    protected static $brokenUtf8ToUtf8 = [
         "\xc2\x80" => "\xe2\x82\xac",
 
         "\xc2\x82" => "\xe2\x80\x9a",
@@ -1498,9 +1605,9 @@ class Encoding {
 
         "\xc2\x9e" => "\xc5\xbe",
         "\xc2\x9f" => "\xc5\xb8"
-    );
+    ];
 
-    protected static $utf8ToWin1252 = array(
+    protected static $utf8ToWin1252 = [
         "\xe2\x82\xac" => "\x80",
 
         "\xe2\x80\x9a" => "\x82",
@@ -1533,7 +1640,7 @@ class Encoding {
 
         "\xc5\xbe"     => "\x9e",
         "\xc5\xb8"     => "\x9f"
-    );
+    ];
 
     static function toUTF8($text){
         /**
@@ -1562,7 +1669,7 @@ class Encoding {
          */
 
         if(is_array($text)) {
-            /** @var Array $text  */
+            /** @var array $text  */
             foreach($text as $k => $v)
             {
                 $text[$k] = self::toUTF8($v);
@@ -1715,6 +1822,11 @@ function text_to_words($text) {
     $ptn = "~".UWR."~iu";
     preg_match_all($ptn, $text, $m);
     return $m[0];
+}
+
+function dkretz() {
+	global $User;
+	return $User->Username() == 'dkretz';
 }
 
 

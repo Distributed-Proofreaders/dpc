@@ -11,7 +11,27 @@ require $relPath . "dpinit.php";
                  w
 */
 
+		$sql = "
+		SELECT DATE_FORMAT(d.dateval, '%m-%d') mmdd,
+			   SUM(CASE WHEN PHASE = 'P1' THEN 1 ELSE 0 END) p1count,
+			   SUM(CASE WHEN PHASE = 'P2' THEN 1 ELSE 0 END) p2count,
+			   SUM(CASE WHEN PHASE = 'P3' THEN 1 ELSE 0 END) p3count,
+			   SUM(CASE WHEN PHASE = 'F1' THEN 1 ELSE 0 END) f1count,
+			   SUM(CASE WHEN PHASE = 'F2' THEN 1 ELSE 0 END) f2count
+		FROM days d
 
+		JOIN page_versions pv
+			ON pv.version_time BETWEEN d.min_unixtime AND d.max_unixtime
+
+		WHERE d.dateval > DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)
+			AND d.dateval < DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+		GROUP BY d.dateval
+		ORDER BY d.dateval
+		";
+
+$rows = $dpdb->SqlObjects($sql);
+
+/*
 $rows = $dpdb->SqlObjects("
 SELECT DATE_FORMAT(d.dateval, '%m-%d') mmdd,
         SUM(CASE WHEN round_id = 'P1' THEN page_count ELSE 0 END) p1count,
@@ -26,6 +46,7 @@ WHERE d.dateval > DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)
     AND d.dateval < DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
 GROUP BY d.dateval
 ORDER BY d.dateval");
+*/
 
 $data = array();
 $data[0] = array("Day", "P1", "P2", "P3", "F1", "F2");
