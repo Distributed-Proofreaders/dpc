@@ -65,6 +65,7 @@ if ($isuploadfile) {       // we have a file now. do some more checks.
             $project->LogPPUpload($tofilepath);
             $log_comment = "Uploaded file for $upload_action";
             $project->AddPostComment($log_comment);
+            $project->SetPPHold("Auto-hold on upload");
             break;
 
         case "ppv_complete":

@@ -3595,7 +3595,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                 AND phase = 'PP'") > 0;
     }
 
-    private function SetPPHold($note = "") {
+    public function SetPPHold($note = "") {
         if(! $this->IsPPHold()) {
             $this->SetAutoHold("PP", "pp", $note);
         }
