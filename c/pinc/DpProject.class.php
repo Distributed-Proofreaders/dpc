@@ -512,8 +512,8 @@ class DpProject
         global $dpdb;
         $projectid = $this->ProjectId();
         $postcomments = "\n----------\n".date("Y-m-d H:i")
-            . "\n$comment
-        {$this->PostComments()}\n";
+            . "\n$comment\n";
+//        {$this->PostComments()}\n";
 
         $sql = "
 			UPDATE projects

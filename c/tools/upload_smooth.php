@@ -39,9 +39,7 @@ if(isset($_FILES) && isset($_FILES["dpupload"])) {
 
     $project->MaybeUnzipSmoothZipFile();
 
-    $log_comment = "\n----------\n".date("Y-m-d H:i")
-        . "Uploaded zip file for smooth reading ({$project->SmoothZipFilePath()})"
-        . "\n$log_comment\n";
+    $log_comment = "Uploaded zip file for smooth reading ({$project->SmoothZipFilePath()})";
     $project->AddPostComment($log_comment);
 
     divert(url_for_project($projectid));
