@@ -22,6 +22,7 @@ define("PJ_EVT_CHECKOUT",   "checkout");
 define("PJ_EVT_POST",       "post");
 define("PJ_EVT_POSTEDNUM",  "set_postednum");
 define("PJ_EVT_DELETE",     "delete");
+define("PJ_EVT_PP_UPLOAD",  "pp_upload");
 
 class DpProject
 {
@@ -432,6 +433,9 @@ class DpProject
 
     public function LogSmoothUpload($filename) {
         $this->LogProjectEvent(PJ_EVT_SMOOTH, "smooth project upload ($filename)");
+    }
+    public function LogPPUpload($filename) {
+        $this->LogProjectEvent(PJ_EVT_PP_UPLOAD, "PP upload ($filename)");
     }
     public function LogSmoothDownload() {
         $this->LogProjectEvent(PJ_EVT_SMOOTH, "smooth reader download");

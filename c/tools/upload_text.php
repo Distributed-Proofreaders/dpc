@@ -62,7 +62,7 @@ if ($isuploadfile) {       // we have a file now. do some more checks.
                 exit;
             }
             $tofilepath = $project->PPUploadPath();
-            $project->LogSmoothUpload($tofilepath);
+            $project->LogPPUpload($tofilepath);
             $log_comment = "Uploaded file for $upload_action";
             $project->AddPostComment($log_comment);
             break;
