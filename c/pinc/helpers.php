@@ -1210,7 +1210,7 @@ function ProjectSmoothDownloadUrls($projectid) {
         if(is_dir($path)) {
             continue;
         }
-        $filename = basename($path);
+        $filename = rawurlencode(basename($path));
         $type = extension($path);
         $url = build_path($smoothurl, $filename);
         $rslt[$type] = $url;

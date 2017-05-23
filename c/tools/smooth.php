@@ -108,7 +108,7 @@ function edownload($projectid) {
     $surls = ProjectSmoothDownloadUrls($projectid);
     $links = [];
     foreach($surls as $type => $url) {
-        $links[] = link_to_url(rawurlencode($url), $type);
+        $links[] = link_to_url($url, $type);
     }
     return implode(" ", $links);
 }
