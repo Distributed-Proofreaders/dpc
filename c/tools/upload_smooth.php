@@ -33,7 +33,8 @@ if(isset($_FILES) && isset($_FILES["dpupload"])) {
         die("Uploaded file not a zip file.");
     }
 
-    rename($uploadtmpfilename, $project->SmoothZipFilePath());
+    $tofilepath = $project->SmoothZipFilePath();
+    rename($uploadtmpfilename, $tofilepath);
     chmod($tofilepath, 0777);
 
     $project->MaybeUnzipSmoothZipFile();
