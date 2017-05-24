@@ -2330,8 +2330,9 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 		   	    IFNULL(ppv.username, '') != '$username'
 		   	    || p.phase = 'F1'       -- allow sequential users P3 -> F1
             )
-		   	LIMIT 1
-			";
+		ORDER BY pv.pagename
+		LIMIT 1
+		";
 
         $pagename = $dpdb->SqlOneValue($sql);
 
