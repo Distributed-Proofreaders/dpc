@@ -1213,6 +1213,8 @@ function ProjectSmoothDownloadUrls($projectid) {
         $filename = rawurlencode(basename($path));
         $type = extension($path);
         $url = build_path($smoothurl, $filename);
+		if (substr_compare($filename, "_src.txt", -8) === 0)
+			$type = "fpgen-src";
         $rslt[$type] = $url;
     }
     return $rslt;
