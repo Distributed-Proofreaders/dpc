@@ -142,8 +142,13 @@ show_news_for_page("PPV");
 
 // -----------------------------------------------------------------------------
 
+// Note the first <input> with onclick returning false basically disables
+// enter on the form; otherwise enter will run the first <input> with type='submit'
+// which is the return-to-pool button.
+
 echo "
 <form name='ppvform' method='POST' action=''>
+<input type='submit' value='' onclick='return false' style='opacity:0'>
 
 <p class='ph2'>Projects you have checked out to PPV</p>\n";
 if($nmine == 0) {
