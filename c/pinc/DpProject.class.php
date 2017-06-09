@@ -590,6 +590,7 @@ class DpProject
                 WHERE projectid = ?";
         $args = [&$str, &$projectid];
         $dpdb->SqlExecutePS($sql, $args);
+        $this->Refresh();
     }
     // =====================================================
 
