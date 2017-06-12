@@ -312,7 +312,7 @@ class ProjectInfoHolder
         $this->row( _("Post Processor"),      'DP_user_field',       $this->pper,    'pper' );
         $this->row( _("PP Verifier"),  'DP_user_field', $this->ppverifier, 'ppverifier');
         $this->row( _("Images Source"),       'image_source_list',   $this->image_source     );
-        $this->row( _("URL for Source Images"),       'text_field',          $this->image_link);
+        $this->row( _("URL for Source Images"),       'text_field',          $this->image_link, 'image_link');
         $this->row( _("Image Preparer"),              'DP_user_field',       $this->image_preparer,  'image_preparer', _("DP user who scanned or harvested the images."));
         $this->row( _("Text Preparer"),               'DP_user_field',       $this->text_preparer,   'text_preparer', _("DP user who prepared the text files.") );
         $this->row( _("Extra Credits (to be included in list of names)"),   
