@@ -2047,6 +2047,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $tid = $Context->CreateForumThread($subj, $msg, $this->ProjectManager());
         assert($tid > 0);
         $this->SetForumTopicId($tid);
+		$this->MoveTopicToPhase($this->Phase());
         return $tid;
     }
 
