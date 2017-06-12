@@ -120,7 +120,7 @@ $project->MaybeAdvanceRound();
 
 // if user submitted comments for post processing, load them
 if($submit_post_comments) {
-    $project->PrependPostComments($postcomments);
+    $project->SetPostComments($postcomments);
 }
 
 // -----------------------------------------------------------------------------
@@ -1265,16 +1265,14 @@ function solicit_postcomments($project) {
 	// (limit of 90 days is mentioned below).
 	echo "<p>" . sprintf(_("You can use this text area to enter comments on how you're
 				 doing with the post-processing, both to keep track for yourself
-				 and so that we will know that there's still work checked out.
-				 You will not receive an e-mail reminder about this project for at
-				 least another %1\$d days.") .
+				 and so that we will know that there's still work checked out.") .
 				 _("You can use this feature to keep track of your progress,
 				 missing pages, etc. (if you are waiting on missing images or page
 				 scans, please add the details to the <a href='%2\$s'>Missing Page
 				 Wiki</a>)."),
 				 90, "$forums_url/viewtopic.php?t=7584") . ' ' .
-				 _("Note that your old comments will be replaced by those
-				 you enter here.") . "</p>
+				 _("Note that your old comments will be <b>replaced</b> by those
+				 you enter here; <b>not</b> appended with a timestamp.") . "</p>
         <form name='pp_update' method='post'>
         <textarea name='postcomments' cols='100' rows='10'>$postcomments</textarea>
         <input type='hidden' name='projectid' value='$projectid'>

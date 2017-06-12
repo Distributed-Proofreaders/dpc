@@ -507,22 +507,6 @@ class DpProject
 //        }
         $this->UnzipSmoothZipFile();
     }
-
-    public function AddPostComment($comment) {
-        global $dpdb;
-        $projectid = $this->ProjectId();
-        $postcomments = "\n----------\n".date("Y-m-d H:i")
-            . "\n$comment\n";
-//        {$this->PostComments()}\n";
-
-        $sql = "
-			UPDATE projects
-			SET  postcomments = CONCAT(IFNULL(postcomments, ''), ?)
-			WHERE projectid = '$projectid'";
-
-        $args = [&$postcomments];
-        $dpdb->SqlExecutePS($sql, $args);
-    }
     /*
     function UnzipSmoothZipFile($projectid) {
         $dest = SmoothDirectoryPath($projectid);
@@ -1825,12 +1809,24 @@ class DpProject
         return trim($this->_row['postcomments']);
     }
     
-    public function PrependPostComments($str) {
-        $str .= ("\n\n" . $this->PostComments());
-        $this->SetPostComments($str);
+    public function AddPostComment($comment) {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        $postcomments = "\n----------\n".date("Y-m-d H:i")
+            . "\n$comment\n";
+//        {$this->PostComments()}\n";
+
+        $sql = "
+			UPDATE projects
+			SET  postcomments = CONCAT(IFNULL(postcomments, ''), ?)
+			WHERE projectid = '$projectid'";
+
+        $args = [&$postcomments];
+        $dpdb->SqlExecutePS($sql, $args);
+		$this->Refresh();
     }
 
-    private function SetPostComments($str) {
+    public function SetPostComments($str) {
         global $dpdb;
         $projectid = $this->ProjectId();
         $sql = "UPDATE projects SET postcomments = ?
