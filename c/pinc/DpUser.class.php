@@ -250,10 +250,11 @@ class DpUser
 
                 UNION ALL
 
-                SELECT username, COUNT(1) page_count FROM page_events_save
-                WHERE phase = ?
-                AND event_time >= UNIX_TIMESTAMP(CURRENT_DATE())
-                GROUP BY username
+                SELECT username, COUNT(1) page_count FROM page_versions
+                    WHERE phase = ?
+						AND state = 'C'
+						AND version_time >= UNIX_TIMESTAMP(CURRENT_DATE())
+					GROUP BY username
             ) a
             JOIN users u ON a.username = u.username
             JOIN users u1 ON u1.username = ?
@@ -262,7 +263,7 @@ class DpUser
                 OR ( page_count = ?
                     AND u.date_created <= u1.date_created
                 )
-            ORDER BY a.page_count, u.date_created DESC
+            ORDER BY page_count, u.date_created DESC
             LIMIT ?";
         echo html_comment($usql);
         $uargs = [&$roundid, &$roundid, &$username, &$count, &$count, &$rplus];
@@ -284,10 +285,11 @@ class DpUser
 
                 UNION ALL
 
-                SELECT username, COUNT(1) page_count FROM page_events_save
-                WHERE phase = ?
-                AND event_time >= UNIX_TIMESTAMP(CURRENT_DATE())
-                GROUP BY username
+                SELECT username, COUNT(1) page_count FROM page_versions
+                    WHERE phase = ?
+						AND state = 'C'
+						AND version_time >= UNIX_TIMESTAMP(CURRENT_DATE())
+					GROUP BY username
             ) a
             JOIN users u ON a.username = u.username
             JOIN users u1 ON u1.username = ?
