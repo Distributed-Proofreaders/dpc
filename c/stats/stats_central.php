@@ -157,7 +157,7 @@ echo "</div> <!-- miscstats -->";
                     "col04" => link_to_round_stats("P3", _("Top Proofreaders")));
     $rows[] = array("col01" => _("F1"),
                     "col02" => link_to_round_charts("F1",_("Pages Proofread Charts")),
-                    "col03" => link_to_misc_stats("f1", _("Monthly Page Counts.")),
+                    "col03" => link_to_misc_stats("F1", _("Monthly Page Counts.")),
                     "col04" => link_to_round_stats("F1", _("Top Proofreaders")));
     $rows[] = array("col01" => _("F2"),
                     "col02" => link_to_round_charts("F2",_("Pages Proofread Charts")),
