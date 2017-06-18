@@ -54,8 +54,8 @@ function showTeamMembers($team, $roundid) {
     SELECT
         ut.username,
         SUM(urp.page_count) page_count,
-        ut.joined_time
-    FROM user_team ut
+        DATE_FORMAT(FROM_UNIXTIME(ut.create_time), '%Y-%m-%d') joined
+    FROM users_teams ut
 
     JOIN users u ON ut.username = u.username
 

@@ -176,7 +176,7 @@ class DpUser
             INSERT INTO users_teams
                 ( username, team_id, create_time)
             VALUES
-            ( ?, ?, CURRENT_TIMESTAMP())";
+            ( ?, ?, UNIX_TIMESTAMP())";
         $args = [&$username, &$id];
         $dpdb->SqlExecutePS($sql, $args);
     }
