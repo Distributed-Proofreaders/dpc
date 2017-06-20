@@ -59,7 +59,7 @@ if($insertdb) {
             save_general_tab();
             break;
     }
-    $User->FetchPreferences();
+    $User->FetchUser($User->Username());
 
 }
 
@@ -84,11 +84,14 @@ if ($restorec) {
 
 
 // Note that these indices are used in two if-else-clauses below
+/* Eliminating all but the single tab!
 $tabs = array(0 => _('General'),
               1 => _('Proofreading'));
 
 if ($User->IsProjectManager())
     $tabs[2] = _('Project managing');
+*/
+$tabs = array(0 => _('General'));
 
 // header, start of table, form, etc. common to all tabs
 $header = _("Personal Preferences");
@@ -161,6 +164,8 @@ window.onload = function() {
     set_credit_other();
 }; 
 </script>
+<p style='text-align:center'>Passwords are maintained by the Forum system.
+To change your password, use the Forum's <a href='$change_password_url'>User Control Panel</a>.</p>
 
 ";
 
@@ -212,6 +217,7 @@ function echo_general_tab() {
         array( '', '' ));
 
     // language
+/*
     show_preference(
         _('Language'), 'u_lang', 'lang',
         $User->InterfaceLanguage(),
@@ -220,20 +226,23 @@ function echo_general_tab() {
 
     echo "</tr>
           <tr>\n";
+*/
 
-	echo "<td></td><td></td><td></td>\n";
+//	echo "<td></td><td></td><td></td>\n";
 //    show_preference(
 //        _('Interface Language'), 'u_intlang', 'intlang',
 //        $User->InterfaceLanguage(),
 //        'dropdown',
 //        $u_intlang_options);
 
+/*
     show_preference(
         _('Email Updates'), 'email_updates', 'updates',
         $User->IsEmailUpdates(),
         'radio_group',
         array( 1 => _("Yes"), 0 => _("No") ));
     echo "</tr>\n";
+*/
 
 //    echo "<tr>
 //        <td></td>\n";
@@ -250,6 +259,7 @@ function echo_general_tab() {
 //        array( 1 => _("Left"), 0 => _("Right") ));
 //    echo "</tr>\n";
 
+/*
     echo "<tr>\n";
     show_preference(
         _('Statistics'), 'u_privacy', 'privacy',
@@ -281,6 +291,7 @@ function echo_general_tab() {
         'credit_name',
         NULL);
     echo "</tr>\n";
+*/
 
     echo_bottom_button_row();
 }
@@ -292,14 +303,16 @@ function save_general_tab() {
     global $cp_credit, $ip_credit, $tp_credit, $pm_credit, $pp_credit;
     global $credit_name, $credit_other;
 
-    $real_name      = $User->RealName();
+    $User->SetRealName($real_name);
+    if (true)
+        return;
     $email_updates  = $User->IsEmailUpdates();
 
     // set users values
     $sql = "
         UPDATE users 
-        SET real_name       = '$real_name', 
-            email_updates   = '$email_updates',
+        SET
+            emailupdates   = '$email_updates',
             u_align         = '$u_align',
             u_neigh         = '$u_neigh',
             u_lang          = '$u_lang' ,
@@ -312,13 +325,13 @@ function save_general_tab() {
 
     // Opt-out of credits when Content-Providing (deprecated), Image Preparing, 
     // Text Preparing, Project-Managing and/or Post-Processing.
-    $User->SetBoolean("cp_anonymous", $cp_credit == "yes");
-    $User->SetBoolean("ip_anonymous", $ip_credit == "yes");
-    $User->SetBoolean("tp_anonymous", $tp_credit == "yes");
-    $User->SetBoolean("pm_anonymous", $pm_credit == "yes");
-    $User->SetBoolean("pp_anonymous", $pp_credit == "yes");
-    $User->SetSetting("credit_name",  $credit_name);
-    $User->SetSetting("credit_other", $credit_other);
+    //$User->SetBoolean("cp_anonymous", $cp_credit == "yes");
+    //$User->SetBoolean("ip_anonymous", $ip_credit == "yes");
+    //$User->SetBoolean("tp_anonymous", $tp_credit == "yes");
+    //$User->SetBoolean("pm_anonymous", $pm_credit == "yes");
+    //$User->SetBoolean("pp_anonymous", $pp_credit == "yes");
+    //TODO:$User->SetSetting("credit_name",  $credit_name);
+    //$TODO:User->SetSetting("credit_other", $credit_other);
 }
 
 /*************** PROOFREADING TAB ***************/
