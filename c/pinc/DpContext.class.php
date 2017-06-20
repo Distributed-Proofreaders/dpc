@@ -629,7 +629,7 @@ class DpContext {
 		@unlink( $fromimagepath );
 
 		$toversionpath = PageVersionPath($projectid, $pagename, 0);
-		assert(file_put_contents($toversionpath, $text));
+		assert(file_put_contents($toversionpath, $text) !== FALSE);
 
 		@unlink($fromtextpath);
 
