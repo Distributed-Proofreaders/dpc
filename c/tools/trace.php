@@ -373,6 +373,7 @@ $tblhistory->EchoTable();
 //<hr>\n";
 
 echo "<p>" . link_to_page_trace($projectid) . "</p>\n";
+echo "<p><a href='page_events.php?projectid=$projectid'>All Page Events</a>" . "</p>\n";
 
 EchoPageStateIssues($project);
 echo "

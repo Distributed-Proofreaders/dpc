@@ -810,6 +810,46 @@ The Administration"));
         $this->RecalcProjectPageCounts();
     }
 
+    /* Note page_last_versions is a view on page_versions:
+     *
+     * SELECT id, projectid, pagename, version, phase, task,
+     *     username, state, version_time, crc32, textlen
+     * FROM (
+     *     page_versions LEFT JOIN page_versions pv0
+     *     ON
+     *         projectid = pv0.projectid and
+     *         pagename = pv0.pagename and
+     *         version < pv0.version
+     * ) WHERE ISNULL(pv0.id) 
+     *
+     * Called from DpProject.next_retrievable_page_for_user()
+     * when it determines that there are no more pages available in this
+     * round; but one has been checked out for more than four hours.
+     * Must set the information back, or our own checkout won't work.
+     */
+    public function Reclaim() {
+        global $dpdb;
+        global $User;
+
+        $projectid = $this->ProjectId();
+	    $pagename  = $this->PageName();
+	    $phase     = $this->Phase();
+        $sql = "
+            UPDATE page_versions
+            SET state = 'A',
+                username = NULL,
+                version_time = NULL
+            WHERE projectid = ?
+                and pagename = ?
+                and phase = ?
+                and state != 'A'";
+	    $args = [&$projectid, &$pagename, &$phase];
+        $dpdb->SqlExecutePS($sql, $args);
+        $this->LogReclaim($phase);
+        $this->RecalcProjectPageCounts();
+        $this->_refresh_row();
+    }
+
 	// special case to return to pre-PP Phase
 	// making the final Version available again.
 	private function ClearPP() {

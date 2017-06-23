@@ -2364,9 +2364,12 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 		";
         $pagename = $dpdb->SqlOneValue($sql);
 
-        return ($pagename != "") 
-            ? $this->Page($pagename)
-            : null;
+        if ($pagename == "")
+            return null;
+
+        $pg = $this->Page($pagename);
+        $pg->Reclaim();
+        return $pg;
     }
 
     public function MostRecentUserProofDate() {
@@ -2524,18 +2527,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 			$pg->Clear();
 		}
     }
-
-
-    public function ClearPage($pagename) {
-        global $dpdb;
-
-	    $dpdb->SqlExecute("
-	        UPDATE page_last_versions
-	        SET state = 'A'
-	        WHERE projectid = '{this->ProjectId)_}'
-	        	AND pagename = '$pagename'");
-    }
-
 
     public function PageNameBefore($pagename) {
         global $dpdb;
