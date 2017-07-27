@@ -87,7 +87,12 @@ show_news_for_page( "SR" );
 
 
 <p class='bold'>Detailed instructions are available in the <a href=' http://www.pgdpcanada.net/wiki/index.php?title=Smooth-reading_FAQ'>
-Smooth Reading FAQ</a>.\n";
+Smooth Reading FAQ</a>.\n</p>
+
+<p class='bold'>HTML and txt formats will open in your browser. If you want
+to use your external editor, Right-Click, and select Save Link As...</p>\n
+
+";
 
 $tbl->EchoTable();
 
