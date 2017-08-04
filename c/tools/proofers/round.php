@@ -27,7 +27,7 @@ echo "<h1 class='center'>$title</h1>\n";
 
 $sql = "
     SELECT  p.projectid,
-            p.nameofwork,
+            CASE WHEN p.nameofwork LIKE '[BEGIN]%' THEN CONCAT('**', p.nameofwork) ELSE p.nameofwork END AS nameofwork,
             p.authorsname,
             p.language,
             p.genre,
@@ -36,8 +36,9 @@ $sql = "
             LOWER(p.username) pmsort,
             SUM(1) n_pages,
             SUM(pv.state = 'A') n_available_pages,
+            CASE WHEN p.nameofwork LIKE '[BEGIN]%' THEN 0 ELSE
             IFNULL(DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pe.event_time))),
-                   DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date))) AS days_avail,
+                   DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date))) END AS days_avail,
 --            DATEDIFF(current_date(), FROM_UNIXTIME(MAX(pe.event_time))) AS since_hold,
 --            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date)) AS days_avail,
             DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time))) AS last_save_days
@@ -66,7 +67,8 @@ AND p.phase = ph.phase
             AND version > pv.version
      )
 GROUP BY p.projectid
-    ORDER BY days_avail";
+    ORDER BY days_avail, nameofwork
+    ";
 /*
     SELECT  p.projectid,
             p.nameofwork,
