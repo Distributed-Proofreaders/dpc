@@ -375,14 +375,17 @@ function show_round_specific_stats( $round_id ) {
 
     // Today's Numbers
     echo "<ul class='clean'>\n";
-    echo _("<li>Today's Goal: $todaygoal</li>\n")
-       . _("<li>Today's Total: $todaycount ($strnow)</li>\n\n")
+	if ($todaygoal != 0)
+		echo _("<li>Today's Goal: $todaygoal</li>\n");
+   echo	_("<li>Today's Total: $todaycount ($strnow)</li>\n\n");
 
-       . _("<li>Yesterday's Goal: $yesterdaygoal</li>\n")
-       . _("<li>Yesterday's Total: $yesterdaycount</li>\n\n")
+	if ($yesterdaygoal != 0)
+		echo _("<li>Yesterday's Goal: $yesterdaygoal</li>\n");
+	echo _("<li>Yesterday's Total: $yesterdaycount</li>\n\n");
 
-       . _("<li>$strmonthgoal: $monthgoal</li>\n")
-       . _("<li>$strmonthcount: $monthcount ({$strpct}%)</li>\n")
+	if ($monthgoal != 0)
+		echo _("<li>$strmonthgoal: $monthgoal</li>\n");
+	echo _("<li>$strmonthcount: $monthcount ({$strpct}%)</li>\n")
 
        . "</ul>\n";
 
