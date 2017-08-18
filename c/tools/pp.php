@@ -61,7 +61,7 @@ handled consistently and correctly throughout the entire project.<p>
 
 <p>On this page you'll find the list of projects available for you to select to
 post-process. 
-<a href='http://www.pgdpcanada.net/wiki/index.php/Post-Processing_FAQ'>Check
+<a href='/wiki/index.php/Post-Processing_FAQ'>Check
 the wiki</a> to find out more.</p>
 
 <hr>
@@ -75,7 +75,7 @@ echo "
     <p class='ph2'>Projects you have checked out to PP</p>\n";
     if($nmine > 0) { 
         echo  "<p>You have $nmine projects checked out. These are now found on
-        <a href='http://www.pgdpcanada.net/c/tools/proofers/my_projects.php'>My
+        <a href='/c/tools/proofers/my_projects.php'>My
         Projects</a> page.</p>";
         echo "<hr/>\n";
     }

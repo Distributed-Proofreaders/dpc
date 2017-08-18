@@ -6,7 +6,7 @@
  * Time: 7:25 PM
  */
 
-$proof_url = "http://www.pgdpcanada.net/c/tools/proofers/";
+$proof_url = "/c/tools/proofers/";
 
 function redirect_to_url( $url, $metacomment = "" ) {
     divert( $url, $metacomment );
@@ -36,7 +36,7 @@ function red_link_to_url( $url, $prompt, $is_new_tab = false ) {
 // -- site
 
 function url_for_logout() {
-    return "http://www.pgdpcanada.net/c/tools/logout.php";
+    return "/c/tools/logout.php";
 }
 
 function link_to_logout($prompt = "Log out") {
@@ -44,7 +44,7 @@ function link_to_logout($prompt = "Log out") {
 }
 
 function url_for_site() {
-    return "http://www.pgdpcanada.net/c/default.php";
+    return "/c/default.php";
 }
 
 function link_to_site($prompt = "Home") {
@@ -71,7 +71,7 @@ function link_to_help($prompt = "Help") {
 
 function url_for_proofing_guidelines() {
 //    return "http://www.pgdpcanada.net/wiki/index.php/FAQ_Proofreading_Guidelines";
-    return "http://www.pgdpcanada.net/guidelines/proofguide.html";
+    return "/guidelines/proofguide.html";
 }
 
 function link_to_proofing_guidelines($prompt = "Proofing Guidelines") {
@@ -79,7 +79,7 @@ function link_to_proofing_guidelines($prompt = "Proofing Guidelines") {
 }
 
 function url_for_formatting_guidelines() {
-    return "http://www.pgdpcanada.net/guidelines/formatguide.html";
+    return "/guidelines/formatguide.html";
 //    return "http://www.pgdpcanada.net/wiki/index.php/FAQ_Formatting_Guidelines";
 }
 

@@ -17,8 +17,8 @@ $site_url = DPC_URL;
 $logo_url = DPC_URL . "c/graphics/dpclogo.png";
 $ajax_url = DPC_URL . "/c/wc.php";
 
-$code_url = DPC_URL . '/c';
-$stats_url = DPC_URL . '/c/stats';
+$code_url = '/c';
+$stats_url = '/c/stats';
 $pm_url   = $code_url . "/tools/project_manager";
 $wc_url   = DPC_URL . "/c/wc";
 
@@ -32,7 +32,7 @@ $js_url = $code_url . "/js";
 $css_url = $code_url . "/css";
 
 $projects_dir = DPC_PATH . 'projects';
-$projects_url = $site_url . '/projects';
+$projects_url = '/projects';
 
 // /home/pgdpcanada/public_html/archive
 $projects_archive_dir = DPC_PATH . 'archive';
@@ -57,7 +57,7 @@ $wordcheck_dir = $transient_root . "/wordcheck";
 
 //$jpgraph_dir = DPC_PATH . 'jpgraph';
 
-$wiki_url = DPC_URL . '/wiki/index.php';
+$wiki_url = '/wiki/index.php';
 
 //$wikihiero_dir = DPC_PATH . 'wikihiero';
 //$wikihiero_url = DPC_URL . '/wikihiero';
@@ -76,7 +76,7 @@ $sftp_path      = "/var/sftp";
 $dpscans_path   = "/var/sftp/dpscans";
 
 $forums_dir = DPC_PATH . 'forumdpc';
-$forums_url = DPC_URL . "/forumdpc";
+$forums_url = "/forumdpc";
 $registration_url = "{$forums_url}/ucp.php?mode=register";
 $forum_login_url = "{$forums_url}/ucp.php?mode=login";
 $change_password_url = "$forums_url/ucp.php?i=profile&mode=reg_details";

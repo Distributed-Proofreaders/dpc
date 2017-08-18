@@ -47,11 +47,11 @@ class DpTheme {
         echo "
 <div id='navbox'>
     <div id='navleft' class='nav lfloat'>
-      <a class='nav' href='http://www.pgdpcanada.net/c/default.php'>DPC</a>
-    · <a class='nav' href='http://www.pgdpcanada.net/c/activity_hub.php'>Activity Hub</a>
-    · <a class='nav' href='http://www.pgdpcanada.net/c/search.php'>Project Search</a>
-    · <a class='nav' href='http://www.pgdpcanada.net/c/tools/proofers/my_projects.php'>My Projects</a>
-    · <a class='nav' href='http://www.pgdpcanada.net/c/userprefs.php'>My Preferences</a>
+      <a class='nav' href='/c/default.php'>DPC</a>
+    · <a class='nav' href='/c/activity_hub.php'>Activity Hub</a>
+    · <a class='nav' href='/c/search.php'>Project Search</a>
+    · <a class='nav' href='/c/tools/proofers/my_projects.php'>My Projects</a>
+    · <a class='nav' href='/c/userprefs.php'>My Preferences</a>
     · <a class='nav' href='http://www.pgdpcanada.net/forumdpc/ucp.php?i=pm&amp;folder=inbox'>My Inbox</a>
     · <a class='nav' href='http://www.pgdpcanada.net/forumdpc'>Forums</a>
     · <a class='nav' href='http://www.pgdpcanada.net/wiki/index.php'>Wiki</a>

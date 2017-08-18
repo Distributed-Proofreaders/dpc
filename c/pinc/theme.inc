@@ -187,7 +187,7 @@ function html_logobar() {
     <!--  LOGO BAR -->
 
     <tr><td class='logobar w50'>
-        <a href='http://www.pgdpcanada.net/c/default.php'>
+        <a href='/c/default.php'>
             <img src='$code_url/graphics/dpclogo.png'"
                 ." width='336' height='68' alt='Distributed Proofreaders'>
         </a>
@@ -553,22 +553,22 @@ function show_admin_sidebar() {
     <div id='admin_sidebar' class='sidebar center'>
     <h5>Admin Links</h5>
     <pre class='left'>
-    <a href='http://www.pgdpcanada.net/c/tools/prep.php'>Projects Before P1</a>
-    <a href='http://www.pgdpcanada.net/c/tools/p1counts.php'>P1 Genre Counts</a>
-    <a href='http://www.pgdpcanada.net/c/tools/active_projects.php'>Active Project List</a>
-    <a href='http://www.pgdpcanada.net/c/tools/holds.php'>Active Projects On Hold</a>
-    <a href='http://www.pgdpcanada.net/c/tools/qc.php'>Projects On QC Hold</a>
-    <a href='http://www.pgdpcanada.net/c/search2.php'>Extended Project Search</a>
-    <a href='http://www.pgdpcanada.net/c/user_pages.php'>Diffs for a Round</a>
-    <a href='http://www.pgdpcanada.net/c/tools/bad.php'>Bad Pages</a>
+    <a href='/c/tools/prep.php'>Projects Before P1</a>
+    <a href='/c/tools/p1counts.php'>P1 Genre Counts</a>
+    <a href='/c/tools/active_projects.php'>Active Project List</a>
+    <a href='/c/tools/holds.php'>Active Projects On Hold</a>
+    <a href='/c/tools/qc.php'>Projects On QC Hold</a>
+    <a href='/c/search2.php'>Extended Project Search</a>
+    <a href='/c/user_pages.php'>Diffs for a Round</a>
+    <a href='/c/tools/bad.php'>Bad Pages</a>
     <a href='https://docs.google.com/spreadsheets/d/1Ut-t3zDouO5eSJShQsreG0LTjvFP2dszgXHGa-CUWcY/edit#gid=0'>DoD Spreadsheet</a>
     <a href='https://docs.google.com/spreadsheets/d/1lU5VeCLMIPhkqqGc-g0iE7Ld5EU5b-sI7DcoKiUwZPo/edit#gid=0'>Clearance Spreadsheet</a>\n";
         if($User->IsSiteManager() || $User->IsProjectFacilitator() || $User->IsProjectManager()) {
             echo "
-    <a href='http://www.pgdpcanada.net/c/tools/site_admin/user_roles.php'>Manage Roles for a User</a>
-    <a href='http://www.pgdpcanada.net/c/tools/p1release.php'>Project P1 Release</a>
-    <a href='http://www.pgdpcanada.net/c/tools/pper.php'>Post Processor Report</a>
-    <a href='http://www.pgdpcanada.net/c/tools/site_admin/sitenews.php'>Site News Central</a>\n";
+    <a href='/c/tools/site_admin/user_roles.php'>Manage Roles for a User</a>
+    <a href='/c/tools/p1release.php'>Project P1 Release</a>
+    <a href='/c/tools/pper.php'>Post Processor Report</a>
+    <a href='/c/tools/site_admin/sitenews.php'>Site News Central</a>\n";
         }
         echo "
     </pre>\n";

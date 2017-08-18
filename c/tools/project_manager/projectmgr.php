@@ -229,7 +229,7 @@ function ephase($phase, $row) {
 
 function eholdlist($holdlist, $row) {
     $projectid = $row["projectid"];
-    $url = "http://www.pgdpcanada.net/c/holdmaster.php?projectid=$projectid";
+    $url = "/c/holdmaster.php?projectid=$projectid";
     return link_to_url($url, $holdlist);
 }
 
