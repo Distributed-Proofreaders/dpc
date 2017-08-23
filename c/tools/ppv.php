@@ -116,11 +116,11 @@ theme("PPV: Post Processing Verification", "header");
     <p>In this task, experienced volunteers verify texts that have already been
         Post-Processed, and mentor new Post-Processors.  Before working in this task,
         make sure you read the <b>new</b>
-        <a href='http://www.pgdpcanada.net/wiki/index.php/Post-Processing_Verification_Guidelines'>Post-Processing Verification Guidelines</a>
+        <a href='/wiki/index.php/Post-Processing_Verification_Guidelines'>Post-Processing Verification Guidelines</a>
         and use the
-        <a href='http://www.pgdpcanada.net/c/faq/ppv_report.txt'>PPV Report Card</a>
+        <a href='/c/faq/ppv_report.txt'>PPV Report Card</a>
         for each project you PPV. As always, the
-        <a href='http://www.pgdpcanada.net/forum/viewforum.php?f=13'>Post-Processing Forum</a>
+        <a href='/forum/viewforum.php?f=13'>Post-Processing Forum</a>
         is available for any of your questions.</p>
 
     <hr/>

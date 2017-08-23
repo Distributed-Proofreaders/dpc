@@ -218,7 +218,7 @@ function html_logobar() {
     <td>\n";
 
     if (! $User->IsLoggedIn()) {
-	    $link_to_forums_login = "<a href='http://www.pgdpcanada.net/forumdpc/ucp.php?mode=login'>Forums</a>";
+	    $link_to_forums_login = "<a href='/forumdpc/ucp.php?mode=login'>Forums</a>";
 	    $items = [link_to_site("DPC")];
 	    $items[] = $link_to_forums_login;
 	    echo implode($divider, $items);

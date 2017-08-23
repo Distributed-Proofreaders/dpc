@@ -15,7 +15,7 @@ define("TEMP_URL", DPC_URL . "/d/temp");
 
 $site_url = DPC_URL;
 $logo_url = DPC_URL . "c/graphics/dpclogo.png";
-$ajax_url = DPC_URL . "/c/wc.php";
+$ajax_url = "/c/wc.php";
 
 $code_url = '/c';
 $stats_url = '/c/stats';

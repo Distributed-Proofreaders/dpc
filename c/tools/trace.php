@@ -292,7 +292,7 @@ if($project->Phase() == "PREP") {
 	echo "<hr>
 <div id='divprep'>
 	<pre>
-	 PREP   <a href='http://www.pgdpcanada.net/c/tools/prep.php'>link</a>\n";
+	 PREP   <a href='/c/tools/prep.php'>link</a>\n";
     $qcholdid = $project->QCHoldId();
     echo "
 Advance Requirements:
@@ -329,7 +329,7 @@ echo "
 
 if($project->Phase() == "P1") {
     echo "
-<a href='http://www.pgdpcanada.net/c/tools/p1release.php'>P1 Queue Holds</a>";
+<a href='/c/tools/p1release.php'>P1 Queue Holds</a>";
 }
 
 
@@ -352,7 +352,7 @@ echo "
 <hr>
 <h4>".link_to_phase('ppv', 'PPV')."</h4>
 <pre>
-PPV   <a href='http://www.pgdpcanada.net/c/tools/ppv.php'>link</a>
+PPV   <a href='/c/tools/ppv.php'>link</a>
     PPV upload file: {$project->PPVUploadPath()}
     Exists?   $isPPVUploadFile
     <input type='submit' name='submit_ppv_uncheckout' value='PPV return' $ppv_disabled>

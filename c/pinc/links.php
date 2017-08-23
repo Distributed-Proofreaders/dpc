@@ -62,7 +62,7 @@ function redirect_to_home() {
 }
 
 function url_for_help() {
-    return "http://www.pgdpcanada.net/wiki/index.php/FAQ_Central";
+    return "/wiki/index.php/FAQ_Central";
 }
 
 function link_to_help($prompt = "Help") {
@@ -91,7 +91,7 @@ function link_to_formatting_guidelines($prompt = "Formatting Guidelines") {
 // -- phase
 
 function url_for_phase($phase) {
-    return "http://www.pgdpcanada.net/c/tools/{$phase}.php";
+    return "/c/tools/{$phase}.php";
 }
 
 function link_to_phase($phase, $prompt = "") {
@@ -209,6 +209,11 @@ function url_for_processpage() {
 function url_for_project($projectid) {
     global $code_url;
     return "$code_url/project.php?projectid={$projectid}";
+}
+
+function full_url_for_project($projectid) {
+    global $code_url, $site_url;
+    return "$site_url$code_url/project.php?projectid={$projectid}";
 }
 
 function link_to_project($projectid, $prompt = "", $newpage = false) {

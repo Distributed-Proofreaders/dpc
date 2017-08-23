@@ -2035,7 +2035,7 @@ class DpProject
         $subj = "{$this->Title()} (by {$this->Author()})";
         $title = $this->Title();
         $author = $this->Author();
-        $url = url_for_project($this->ProjectId());
+        $url = full_url_for_project($this->ProjectId());
 
         $msg = "
         This thread is for discussion of {$title} (by {$author}).

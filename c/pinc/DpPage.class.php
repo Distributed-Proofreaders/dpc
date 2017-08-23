@@ -83,8 +83,7 @@ class DpPage
     }
 
     public function ProjectUrl() {
-        global $site_url;
-        return $site_url."/projects/".$this->ProjectId();
+        return "/projects/".$this->ProjectId();
     }
 
     public function ProjectPath() {

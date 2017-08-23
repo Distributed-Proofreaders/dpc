@@ -86,7 +86,7 @@ show_news_for_page( "SR" );
       or by using the button on this Smooth Reading page, in the 'Upload with notes' column.</p>
 
 
-<p class='bold'>Detailed instructions are available in the <a href=' http://www.pgdpcanada.net/wiki/index.php?title=Smooth-reading_FAQ'>
+<p class='bold'>Detailed instructions are available in the <a href='/wiki/index.php?title=Smooth-reading_FAQ'>
 Smooth Reading FAQ</a>.\n</p>
 
 <p class='bold'>HTML and txt formats will open in your browser. If you want
