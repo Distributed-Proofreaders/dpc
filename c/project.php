@@ -575,6 +575,7 @@ function sidebar_meta($project) {
     <tr> <td>Clearance</td> <td>{$project->Clearance()}</td> </tr>
     <tr> <td>Source</td> <td>{$project->ImageSource()}</td> </tr>
     <tr> <td>Source URL</td> <td>{$project->ImageLink()}</td> </tr>
+    <tr> <td>Image Preparer</td> <td>{$project->ImagePreparer()}</td> </tr>
 
     <tr> <td>Post processor</td> <td>{$project->PPer()}</td> </tr>
     <tr> <td>PP verifier</td> <td>{$project->PPVer()}</td> </tr>

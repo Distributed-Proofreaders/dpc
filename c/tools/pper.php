@@ -53,7 +53,7 @@ exit;
 function echo_pper_projects($username) {
 	global $dpdb;
 
-	$rows = $dpdb->SqlRows("
+    $sql = "
 		SELECT
 			p.projectid,
 			p.nameofwork,
@@ -74,9 +74,11 @@ function echo_pper_projects($username) {
 		LEFT JOIN languages l1 ON p.language = l1.code
 		LEFT JOIN languages l2 ON p.seclanguage = l2.code
 		JOIN phases ph ON p.phase = ph.phase
-		WHERE  p.postproofer = '$username'
-		ORDER BY ph.sequence, days_avail");
+		WHERE  p.postproofer = ?
+		ORDER BY ph.sequence, days_avail";
 
+    $args = array(&$username);
+	$rows = $dpdb->SqlRowsPS($sql, $args);
 	$nprojects = count($rows);
 //	foreach($rows as $row) {
 //		$projectid = $row['projectid'];
