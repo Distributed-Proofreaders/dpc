@@ -12,6 +12,7 @@ $projectid      = Arg("projectid");
 //$saveAndQuit    = IsArg("saveAndQuit");
 $saveAndProject = IsArg("saveAndProject");
 $isdelete       = IsArg("Delete");
+$isclone        = IsArg("Clone");
 
 $project        = new DpProject($projectid);
 $project->UserMayManage()
@@ -26,17 +27,20 @@ $page_title = _("Edit a Project");
 
 $pih = new ProjectInfoHolder($projectid);
 //if ( $saveAndQuit || $saveAndProject )
-if( $saveAndProject ) {
+if ($saveAndProject || $isclone) {
 
     $errors = $pih->set_from_post();
     if (! $errors) {
-        $pih->save_to_db();
+        if ($isclone)
+            $projectid = $pih->clone_to_db();
+        else
+            $pih->save_to_db();
 
 //        if( $saveAndQuit) {
 //            divert("projectmgr.php");
 //            exit;
 //        }
-        if( $saveAndProject) {
+        if( $saveAndProject || $isclone) {
             divert(url_for_project($projectid));
 //            divert("$code_url/project.php?projectid=$pih->projectid");
             exit;
@@ -235,6 +239,19 @@ class ProjectInfoHolder
 
     // -------------------------------------------------------------------------
 
+    public function clone_to_db() {
+        global $dpdb, $User;
+
+        $dpdb->beginTransaction();
+        $this->projectid = DpProject::CreateProject(
+            $this->nameofwork, $this->authorsname,
+            $this->projectmgr, $User->Username());
+
+        $this->save_to_db();
+        $dpdb->commit();
+        return $this->projectid;
+    }
+
     public function save_to_db() {
         global $dpdb;
 
@@ -334,6 +351,7 @@ class ProjectInfoHolder
         if($project->Phase() == "PREP" || $User->IsSiteManager()) {
             echo "<input type='submit' name='Delete' value='"._("Delete Project")."'>\n";
         }
+        echo "<input type='submit' name='Clone' value='"._("Clone Project")."'>\n";
         echo "
         </td></tr>
         </table>
