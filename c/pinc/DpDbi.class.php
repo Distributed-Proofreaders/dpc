@@ -37,6 +37,21 @@ class DpDb
     public function __destruct() {
     }
 
+    /**
+     * Transaction Management.
+     */
+    public function beginTransaction() {
+        $this->_mysqli->autocommit(FALSE);
+    }
+
+    public function commit() {
+        $this->_mysqli->commit();
+    }
+
+    public function rollback() {
+        $this->_mysqli->rollback();
+    }
+
     private function sql_select($sql) {
         if($this->_is_echo_queries) {
             echo html_comment($sql);
@@ -540,3 +555,4 @@ function make_typestring($args) {
     return $ret;
 }
 
+// vim: sw=4 ts=4 expandtab
