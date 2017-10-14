@@ -43,7 +43,7 @@ Canada to make books published after 1923, written by authors who died at least
 50 years ago, more available to the public.</p>
 
 <p>DPC software is licensed and available under GNU GPL v2. Source code can be found 
-<a href='https://code.google.com/p/dpcanada'>here</a>.\n");
+<a href='https://github.com/Distributed-Proofreaders/dpc/commits/master'>here</a>.\n");
 
  show_news_for_page("FRONT");
 
