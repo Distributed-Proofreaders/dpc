@@ -181,19 +181,26 @@ class DpPhpbb3
 //                WHERE username_clean = '$pname'");
             
         if($poster != "") {
-            $bb_users_table = build_forum_users_table();
+            $bb_topics_table = build_forum_topics_table();
+            $bb_posts_table = build_forum_posts_table();
+            $bb_watch_table = build_forum_watch_table();
             $sql = "
-                UPDATE $bb_users_table
+                UPDATE $bb_posts_table
                 SET poster_id = $pm_id
                 WHERE post_id = $post_id";
             $dpdb->SqlExecute($sql);
             $dpdb->SqlExecute("
-                UPDATE $bb_users_table
+                UPDATE $bb_topics_table
                 SET topic_poster = $pm_id,
                     topic_first_poster_name = '$poster',
                     topic_last_poster_name = '$poster',
                     topic_last_poster_id = $pm_id
                 WHERE topic_id = $topic_id");
+            $sql = "
+                UPDATE $bb_watch_table
+                SET user_id = $pm_id
+                WHERE topic_id = $topic_id";
+            $dpdb->SqlExecute($sql);
                 
         }
         return $topic_id;
@@ -384,6 +391,14 @@ function build_forum_table($stub) {
 
 function build_forum_users_table() {
 	return build_forum_table("users");
+}
+
+function build_forum_posts_table() {
+	return build_forum_table("posts");
+}
+
+function build_forum_watch_table() {
+	return build_forum_table("topics_watch");
 }
 
 function build_forum_topics_table() {
