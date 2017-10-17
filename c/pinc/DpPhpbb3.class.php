@@ -161,7 +161,7 @@ class DpPhpbb3
             'post_edit_locked'  => 0,
             'topic_title'       => $dpsubject,
             'notify_set'        => false,
-            'notify'            => false,
+            'notify'            => true,
             'post_time'         => 0,
             'forum_name'        => '',
             'enable_indexing'   => true,
