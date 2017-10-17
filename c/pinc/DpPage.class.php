@@ -40,8 +40,8 @@ class DpPage
         if(! $this->_pagename) {
             die( "pagename argument omitted in DpPage ($projectid $pagename)" ) ;
         }
-        $args = [&$projectid, &$pagename];
-	    $this->_row = $dpdb->SqlOneRowPS(sql_project_page());
+		$args = [&$projectid, &$pagename];
+	    $this->_row = $dpdb->SqlOneRowPS(sql_project_page(), $args);
     }
 
     private function _refresh_row() {
@@ -49,8 +49,8 @@ class DpPage
         $projectid = $this->_projectid;
         $pagename  = $this->_pagename;
 
-        $args = [&$projectid, &$pagename];
-        $this->_row = $dpdb->SqlOneRowPS(sql_project_page());
+		$args = [&$projectid, &$pagename];
+        $this->_row = $dpdb->SqlOneRowPS(sql_project_page(), $args);
     }
 
     public function ProjectId() {
@@ -1238,8 +1238,8 @@ function sql_project_page() {
                     AND pv.pagename = puv.pagename
                     AND pv.version > puv.version
 		    LEFT JOIN page_versions pv0
-		    	ON pv.projectid = puv.projectid
-                    AND pv.pagename = puv.pagename
+		    	ON pv0.projectid = puv.projectid
+                    AND pv0.pagename = puv.pagename
                     AND pv.version > pv0.version
                     AND puv.version < pv0.version
 			WHERE pg.projectid = ?
