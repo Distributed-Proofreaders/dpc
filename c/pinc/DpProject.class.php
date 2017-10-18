@@ -1262,9 +1262,10 @@ class DpProject
             // $include is "separator" or "names"
             $names = explode(",", $pg["proofernames"]);
 
+            $img = $pg['imagefile'];
 			$text .= ($include == "separator")
-                        ? ExportPageHeader($pg['pagename'], null) . "\n"
-                        : ExportPageHeader($pg['pagename'], $names) . "\n";
+                        ? ExportPageHeader($pg['pagename'], null, $img) . "\n"
+                        : ExportPageHeader($pg['pagename'], $names, $img) . "\n";
             if($include == "pagetag") {
                 $text .= PageTag($pg['imagefile']);
             }

@@ -1264,10 +1264,9 @@ function ProjectPagePath($projectid, $pagename) {
 	return $path;
 }
 
-function ExportPageHeader($pagename, $proofers = null) {
-//	if(is_null($proofers)) {
-//		$proofers = array( "", "", "", "", "");
-//	}
+function ExportPageHeader($pagename, $proofers = null, $img = null) {
+    if (!empty($img))
+        $pagename = $img;
     $str = is_array($proofers)
         ? "(" . implode(" \\ ", $proofers) . ")"
         : "";
