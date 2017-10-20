@@ -1267,10 +1267,12 @@ function ProjectPagePath($projectid, $pagename) {
 function ExportPageHeader($pagename, $proofers = null, $img = null) {
     if (!empty($img))
         $pagename = $img;
+
+    // Note this exact format is required for guiguts labels
     $str = is_array($proofers)
-        ? "(" . implode(" \\ ", $proofers) . ")"
+        ? "\\ " . implode(" \\ ", $proofers)
         : "";
-	$str = "-----File: $pagename $str ---";
+	$str = "-----File: $pagename--- $str ---";
 	$str = str_pad($str, 75, "-", STR_PAD_RIGHT);
 	return $str;
 }
