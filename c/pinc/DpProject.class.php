@@ -2,6 +2,7 @@
 /** @var DpProject $project */
 
 /** @var $User DpThisUser */
+ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 require_once "words.php";
@@ -15,6 +16,8 @@ define("PJ_EVT_DEACTIVATE", "deactivate");
 define("PJ_EVT_HOLD",       "set_hold");
 define("PJ_EVT_RELEASE",    "release_hold");
 define("PJ_EVT_SMOOTH",     "smooth_reading");
+define("PJ_EVT_SMOOTH_NOTIFY","smooth_notify");
+define("PJ_EVT_MSG",        "send_msg");
 define("PJ_EVT_REVERT",     "revert");
 define("PJ_EVT_COMPLETE",   "set_complete");
 define("PJ_EVT_TRANSITION", "transition");
@@ -292,15 +295,81 @@ class DpProject
     public function SetSmoothDeadlineDays($days) {
         global $dpdb;
         $projectid = $this->ProjectId();
+        $currentdays = $this->SmoothDaysLeft();
 
         $sql = "
             UPDATE projects
             SET smoothread_deadline = UNIX_TIMESTAMP(
                 DATE_ADD(CURRENT_DATE(), INTERVAL $days DAY))
-            WHERE projectid = '$projectid'";
-        $dpdb->SqlExecute($sql);
+            WHERE projectid = ?";
+        $dpdb->SqlExecutePS($sql, [&$projectid]);
         $this->LogProjectEvent(PJ_EVT_SMOOTH, "Set deadline days to $days");
         $this->Refresh();
+
+        if (empty($currentdays) && !empty($days)) {
+            $this->LogProjectEvent(PJ_EVT_SMOOTH_NOTIFY, "Smooth deadline set, notifying waiters");
+            list($subject, $email) = $this->ConstructSmoothMsg();
+            $this->Notify('smooth', $subject, $email);
+        }
+    }
+
+    public function Notify($event, $subject, $email) {
+        global $dpdb;
+        $projectid = $this->Projectid();
+        $from = $this->PPer();
+        if (empty($from)) {
+            die("PPer is not set!");
+        }
+
+        $sql = "
+            SELECT username
+            FROM notify
+            WHERE projectid=? AND event=?
+        ";
+        foreach ($dpdb->SqlValuesPS($sql, [&$projectid, &$event]) as $to) {
+            $this->SendPM($from, $to, $subject, $email, $event);
+        }
+    }
+
+    public function ConstructSmoothMsg()
+    {
+        $projectid = $this->ProjectId();
+        $surls = ProjectSmoothDownloadUrls($projectid);
+        $title = $this->Title();
+        $author = $this->Author();
+        $days = $this->SmoothDaysLeft();
+        $viewlink = link_to_view_text_and_images($projectid, "view the latest text and images online");
+        $viewlink = str_replace("\n", "", $viewlink);   // remove \n
+        $projecturl = $this->ProjectLink('this project');
+        $projecturl = str_replace("\n", "", $projecturl);
+
+        $links = array();
+        foreach ($surls as $fmt => $url) {
+            $links[] = link_to_url($url, $fmt);
+        }
+        $links_str = " · " . implode(" · ", $links);
+        $subject = "Available for Smooth Reading -- $title ($author)";
+        $msg = "
+        You are receiving this PM because you asked to be informed when $projecturl became available for Smooth Reading.
+
+        $title (by $author)
+
+        Available for Smooth Reading for $days days.
+
+        Download your preferred format:
+
+        $links_str
+
+        If you want to check something closely, you can $viewlink.
+
+        Thank you!";
+
+        return array($subject, $msg);
+    }
+
+    public function SendPM($from, $to, $subject, $msg, $event) {
+        $this->LogProjectEvent(PJ_EVT_MSG, "Send PM to $to on event $event from $from");
+        DpContext::SendForumMessage($from, $to, $subject, $msg);
     }
 
     public function SmoothDaysLeft() {

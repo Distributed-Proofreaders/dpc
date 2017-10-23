@@ -9,7 +9,6 @@ error_reporting(E_ALL);
 if(!isset($relPath))
     $relPath = "./";
 
-require_once $relPath . "DpProject.class.php";
 require_once $relPath . "rounds.php";
 require_once $relPath . "DpVersion.class.php";
 
