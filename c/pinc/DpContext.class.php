@@ -878,4 +878,4 @@ class Round
 		return $this->_row['caption'];
 	}
 }
-
+// vim: sw=4 ts=4 expandtab

@@ -23,6 +23,7 @@ define("PJ_EVT_COMPLETE",   "set_complete");
 define("PJ_EVT_TRANSITION", "transition");
 define("PJ_EVT_CHECKOUT",   "checkout");
 define("PJ_EVT_POST",       "post");
+define("PJ_EVT_POSTED_NOTIFY","posted_notify");
 define("PJ_EVT_POSTEDNUM",  "set_postednum");
 define("PJ_EVT_DELETE",     "delete");
 define("PJ_EVT_PP_UPLOAD",  "pp_upload");
@@ -296,6 +297,7 @@ class DpProject
         global $dpdb;
         $projectid = $this->ProjectId();
         $currentdays = $this->SmoothDaysLeft();
+        $v = $this->_row['smooth_days_left'];
 
         $sql = "
             UPDATE projects
@@ -306,19 +308,22 @@ class DpProject
         $this->LogProjectEvent(PJ_EVT_SMOOTH, "Set deadline days to $days");
         $this->Refresh();
 
-        if (empty($currentdays) && !empty($days)) {
+        // Note smooth_days_left is negative, if smoothread_deadline is NULL
+        if ((empty($currentdays) || $currentdays < 0) && !empty($days)) {
             $this->LogProjectEvent(PJ_EVT_SMOOTH_NOTIFY, "Smooth deadline set, notifying waiters");
             list($subject, $email) = $this->ConstructSmoothMsg();
-            $this->Notify('smooth', $subject, $email);
+            $this->Notify('smooth', $this->PPer(), $subject, $email);
         }
     }
 
-    public function Notify($event, $subject, $email) {
+    public function Notify($event, $from, $subject, $email) {
         global $dpdb;
         $projectid = $this->Projectid();
-        $from = $this->PPer();
         if (empty($from)) {
-            die("PPer is not set!");
+            $from = $this->PM();
+
+            if (empty($from))
+                die("PM and PPer is not set!");
         }
 
         $sql = "
@@ -361,6 +366,29 @@ class DpProject
         $links_str
 
         If you want to check something closely, you can $viewlink.
+
+        Thank you!";
+
+        return array($subject, $msg);
+    }
+
+    public function ConstructPostedMsg()
+    {
+        $title = $this->Title();
+        $author = $this->Author();
+        $projecturl = $this->ProjectLink('this project');
+        $projecturl = str_replace("\n", "", $projecturl);
+        $postednum = $this->PostedNumber();
+        $fadedpageurl = link_to_fadedpage_catalog($postednum, "view the posted details on Fadedpage at $postednum");
+        $fadedpageurl = str_replace("\n", "", $fadedpageurl);
+
+        $subject = "Now Posted to Fadedpage -- $title ($author)";
+        $msg = "
+        You are receiving this PM because you asked to be informed when $projecturl was posted to Fadedpage.
+
+        $title (by $author)
+
+        You can $fadedpageurl.
 
         Thank you!";
 
@@ -764,13 +792,14 @@ class DpProject
             case "P3":
             case "F1":
             case "F2":
-	        if($this->PageCount() == 0) {
-				$msgs[] = "No page texts in $phase";
-			}
-			if($this->UncompletedCount() != 0) {
-				$msgs[] = "Pages are uncompleted";
-			}
+                if($this->PageCount() == 0) {
+                    $msgs[] = "No page texts in $phase";
+                }
+                if($this->UncompletedCount() != 0) {
+                    $msgs[] = "Pages are uncompleted";
+                }
                 break;
+
             case "PP":
                 if($this->PPer() == "") {
                     $msgs[] = "No PPer";
@@ -789,9 +818,9 @@ class DpProject
                 if($this->PostedNumber() == "") {
                     $msgs[] = "No Posted Number";
                 }
-		if(strlen($this->PostedNumber()) != 8) {
-		    $msgs[] = "Incorrect Posted Number";
-		}
+                if(strlen($this->PostedNumber()) != 8) {
+                    $msgs[] = "Incorrect Posted Number";
+                }
                 if($this->PPVer() == "") {
                     $msgs[] =  "No PPVer";
                 }
@@ -825,17 +854,17 @@ class DpProject
         if($this->IsPosted()) {
             return null;
         }
-	    // the following checks that all pages are completed
+        // the following checks that all pages are completed
         $msgs = $this->AdvanceValidateErrors();
 
         if(count($msgs) > 0) {
             return $msgs;
         }
 
-	    /*
-	     * For all cases:
-	     * UPDATE project_pages SET status = 'page_avail' WHERE projectid = '$projectid'
-	     */
+        /*
+         * For all cases:
+         * UPDATE project_pages SET status = 'page_avail' WHERE projectid = '$projectid'
+         */
 
         $to_phase   = $Context->PhaseAfter($this->Phase());
 
@@ -857,52 +886,10 @@ class DpProject
             case "PPV":
                 $this->SetPhase($to_phase);
                 break;
-/*
-            case "PREP":
-	            $this->SetPhase("P1");
-	            assert($this->ClonePageVersions( "P1", "PROOF", "A"));
-//	            $this->SetModifiedDate();
-                break;
-
-            case "P1":
-				$this->SetPhase("P2");
-	            assert($this->ClonePageVersions( "P2", "PROOF", "A"));
-//	            $this->SetModifiedDate();
-                break;
-
-            case "P2":
-	            $this->SetPhase("P3");
-	            assert($this->ClonePageVersions( "P3", "PROOF", "A"));
-//	            $this->SetModifiedDate();
-	            break;
-
-            case "P3":
-	            $this->SetPhase("F1");
-	            assert($this->ClonePageVersions( "F1", "FORMAT", "A"));
-//	            $this->SetModifiedDate();
-	            break;
-
-            case "F1":
-	            $this->SetPhase("F2");
-	            assert($this->ClonePageVersions( "F2", "FORMAT", "A"));
-//	            $this->SetModifiedDate();
-	            break;
-
-            case "F2":
-	            $this->SetPhase("PP");
-//	            $this->SetModifiedDate();
-                break;
-
-            case "PP":
-	            $this->SetPhase("PPV");
-//	            $this->SetModifiedDate();
-	            break;
 
             case "PPV":
-	            $this->SetPhase("POSTED");
-//	            $this->SetModifiedDate();
+                $this->SetPhase($to_phase);
                 break;
-*/
 
             case "POSTED":
                 break;
@@ -913,12 +900,12 @@ class DpProject
                 die("Advance from unresolved round - {$this->RoundId()}.") ;
         }
 
-		$this->RecalcPageCounts();
-		$this->Refresh();
+        $this->RecalcPageCounts();
+        $this->Refresh();
 
-//	    $this->CopyPagesToNewTable();
-//        $this->validatePageState();
-        return $msgs;
+//	$this->CopyPagesToNewTable();
+//      $this->validatePageState();
+//      $this->validatePageState();
     }
 
 	public function PageNames() {
@@ -2538,6 +2525,17 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->LogPhaseTransition($phase, $newphase);
         $this->SetPhaseDate();
         $this->MoveTopicToPhase($newphase);
+
+        # If this is a transition to posted, send notifications
+        if ($phase != 'POSTED' && $newphase == 'POSTED')
+            $this->PostedNotify();
+    }
+
+    public function PostedNotify()
+    {
+        $this->LogProjectEvent(PJ_EVT_POSTED_NOTIFY, "Project transitioning to POSTED, notifying waiters");
+        list($subject, $email) = $this->ConstructPostedMsg();
+        $this->Notify('post', $this->PM(), $subject, $email);
     }
 
     public function LogPhaseTransition($fromphase, $tophase) {
@@ -3762,10 +3760,10 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             SET projectid           = ?,
                 nameofwork          = ?,
                 authorsname         = ?,
-                username			= ?,
+                username            = ?,
                 createdby           = ?,
                 phase               = 'PREP',
-                LANGUAGE 			= 'en',
+                LANGUAGE            = 'en',
                 createtime          = UNIX_TIMESTAMP()";
         $args = [&$projectid, &$title, &$author, &$projectmanager, &$cp];
         $ret = $dpdb->SqlExecutePS($sql, $args);
@@ -3885,35 +3883,4 @@ class DpHold
 	}
 }
 
-/*
-function TestDpProject() {
-	global $dpdb;
-	$dpdb->SetEcho();
-	$project = new DpProject('p150730001');
-
-	dump($project->TextForWords());
-	dump($project->LastProofTime());
-	dump($project->Exists());
-	dump($project->MayBeProofedByActiveUser());
-	dump($project->UserMayManage());
-	dump($project->UserMayProof());
-	dump($project->UserMaySeeNames());
-	dump($project->UserMaySeeNames());
-	dump($project->AvailableMessageForActiveUser());
-	dump($project->ModifiedDateInt());
-	dump($project->PhaseDate());
-	dump($project->PhaseDateInt());
-	dump($project->IsMentorRound());
-	dump($project->UserIsPPVer());
-	dump($project->UserIsPPer());
-	dump($project->ScannerCredit());
-	dump($project->Tags());
-	dump($project->IsAvailable());
-	dump( $project-> ModifiedDateInt() );
-	dump( $project->PhaseDate() );
-	dump( $project->PhaseDateInt() );
-	dump( $project->UserIsPPVer() );
-	dump( $project->IsAvailable() );
-	dump( $project->SmoothZipUploadPath() );
-}
-*/
+// vim: sw=4 ts=4 expandtab
