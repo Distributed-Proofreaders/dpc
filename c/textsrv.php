@@ -40,6 +40,6 @@ echo
 </head>
 <body>\n";
 
-echo "<pre>" . h($text) . "</pre>";
+echo "<pre>\n" . h($text) . "</pre>";
 
 echo "</body></html>";

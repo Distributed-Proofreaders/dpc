@@ -53,6 +53,14 @@ exit;
 function echo_pper_projects($username) {
 	global $dpdb;
 
+    if (empty($username)) {
+        $whereClause = "WHERE p.phase = ?";
+        $phase = "PP";
+        $args = array(&$phase);
+    } else {
+        $whereClause = "WHERE p.postproofer = ?";
+        $args = array(&$username);
+    }
     $sql = "
 		SELECT
 			p.projectid,
@@ -74,10 +82,9 @@ function echo_pper_projects($username) {
 		LEFT JOIN languages l1 ON p.language = l1.code
 		LEFT JOIN languages l2 ON p.seclanguage = l2.code
 		JOIN phases ph ON p.phase = ph.phase
-		WHERE  p.postproofer = ?
+        $whereClause
 		ORDER BY ph.sequence, days_avail";
 
-    $args = array(&$username);
 	$rows = $dpdb->SqlRowsPS($sql, $args);
 	$nprojects = count($rows);
 //	foreach($rows as $row) {
@@ -87,8 +94,8 @@ function echo_pper_projects($username) {
 //	}
 
 
-	$tbl = new DpTable("tblpper", "dptable w95 em90 sortable");
-	$tbl->SetTitle("PP Projects for {$username} (count: $nprojects)");
+	$tbl = new DpTable("tblpper dptable w95 em90");
+	//$tbl->SetTitle("PP Projects for {$username} (count: $nprojects)");
 	$tbl->AddColumn("<Phase", "phase", null, "sortkey=sequence");
 	$tbl->AddColumn("<Title", "nameofwork", "etitle");
 	$tbl->AddColumn("<Author", "authorsname");
@@ -96,7 +103,7 @@ function echo_pper_projects($username) {
 	$tbl->AddColumn("<Proj mgr", "pm", "euser");
 	$tbl->AddColumn("<PPer", "pper", "euser");
 	$tbl->AddColumn("<PPVer", "ppver", "euser");
-//	$tbl->AddColumn("^Days", "days_avail", "edays");
+	$tbl->AddColumn("^Days", "days_avail", "edays");
 //	$tbl->AddColumn("^Upload", "projectid", "eupload");
 //	$tbl->AddColumn("^Manage", "projectid", "emanage");
 	$tbl->SetRows($rows);
