@@ -698,7 +698,10 @@ class DpContext {
             'Reply-To: dphelp@www.pgdpcanada.net' . "\r\n" .
             'X-Mailer: PHP/' . phpversion();
 
-        mail($to, $subject, $message, $headers);
+        if (empty($to))
+            DpContext::SendForumMessage($username, $username, $subject, $message);
+        else
+            mail($to, $subject, $message, $headers);
     }
 
     private function UserEmailAddress($username) {

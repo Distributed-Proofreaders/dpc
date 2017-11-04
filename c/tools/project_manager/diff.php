@@ -197,6 +197,11 @@ echo "<!DOCTYPE HTML>
 <link type='text/css' rel='stylesheet' href='{$css_url}/dp.css'>
 <link rel='stylesheet' href='/Lib/php-text-difference/example/styles.css' type='text/css' charset='utf-8'/>
 <script type='text/javascript' src='/c/tools/project_manager/dpdiff.js'></script>
+<style type='text/css'>
+    .DifferencesSideBySide .ChangeInsert td.Right {
+        background: #0c0;
+    }
+</style>
 </head>
 
 <body onload='init()'>
