@@ -95,7 +95,13 @@ if ( count( $chk_other ) > 0 ) {
 	// permit_path($project->ProjectPath());
 	foreach ( array_keys( $chk_other ) as $otherkey ) {
 		$proto = $protopages[$otherkey];
-		$otherpath = $proto['external_image'];
+		//$otherpath = $proto['external_image'];
+        if (isset($proto['external_image']))
+            $otherpath = $proto['external_image'];
+        else if (isset($proto['external_text']))
+            $otherpath = $proto['external_text'];
+        else
+            $otherpath = $proto['external_other'];
 		$otherfile = basename($otherpath);
         $topath = build_path( $project->ProjectPath(), $otherfile );
 
@@ -641,3 +647,4 @@ function epathlink($path) {
 	}
 	return basename($path);
 }
+// vim: sw=4 ts=4 expandtab
