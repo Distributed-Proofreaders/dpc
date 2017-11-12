@@ -744,8 +744,6 @@ To the project manager for ".$this->Title().",
 User ".$username." has marked page " .$this->PageName()
 ." as a 'bad page' in this project.
 
-Reason: {$reason}
-
 Thanks!
 
 The Administration"));
