@@ -29,8 +29,10 @@ theme("PPer: Post Processor Report", "header");
 
 // -----------------------------------------------------------------------------
 
-echo "
-<h1 class='center'>Post-Processor ($username)</h1>\n";
+if (empty($username))
+    echo "<h1 class='center'>All Post-Processors</h1>\n";
+else
+    echo "<h1 class='center'>Post-Processor ($username)</h1>\n";
 
 if($User->IsSiteManager() || $User->IsProjectFacilitator()) {
 	echo "
@@ -39,16 +41,50 @@ if($User->IsSiteManager() || $User->IsProjectFacilitator()) {
 		<label> Username:
 		<input type='text' id='username' name='username' value='{$username}'>
 		</label>
-		<input type='submit' value='submit'>
+		<input type='submit' value='Submit'>
+        Set to empty to get all PPers.
 	</div>
 	</form>\n";
 }
+
+if (empty($username))
+    echo_pp_counts();
 
 echo_pper_projects($username);
 
 $no_stats = 1;
 theme("", "footer");
 exit;
+
+function echo_pp_counts() {
+    global $dpdb;
+
+    $sql = "
+        SELECT
+            (CASE WHEN LENGTH(p.postproofer) > 0 THEN LOWER(p.postproofer) ELSE 'Unassigned' END) AS pper,
+            SUM(CASE WHEN p.phase = 'PP' THEN 1 ELSE 0 END) AS inPP,
+            SUM(CASE WHEN p.phase != 'POSTED' THEN 1 ELSE 0 END) AS todo,
+            SUM(CASE WHEN p.phase = 'POSTED' THEN 1 ELSE 0 END) AS posted,
+            SUM(CASE WHEN p.phase != 'POSTED' AND p.phase != 'PP' AND p.phase != 'PPV' THEN 1 ELSE 0 END) AS beforePP,
+            COUNT(*) AS allPP
+            FROM projects p
+            GROUP BY pper
+            ORDER BY COUNT(*) DESC
+    ";
+	$rows = $dpdb->SqlRows($sql);
+
+    echo "<h2>Counts by User</h2>";
+	$tbl = new DpTable("tblppcount dptable w95 em90");
+	$tbl->AddColumn("<PPer", "pper", "euser");
+	$tbl->AddColumn("^Total", "allPP", "edays");
+	$tbl->AddColumn("^Excluding Posted", "todo", "edays");
+	$tbl->AddColumn("^Before PP", "beforePP", "edays");
+	$tbl->AddColumn("^In PP", "inPP", "edays");
+	$tbl->AddColumn("^Posted", "posted", "edays");
+	$tbl->SetRows($rows);
+
+	$tbl->EchoTable();
+}
 
 function echo_pper_projects($username) {
 	global $dpdb;
@@ -57,9 +93,11 @@ function echo_pper_projects($username) {
         $whereClause = "WHERE p.phase = ?";
         $phase = "PP";
         $args = array(&$phase);
+        echo "<h2>All Projects in PP</h2>";
     } else {
         $whereClause = "WHERE p.postproofer = ?";
         $args = array(&$username);
+        echo "<h2>All Projects with PPer $username</h2>";
     }
     $sql = "
 		SELECT
