@@ -33,6 +33,7 @@ $cp         = Arg("cp", $username);
 $title      = Arg("title");
 $author     = Arg("author");
 $projectmgr = Arg("projectmgr", $User->Username());
+$projecttype= Arg("projecttype", "normal");
 
 for( $i = 0; $i < 1 ; $i++ ) {
     if(! $saveAndQuit && ! $saveAndEdit && ! $saveAndLoad) {
@@ -49,7 +50,7 @@ for( $i = 0; $i < 1 ; $i++ ) {
 		break;
 	}
 
-    $projectid = DpProject::CreateProject($title, $author, $projectmgr, $cp);
+    $projectid = DpProject::CreateProject($title, $author, $projectmgr, $cp, $projecttype);
 
     if( $saveAndQuit ) {
 	    theme("", "footer");
@@ -88,6 +89,16 @@ echo "
     <tr>
     <tr><td class='left cccccc padded'>Project Manager<br>(Remove your name if not you)</td>
         <td><input type='text' value='$projectmgr' name='projectmgr' size='67'>$errormsg</td></tr>
+    <tr>
+        <td class='left cccccc padded'>Project Type</td>
+        <td>
+            <select name='projecttype' id='projecttype'>
+                <option value='normal' selected='selected'>Normal</option>
+                <option value='harvest'>Harvest</option>
+                <option value='recovery'>Recovery</option>
+            </select>
+        </td>
+    </tr>
     <tr>
     <td class='cccccc center' colspan='2'>
     <input type='submit' name='saveAndQuit' value='"._("Save and Quit")."'>

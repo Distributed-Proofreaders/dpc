@@ -242,13 +242,14 @@ function echo_open_proofing_projects($username, $heading) {
         JOIN phases ph ON pv.phase = ph.phase
         JOIN phases pph ON p.phase = pph.phase
         LEFT JOIN project_holds h ON p.projectid = h.projectid AND p.phase = h.phase
-        WHERE pv.username='$username'
+        WHERE pv.username=?
             AND pv.phase IN ('P1', 'P2', 'P3', 'F1', 'F2')
         GROUP BY pv.projectid
         ORDER BY strtime DESC
         ";
 
-    $rows = $dpdb->SqlRows($sql);
+    $args = [&$username];
+    $rows = $dpdb->SqlRowsPS($sql, $args);
 
     $tbl->SetRows($rows);
 
@@ -275,7 +276,8 @@ function echo_my_pp_projects($username) {
             n_pages,
             username AS pm,
             IFNULL(DATEDIFF(FROM_UNIXTIME(smoothread_deadline), CURRENT_DATE()), -1) AS smooth_days,
-            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(phase_change_date)) AS days_avail
+            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(phase_change_date)) AS days_avail,
+            project_type
         FROM projects p
         LEFT JOIN languages l1 ON p.language = l1.code
         LEFT JOIN languages l2 ON p.seclanguage = l2.code
@@ -317,6 +319,7 @@ function echo_my_pp_projects($username) {
     $tbl->AddColumn("^Smooth<br>days", "smooth_days", "esmooth");
     $tbl->AddColumn("^Uploaded<br>file", "projectid", "eupload");
     $tbl->AddColumn("^Manage", "projectid", "emanage");
+    $tbl->AddColumn("^Type", "project_type", "etype");
     $tbl->SetRows($rows);
 
     $tbl->EchoTable();
@@ -352,6 +355,12 @@ function edays($num) {
 }
 function euser($username) {
     return link_to_pm($username, $username, true);
+}
+
+function etype($type) {
+    if (empty($type))
+        return 'normal';
+    return $type;
 }
 
 function elangname($langname, $row) {

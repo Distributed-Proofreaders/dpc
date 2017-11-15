@@ -215,6 +215,8 @@ echo "
 <div>
 <pre>
     Project ID: {$project->ProjectId()}  $proj_link
+    Project Type:{$project->ProjectType()}
+    Normal?:    {$project->IsNormalProject()}
     Title:      {$project->NameOfWork()}
     Author:     {$project->AuthorsName()}
     PM:         {$project->ProjectManager()}
@@ -223,6 +225,7 @@ echo "
     PPer:       {$project->PPer()}
     PPVer:      {$project->PPVer()}
     Posted #:   {$project->PostedNumber()}
+    CurrentVersionTime:{$project->CurrentVersionTime()}
 </pre>
 </div>\n";
 
@@ -308,6 +311,12 @@ Advance Requirements:
 }
 
 $prevphase = $Context->PhaseBefore($project->Phase());
+
+// Special for harvest projects: phase before PP is PREP
+if (!$project->IsNormalProject())
+    if ($project->Phase() == 'PP')
+        $prevphase = 'PREP';
+
 echo "
 <div>
 <fieldset id='divrevert'>
@@ -426,4 +435,4 @@ function url_for_round_diff($projectid, $phase) {
     return "/c/tools/projdiff.php?projectid={$projectid}&phase={$phase}";
 }
 
-
+// vim: sw=4 ts=4 expandtab

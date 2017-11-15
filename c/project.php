@@ -566,6 +566,7 @@ function sidebar_meta($project) {
     <div class='sidebar'>
     <h4>Project Meta</h4>
     <table class='table_sidebar'>
+    <tr> <td>Type</td> <td>{$project->ProjectType()}</td> </tr>
     <tr> <td>Genre</td> <td>{$project->Genre()}</td> </tr>
     <tr> <td>Language</td> <td>{$project->Language()}</td> </tr>
     <tr> <td>Difficulty</td> <td>{$project->Difficulty()}</td> </tr>

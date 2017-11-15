@@ -101,7 +101,8 @@ class DpProject
                     DATE(FROM_UNIXTIME(IFNULL(smoothread_deadline, 0))),
                     CURRENT_DATE()) AS smooth_days_left,
 				pv.state version_state,
-	            DATE_FORMAT(FROM_UNIXTIME(MAX(pv.version_time)), '%b %e %Y %H:%i') last_proof_time
+                DATE_FORMAT(FROM_UNIXTIME(MAX(pv.version_time)), '%b %e %Y %H:%i') last_proof_time,
+                project_type
 
             FROM projects AS p
             LEFT JOIN page_last_versions pv
@@ -166,6 +167,24 @@ class DpProject
 //	}
     public function CurrentVersionTime() {
 	    return $this->_row['last_proof_time'];
+    }
+
+    public function ProjectType() {
+        if (empty($this->_row['project_type']))
+            return 'normal';
+        return $this->_row['project_type'];
+    }
+
+    public function IsNormalProject() {
+        return $this->ProjectType() == 'normal';
+    }
+
+    public function IsHarvestProject() {
+        return $this->ProjectType() == 'harvest';
+    }
+
+    public function IsRecoveryProject() {
+        return $this->ProjectType() == 'recovery';
     }
 
     public function MayBeProofedByActiveUser() {
@@ -782,7 +801,8 @@ class DpProject
                 if($this->Clearance() == "") {
                     $msgs[] = "No Clearance";
                 }
-                if($this->PageCount() < 1) {
+                // Only need pages if we are a normal project
+                if($this->IsNormalProject() && $this->PageCount() < 1) {
                     $msgs[] = "No pages";
                 }
                 break;
@@ -792,7 +812,7 @@ class DpProject
             case "P3":
             case "F1":
             case "F2":
-                if($this->PageCount() == 0) {
+                if($this->PageCount() == 0 && $this->IsNormalProject()) {
                     $msgs[] = "No page texts in $phase";
                 }
                 if($this->UncompletedCount() != 0) {
@@ -868,6 +888,17 @@ class DpProject
 
         $to_phase   = $Context->PhaseAfter($this->Phase());
 
+        // Recovery and Harvest go directly to PP
+        if (!$this->IsNormalProject()) {
+            switch ($this->Phase()) {
+            case "PREP":
+                $this->SetPhase("PP");
+                break;
+            default:
+                $this->SetPhase($to_phase);
+                break;
+            }
+        } else
         switch($this->Phase()) {
             case "PREP":
             case "P1":
@@ -2482,6 +2513,10 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $oldphase = $this->Phase();
         $newphase = $Context->PhaseBefore($oldphase);
 
+        if (!$this->IsNormalProject())
+            if ($oldphase == 'PP')
+                $newphase = 'PREP';
+
 	    if(! $is_clear) {
 		    $this->SetUserHold( $newphase, "from reverting project from $oldphase" );
 	    }
@@ -3748,7 +3783,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 //        $Context->ZipSendString($zipstub, $this->ActiveText());
 //    }
 
-    public static function CreateProject($title, $author, $projectmanager = "", $cp="") {
+    public static function CreateProject($title, $author, $projectmanager = "", $cp="", $type = "normal") {
         global $Context, $dpdb ;
 
         $projectid = $Context->NewProjectId();
@@ -3764,17 +3799,24 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                 createdby           = ?,
                 phase               = 'PREP',
                 LANGUAGE            = 'en',
+                project_type         = ?,
                 createtime          = UNIX_TIMESTAMP()";
-        $args = [&$projectid, &$title, &$author, &$projectmanager, &$cp];
+        $args = [
+            &$projectid, &$title, &$author, &$projectmanager, &$cp, &$type
+        ];
         $ret = $dpdb->SqlExecutePS($sql, $args);
 	    assert($ret == 1);
         
         $project = new DpProject($projectid);
 //        $project->CreateProjectTable();
         $project->LogProjectEvent(PJ_EVT_CREATE);
-        $project->SetAutoQCHold();
-        $project->SetQueueHold("P1", "P1 Queue Manager release");
-        $project->SetAutoPMHold("PREP", "PM release to QC manager");
+        if ($type != 'normal')
+            $project->SetAutoPMHold("PREP", "PM release to PP");
+        else {
+            $project->SetAutoQCHold();
+            $project->SetQueueHold("P1", "P1 Queue Manager release");
+            $project->SetAutoPMHold("PREP", "PM release to QC manager");
+        }
         return $projectid;
     }
 }
