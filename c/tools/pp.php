@@ -123,7 +123,8 @@ function echo_available_projects() {
             username AS pm,
             LOWER(username) AS pmsort,
             CASE WHEN username = '$username' THEN 0 ELSE 1 END AS mine,
-            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(phase_change_date)) AS days_avail
+            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(phase_change_date)) AS days_avail,
+            project_type
         FROM projects p
         LEFT JOIN languages l1 ON p.language = l1.code
         LEFT JOIN languages l2 ON p.seclanguage = l2.code
@@ -138,6 +139,7 @@ function echo_available_projects() {
     $tbl->AddColumn("<Author", "authorsname", "eauthor");
     $tbl->AddColumn("<", "langname", "elanguage");
     $tbl->AddColumn("<Genre", "genre");
+    $tbl->AddColumn("<Type", "project_type");
     $tbl->AddColumn("^Pages", "n_pages");
     $tbl->AddColumn("<Proj Mgr", "pm", "euser", "sortkey=pmsort");
     $tbl->AddColumn("<PPer", "postproofer", "euser", "sortkey=ppsort");

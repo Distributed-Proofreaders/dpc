@@ -24,6 +24,7 @@ define("PJ_EVT_TRANSITION", "transition");
 define("PJ_EVT_CHECKOUT",   "checkout");
 define("PJ_EVT_POST",       "post");
 define("PJ_EVT_POSTED_NOTIFY","posted_notify");
+define("PJ_EVT_PP_NOTIFY",  "pp_notify");
 define("PJ_EVT_POSTEDNUM",  "set_postednum");
 define("PJ_EVT_DELETE",     "delete");
 define("PJ_EVT_PP_UPLOAD",  "pp_upload");
@@ -408,6 +409,24 @@ class DpProject
         $title (by $author)
 
         You can $fadedpageurl.
+
+        Thank you!";
+
+        return array($subject, $msg);
+    }
+
+    public function ConstructPPMsg()
+    {
+        $title = $this->Title();
+        $author = $this->Author();
+        $projecturl = $this->ProjectLink('this project');
+        $projecturl = str_replace("\n", "", $projecturl);
+
+        $subject = "Transition to PP -- $title ($author)";
+        $msg = "
+        You are receiving this message because you are either the PP or PM for this project.
+
+        $title (by $author): $projecturl has transitioned to PP.
 
         Thank you!";
 
@@ -2564,6 +2583,9 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         # If this is a transition to posted, send notifications
         if ($phase != 'POSTED' && $newphase == 'POSTED')
             $this->PostedNotify();
+        # If this is a transition to PP, send notification to PM/PP
+        if ($phase != 'PP' && $newphase == 'PP')
+            $this->PPNotify();
     }
 
     public function PostedNotify()
@@ -2571,6 +2593,20 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->LogProjectEvent(PJ_EVT_POSTED_NOTIFY, "Project transitioning to POSTED, notifying waiters");
         list($subject, $email) = $this->ConstructPostedMsg();
         $this->Notify('post', $this->PM(), $subject, $email);
+    }
+
+    public function PPNotify()
+    {
+        $this->LogProjectEvent(PJ_EVT_PP_NOTIFY, "Project transitioning to PP, notifying PM&PP");
+        list($subject, $email) = $this->ConstructPPMsg();
+
+        $pm = $this->PM();
+        $pp = $this->PPer();
+        $event = "Transition to PP";
+
+        $this->SendPM($pm, $pm, $subject, $email, $event);
+        if (!empty($pp) && $pp != $pm)
+            $this->SendPM($pm, $pp, $subject, $email, $event);
     }
 
     public function LogPhaseTransition($fromphase, $tophase) {
@@ -2589,7 +2625,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                 details2 = '$tophase'";
         $dpdb->SqlExecute($sql);
     }
-
 
     public function DeleteProject() {
         global $dpdb;
