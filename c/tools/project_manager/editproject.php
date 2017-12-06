@@ -141,6 +141,7 @@ class ProjectInfoHolder
         $this->image_preparer   = $project->ImagePreparer();
         $this->text_preparer    = $project->TextPreparer();
         $this->extra_credits    = $project->ExtraCredits();
+        $this->project_type     = $project->ProjectType();
         return "";
     }
 
@@ -245,7 +246,7 @@ class ProjectInfoHolder
         $dpdb->beginTransaction();
         $this->projectid = DpProject::CreateProject(
             $this->nameofwork, $this->authorsname,
-            $this->projectmgr, $User->Username());
+            $this->projectmgr, $User->Username(), $this->project_type);
 
         $this->save_to_db();
         $dpdb->commit();

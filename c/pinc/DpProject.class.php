@@ -1844,7 +1844,8 @@ class DpProject
                  image_link,
                  image_preparer,
                  text_preparer,
-                 extra_credits
+                 extra_credits,
+                 project_type
              )
              SELECT
 
@@ -1868,7 +1869,8 @@ class DpProject
                 p.image_link,
                 p.image_preparer,
                 p.text_preparer,
-                p.extra_credits
+                p.extra_credits,
+                p.project_type
                            
             FROM projects AS p
             WHERE projectid = '{$this->ProjectId()}'";
