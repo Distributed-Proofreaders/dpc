@@ -31,9 +31,10 @@ if ($saveAndProject || $isclone) {
 
     $errors = $pih->set_from_post();
     if (! $errors) {
-        if ($isclone)
+        if ($isclone) {
+            $pih->set_project_type($projectid);
             $projectid = $pih->clone_to_db();
-        else
+        } else
             $pih->save_to_db();
 
 //        if( $saveAndQuit) {
@@ -97,6 +98,7 @@ class ProjectInfoHolder
     public $text_preparer    = '';
     public $extra_credits    = '';
     public $isposted         = '';
+    public $project_type     = 'normal';
 
     public function __construct($projectid) {
         global $User;
@@ -108,6 +110,12 @@ class ProjectInfoHolder
         $this->image_source     = '_internal';
         $this->image_preparer   = $projectmgr;
         $this->text_preparer    = $projectmgr;
+    }
+
+    // Used by clone; only piece of info coming from the old project
+    public function set_project_type($projectid) {
+        $p = new DpProject($projectid);
+        $this->project_type = $p->ProjectType();
     }
 
     // -------------------------------------------------------------------------

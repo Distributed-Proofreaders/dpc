@@ -3823,6 +3823,9 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     public static function CreateProject($title, $author, $projectmanager = "", $cp="", $type = "normal") {
         global $Context, $dpdb ;
 
+        if (empty($type))
+            $type = "normal";
+
         $projectid = $Context->NewProjectId();
 //	    $username = $User->Username();
 
