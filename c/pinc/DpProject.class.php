@@ -1774,11 +1774,15 @@ class DpProject
 	protected function StateCount($state) {
 		global $dpdb;
 		$projectid = $this->ProjectId();
+	    //$phase = $this->Phase();
 
+        // Note this doesn't take into account the current phase,
+        // so if there are any pages in subsequent phases it will be
+        // wrong.
 		return $dpdb->SqlOneValue("
 	        SELECT COUNT(1) FROM page_last_versions
 	        WHERE projectid = '$projectid'
-	        	AND state = '$state'");
+            AND state = '$state'");
 	}
 	public function AvailableCount() {
 		return $this->StateCount("A");
