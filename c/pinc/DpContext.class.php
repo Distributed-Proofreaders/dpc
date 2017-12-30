@@ -521,6 +521,10 @@ class DpContext {
 			die( "zip error on close." );
 		}
 		send_file( $zippath );
+        // Note send_file only returns if there was an error.
+        echo "Failed sending zip file containing <pre>";
+        print_r($apaths);
+        echo "</pre>";
 		@unlink($zippath);
 	}
 
