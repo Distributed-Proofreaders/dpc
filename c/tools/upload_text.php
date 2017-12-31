@@ -1,6 +1,15 @@
 <?PHP
 /*
-*/
+ * Upload a user file.
+ * The upload_action arg indicates where the upload is coming from.
+ * For example:
+ * -- on the project page, the Upload a text you have smoothread,
+ *    has an action of smooth_done
+ * -- on the My Projects page, the Upload button has an action of pp_temp
+ *
+ * Note that uploading a file for smoothreading uses a different file,
+ * upload_smooth.php, not really sure why, it used to use this one.
+ */
 
 
 ini_set("display_errors", 1);
@@ -104,14 +113,18 @@ if ($isuploadfile) {       // we have a file now. do some more checks.
 
         case "smooth_done":
             if(extension($uploadfilename) == "zip") {
+                /*
+                 * The zip upload always uses projectid_smooth_done_username.zip
+                 * so there can only be one.
+                 */
                 $tofilepath = $project->SmoothZipUploadPath();
-            }
-            else {
-                $yymmdd = yymmdd();
-                dump($yymmdd);
-                dump($uploadfilename);
-                $tofilepath = build_path($project->SmoothDirectoryPath(),
-                        "{$User->Username()}_{$yymmdd}_{$uploadfilename}");
+            } else {
+                /*
+                 * Use similar naming convention to
+                 * the zip upload, except you can have more than one file.
+                 */
+                $tofilepath = build_path($project->ProjectPath(),
+                    $projectid . "_smooth_done_{$username}_${uploadfilename}");
             }
             $back_url = url_for_project($projectid);
             $project->AddPostComment("Uploaded smoothed file $tofilepath");

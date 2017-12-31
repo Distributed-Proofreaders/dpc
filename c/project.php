@@ -1380,8 +1380,12 @@ function solicit_smooth_reading($project) {
  */
 function link_to_uploaded_smooth_file($project, $filename) {
 	$url = build_path($project->ProjectUrl(), $filename);
-	$username = RegexMatch("_smooth_done_(.*)\.zip", "ui", $filename, 1);
-	return "<a href='$url'>$username</a>\n";
+	$text = RegexMatch("_smooth_done_(.*)\.zip", "ui", $filename, 1);
+    if (empty($text))
+        $text = RegexMatch("_smooth_done_(.*)", "ui", $filename, 1);
+    else
+        $text = "$text (zip file)";
+	return "<a href='$url'>$text</a>\n";
 }
 
 /**
