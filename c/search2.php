@@ -38,8 +38,8 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 //	$diffCaption    = sprintf($fmt, "lkdiff",     _("Difficulty"));
 	$phaseCaption   = sprintf($fmt, "lkphase",    _("Phase"));
 
-	$tbl = new DpTable("tblsearch", "dptable w95");
-	$tbl->SetQBE();
+	$tbl = new DpTable("tblsearch", "dptable sortable w95");
+	//$tbl->SetQBE();
 	$tbl->AddColumn("<".$titleCaption,          "title",            "title_link");
 	$tbl->AddColumn("<".$authorCaption,         "author");
 	$tbl->AddColumn("^".$langCaption,           "langname",               "elangname");
@@ -341,7 +341,7 @@ if ( $nprojects == 0 ) {
 }
 
 $tbl->SetRowCount(count($rows));
-$tbl->SetPaging($pagenum, $rowsperpage);
+//$tbl->SetPaging($pagenum, $rowsperpage);
 $tbl->SetRows($rows);
 
 echo "<div class='center' onclick='eSetSort(event)'>\n";
