@@ -188,6 +188,8 @@ $language_picker .= "
 
 echo "<h2 class='center m50em'>$title</h2>\n";
 
+echo "<div class='center vpadded'><a href='search2.php'>Extended Search</a></div>";
+
 echo html_comment($sql);
 
 echo "
@@ -424,3 +426,5 @@ function edit_link($row) {
 		? link_to_edit_project($row['projectid'], "Edit", true)
 		: "";
 }
+
+// vim: sw=4 ts=4 expandtab

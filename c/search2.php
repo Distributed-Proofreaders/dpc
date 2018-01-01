@@ -49,7 +49,7 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	$tbl->AddColumn("<".$ppCaption,             "pp",               "pmlink");
 	$tbl->AddColumn("^PPV",                     "ppverifier",       "pmlink");
 //	$tbl->AddColumn("^".$diffCaption,           "difficulty");
-	$tbl->AddColumn("^".$phaseCaption,          "phase",    null,   "sortkey=sequence");
+	$tbl->AddColumn("^".$phaseCaption,          "phase",    "ephase",   "sortkey=sequence");
 	$tbl->AddColumn(_("^Edit"),                 null,               "edit_link", "nosort");
 	$tbl->AddColumn("^".$projidCaption,         "projectid");
 
@@ -368,6 +368,10 @@ function elangname($langname, $row) {
 		: "";
 }
 
+function ephase($phase, $row) {
+    return $phase . (($phase == 'P1' and $row['queued'] > 0) ? "/Queue" : "");
+}
+
 /*
 function roundid($row) {
 	return preg_match("/^(.+?)\..*_(.*)$/", $row['phase'], $matches) > 0
@@ -428,7 +432,8 @@ function project_search_view_sql($where, $orderby = "nameofwork") {
                 p.n_available_pages as pages_available,
                 p.n_pages AS pages_total,
                 p.username AS project_manager,
-                ph.sequence
+                ph.sequence,
+                (SELECT 1 FROM project_holds ph WHERE ph.projectid = p.projectid AND ph.phase = 'P1' AND ph.hold_code = 'queue') queued
             FROM projects p
             LEFT JOIN languages l1 ON p.language = l1.code
             LEFT JOIN languages l2 ON p.seclanguage = l2.code
@@ -462,3 +467,5 @@ function edit_link($row) {
 		? link_to_edit_project($row['projectid'], "Edit", true)
 		: "";
 }
+
+// vim: sw=4 ts=4 expandtab
