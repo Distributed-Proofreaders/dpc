@@ -170,6 +170,9 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	if($cmdPgDn) {
 		$pagenum = min($pagenum + 1, ceil(count($rows) / $rowsperpage));
 	}
+    if($dosearch) {
+        $pagenum = 1;
+    }
 
 	$nprojects = count($rows);
 }
