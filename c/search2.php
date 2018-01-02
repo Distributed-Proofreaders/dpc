@@ -340,6 +340,8 @@ if ( $nprojects == 0 ) {
 	exit;
 }
 
+echo _("<p class='hpadded'>$nprojects projects matched the search criteria.</p>");
+
 $tbl->SetRowCount(count($rows));
 //$tbl->SetPaging($pagenum, $rowsperpage);
 $tbl->SetRows($rows);
