@@ -3,23 +3,7 @@ $relPath='../pinc/';
 include_once($relPath.'dpinit.php');
 include_once($relPath.'project_states.inc');
 
-// TODO: move this to dp.css
-echo "
-<head>
-<style>
-table.dptable th.b-right, table.dptable tr.even td.b-right, table.dptable tr.odd td.b-right {
-    border-right: black solid 2px;
-}
-table.dptable th.b-left, table.dptable tr.even td.b-left, table.dptable tr.odd td.b-left {
-    border-left: black solid 2px;
-}
-</style>
-</head>
-";
-
 $title = _("Project Manager Statistics");
-$psd = get_project_status_descriptor('created');
-$psd = get_project_status_descriptor('posted');
 
 $rows = $dpdb->SqlRows("
     SELECT username PM, 
@@ -71,4 +55,5 @@ echo _("
 $tbl->EchoTableNumbered();
 
 theme("","footer");
+// vim: sw=4 ts=4 expandtab
 ?>

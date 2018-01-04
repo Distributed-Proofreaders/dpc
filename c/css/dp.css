@@ -241,9 +241,17 @@ table#tblpages th.b-left,
 table#tblpages td.b-left {
     border-left: black solid 1px;
 }
+table.dptable tr.even td.b-left,
+table.dptable tr.odd td.b-left {
+    border-left: black solid 2px;
+}
 table#tblpages th.b-right,
 table#tblpages td.b-right {
     border-right: black solid 1px;
+}
+table.dptable tr.even td.b-right,
+table.dptable tr.odd td.b-right {
+    border-right: black solid 2px;
 }
 table.hub_table td {
     border: 1px solid black;

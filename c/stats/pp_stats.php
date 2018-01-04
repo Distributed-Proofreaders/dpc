@@ -18,70 +18,67 @@ $tbl2 = new DpTable("tbl2", "dptable minitab");
 $tbl2->SetRows($rows2);
 $tbl2->AddColumn("^Number of Post-Processors", "nproofers");
 
-$rows3 = $dpdb->SqlRows("
-    SELECT p.postproofer,
-    		u.u_privacy,
-           COUNT(1) nprojects
+$rows = $dpdb->SqlRows("
+    SELECT (CASE WHEN LENGTH(postproofer) > 0 THEN postproofer ELSE 'Unassigned' END) AS PP, 
+           COUNT(1) nproj,
+           SUM(CASE WHEN p.phase = 'PREP' THEN 1 ELSE 0 END) as nPREP,
+           SUM(CASE WHEN p.phase = 'P1' AND queued = 'Q' THEN 1 ELSE 0 END) as nQueued,
+           SUM(CASE WHEN p.phase = 'P1' AND queued IS NULL THEN 1 ELSE 0 END) as nP1,
+           SUM(CASE WHEN p.phase = 'P2' THEN 1 ELSE 0 END) as nP2,
+           SUM(CASE WHEN p.phase = 'P3' THEN 1 ELSE 0 END) as nP3,
+           SUM(CASE WHEN p.phase = 'F1' THEN 1 ELSE 0 END) as nF1,
+           SUM(CASE WHEN p.phase = 'F2' THEN 1 ELSE 0 END) as nF2,
+           SUM(CASE WHEN p.phase = 'PP' THEN 1 ELSE 0 END) as nPP,
+           SUM(CASE WHEN p.phase = 'PPV' THEN 1 ELSE 0 END) as nPPV,
+           SUM(CASE WHEN p.phase = 'POSTED' THEN 1 ELSE 0 END) as nPOSTED,
+           SUM(CASE WHEN p.phase IN ('P1','P2','P3','F1','F2') and queued IS NULL THEN 1 ELSE 0 END) as nRounds,
+           SUM(CASE WHEN p.phase IN ('PPV','POSTED') and queued IS NULL THEN 1 ELSE 0 END) as nDone
     FROM projects p
-    JOIN users u ON p.postproofer = u.username
-    WHERE p.phase IN ('POSTED', 'PPV')
-    GROUP BY p.postproofer
+    LEFT JOIN (
+        SELECT projectid, 'Q' queued FROM project_holds WHERE phase = 'P1' and hold_code='queue'
+    ) T on p.projectid = T.projectid
+    WHERE phase != 'DELETED'
+    GROUP BY postproofer
     ORDER BY COUNT(1) DESC");
-$tbl3 = new DpTable("tbl3", "dptable minitab", "Post-Processor Project Counts");
-$tbl3->AddColumn("<PPer", "postproofer", "eUsername");
-$tbl3->AddColumn("^Projects", "nprojects");
-$tbl3->SetRows($rows3);
 
-$rows4 = $dpdb->SqlRows("
-    SELECT 	p.postproofer,
-    		u.u_privacy,
-    		COUNT(1) nprojects
-    FROM projects p
-    JOIN users u ON p.postproofer = u.username
-    WHERE phase = 'POSTED'
-    GROUP BY p.postproofer
-    ORDER BY COUNT(1) DESC");
-$tbl4 = new DpTable("tbl4", "dptable minitab", "Post-Processor Project Counts");
-$tbl4->AddColumn("<PPer", "postproofer", "eUsername");
-$tbl4->AddColumn(">Projects", "nprojects");
-$tbl4->SetRows($rows4);
+$npms = count($rows);
+
+$tbl = new DpTable("tblmanaged", "dptable bordered w70 sortable");
+$tbl->AddColumn("<Name", "PP");
+$tbl->AddColumn(">Total Projects", "nproj");
+$tbl->AddColumn(">PREP", "nPREP");
+$tbl->AddColumn(">Queued", "nQueued", null, "b-right");
+$tbl->AddColumn(">P1", "nP1");
+$tbl->AddColumn(">P2", "nP2");
+$tbl->AddColumn(">P3", "nP3");
+$tbl->AddColumn(">F1", "nF1");
+$tbl->AddColumn(">F2", "nF2");
+$tbl->AddColumn(">In Rounds", "nRounds", null, "b-left");
+$tbl->AddColumn(">PP", "nPP", null, "b-right");
+$tbl->AddColumn(">PPV", "nPPV");
+$tbl->AddColumn(">Posted", "nPOSTED");
+$tbl->AddColumn(">PPV+Posted", "nDone", null, "b-left");
+$tbl->SetRows($rows);
+
 
 $title = "Post-Processing Statistics";
 theme($title,'header');
 
 echo "
     <h2 class='center'>$title</h2>
-    ".link_to_pper_charts()."
-
     <h3 class='center'>" . _("Total Projects Post-Processed Since Statistics were Kept") . "</h3>\n";
-    $tbl1->EchoTable();
 
-    $tbl2->EchoTable();
+$tbl1->EchoTable();
+$tbl2->EchoTable();
 
-echo "
-    <h3 class='center'>" . _("Most Prolific Post-Processors") . "</h3>
-    <h4 class='center'>" . _("(Number of Projects Finished PPing)") . "</h4>\n";
+echo _("
+    <h2 class='center'>$title</h2>
+    <p class='center'>There are $npms Distinct Post-Processors</p>
+");
 
-$tbl3->EchoTable();
-
-
-echo "
-    <h3 class='center'>" . _("Most Prolific Post-Processors") . "</h3>
-    <h4 class='center'>" . _("(Number of Projects Posted)") . "</h4>\n";
-
-$tbl4->EchoTable();
+$tbl->EchoTable();
 
 theme("","footer");
-exit;
 
-function link_to_pper_charts() {
-    return "";
-}
-
-function eUsername($name, $row) {
-	global $User;
-	return ($row['u_privacy'] > 0)
-						? ($User->IsAdmin() ? "{$name}*" : "anonymous")
-						: $name;
-}
+// vim: sw=4 ts=4 expandtab
 ?>
