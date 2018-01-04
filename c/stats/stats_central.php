@@ -127,7 +127,13 @@ echo "
 
     $rows[] = array(
         "col01" => "<a href='pp_stats.php'>" . _("Post-Processing Stats") . "</a>",
-        "col02" => "<a href='ppv_stats.php'>" . _("Post-Processing Verification Stats") . "</a>");
+        "col02" => "<a href='ppv_stats.php'>" . _("Post-Processing Verification Stats") . "</a>"
+    );
+
+    $rows[] = array(
+        "col01" => "<a href='pm_stats.php'>" . _("Project Manager Stats") . "</a>",
+        "col02" => ""
+    );
 
     $tbl->AddColumn("<", "col01");
     $tbl->AddColumn("<", "col02");

@@ -373,21 +373,35 @@ function show_round_specific_stats( $round_id ) {
     $strmonthcount  = strftime(_("%B's Total"));
     $strpct         = number_format($monthpct, 1);
 
+    $t[] = $Context->TimerGet();
+    $todayActive = number_format(PhaseUsersActiveToday($round_id));
+    $t[] = $Context->TimerGet();
+    $yesterdayActive = number_format(PhaseUsersActiveYesterday($round_id));
+    $t[] = $Context->TimerGet();
+    $monthActive = number_format(PhaseUsersActiveMonth($round_id));
+
     // Today's Numbers
     echo "<ul class='clean'>\n";
 	if ($todaygoal != 0)
 		echo _("<li>Today's Goal: $todaygoal</li>\n");
-   echo	_("<li>Today's Total: $todaycount ($strnow)</li>\n\n");
+    echo _("<li>Today's Total: $todaycount ($strnow)</li>\n\n");
 
 	if ($yesterdaygoal != 0)
 		echo _("<li>Yesterday's Goal: $yesterdaygoal</li>\n");
 	echo _("<li>Yesterday's Total: $yesterdaycount</li>\n\n");
 
-	if ($monthgoal != 0)
+	if ($monthgoal != 0) {
 		echo _("<li>$strmonthgoal: $monthgoal</li>\n");
-	echo _("<li>$strmonthcount: $monthcount ({$strpct}%)</li>\n")
+        echo _("<li>$strmonthcount: $monthcount ({$strpct}%)</li>\n");
+    } else
+        echo _("<li>$strmonthcount: $monthcount</li>\n");
 
-       . "</ul>\n";
+    echo _("<li style='margin-top:.5em;'>Today's Active Users: $todayActive</li>\n");
+    echo _("<li>Yesterday's Active Users: $yesterdayActive</li>\n");
+    $strmonthactive = strftime(_("%B's Active Users"));
+    echo _("<li>$strmonthactive: $monthActive</li>\n");
+
+    echo "</ul>\n";
 
     if ($User->IsLoggedIn()) {
         $rankname = honorific_for_count($round_id, $User->RoundPageCount($round_id));
@@ -638,3 +652,4 @@ function html_footer() {
     echo "\n</body>\n";
     echo "</html>\n";
 }
+// vim: sw=4 ts=4 expandtab

@@ -46,6 +46,27 @@ function PhaseCountToday($phase) {
                 AND version_time >= UNIX_TIMESTAMP(CURRENT_DATE())");
 }
 
+function PhaseUsersActiveToday($phase) {
+    global $dpdb;
+    return $dpdb->SqlOneValue("
+            SELECT COUNT(DISTINCT username)
+            FROM page_versions
+            WHERE phase = '$phase'
+            	AND state = 'C'
+                AND version_time >= UNIX_TIMESTAMP(CURRENT_DATE())");
+}
+
+function PhaseUsersActiveYesterday($phase) {
+    global $dpdb;
+    return $dpdb->SqlOneValue("
+        SELECT COUNT(DISTINCT username)
+		FROM page_versions
+        WHERE phase = '$phase'
+			AND state = 'C'
+            AND version_time >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 1 day))
+            AND version_time < UNIX_TIMESTAMP(CURRENT_DATE())");
+}
+
 function PhaseCountYesterday($phase) {
     global $dpdb;
     return $dpdb->SqlOneValue("
@@ -55,6 +76,24 @@ function PhaseCountYesterday($phase) {
 			AND state = 'C'
             AND version_time >= UNIX_TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 1 day))
             AND version_time < UNIX_TIMESTAMP(CURRENT_DATE())");
+}
+
+function PhaseUsersActiveMonth($phase) {
+    global $dpdb;
+    return $dpdb->SqlOneValue("
+        SELECT COUNT(1)
+        FROM
+        (   SELECT DISTINCT username
+            FROM user_round_pages urp
+            WHERE phase = '$phase'
+                AND count_time >= UNIX_TIMESTAMP(DATE(DATE_FORMAT(NOW() ,'%Y-%m-01')))
+            UNION
+            SELECT DISTINCT username
+            FROM page_versions
+            WHERE phase = '$phase'
+            	AND state = 'C'
+                AND version_time > UNIX_TIMESTAMP(CURRENT_DATE())
+        ) a");
 }
 
 function PhaseCountMonth($phase) {
