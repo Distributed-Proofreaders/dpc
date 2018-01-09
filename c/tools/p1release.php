@@ -64,12 +64,12 @@ $tbl->AddColumn("^Language", "langname", "elanguage");
 $tbl->AddColumn("^Proj Mgr", "pm", "epm", "sortkey=pmsort");
 $tbl->AddColumn("^Mod Date", "moddate");
 $tbl->AddColumn("<Title", "nameofwork", "etitle");
+$tbl->AddColumn("<Author", "authorsname", "eauthor");
+$tbl->AddColumn("^Pages", "n_pages", "enpages");
+$tbl->AddColumn("^Days", "days_avail");
 if($User->MayReleaseHold("queue")) {
     $tbl->AddColumn("^Release", "projectid", "erelease");
 }
-// $tbl->AddColumn("<Author", "authorsname", "eauthor");
-// $tbl->AddColumn("^Pages", "n_pages", "enpages");
-// $tbl->AddColumn("^Days", "days_avail");
 $tbl->SetRows($rows);
 
 $projectids = $dpdb->SqlValues("
