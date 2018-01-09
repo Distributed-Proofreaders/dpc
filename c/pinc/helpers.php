@@ -1061,6 +1061,9 @@ function send_file($path, $filename = null) {
 //    ob_clean();
 //    flush();
 //	ignore_user_abort(true);
+    // Make sure buffering is not on, or we might run out of memory!
+    if (ob_get_level())
+        ob_end_clean();
     readfile($path);
     exit;
 }
