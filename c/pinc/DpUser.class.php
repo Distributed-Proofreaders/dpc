@@ -594,31 +594,21 @@ class DpUser
         return $t;
     }
 
-//    public function BestRoundDay($phase) {
-//        global $dpdb;
-//        $count = $this->BestRoundDayCount($phase);
-//        return $count <= 0
-//            ? 0
-//            : $dpdb->SqlOneValue("
-//            SELECT MIN(count_time) FROM user_round_pages
-//            WHERE username = '{$this->Username()}'
-//                AND phase = '$phase'
-//                AND page_count = $count");
-//    }
-
-//    public function BestRoundDayCount($phase) {
-//        global $dpdb;
-//        return $dpdb->SqlOneValue("
-//            SELECT MAX(page_count) FROM user_round_pages
-//            WHERE username = '{$this->Username()}'
-//                AND phase = '$phase'");
-//    }
-
-
     public function MayMentor() {
         return $this->HasRole("P2mentor");
     }
 
+    /*
+     * The hold_code table maps from roles to the holds
+     * which are permitted to be released by users with that role.
+     * Four rows: hold_code->role_code
+     *   pm::PM
+     *   pp::PP
+     *   qc::QC
+     *   queue::p1queue
+     * The column set_or_release is not implemented and currently is always
+     * NULL.
+     */
     public function MayReleaseHold($holdcode) {
         global $dpdb;
 
@@ -934,4 +924,4 @@ function LogRoleRevoke($username, $role) {
             (UNIX_TIMESTAMP(), '$username', '$actor', 'revoke', '$role')");
 }
 
-
+// vim: sw=4 ts=4 expandtab

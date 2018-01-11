@@ -4,8 +4,14 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 
-$relPath = "./pinc/";
+$relPath = "../../pinc/";
 include_once($relPath.'dpinit.php');
+
+$User->IsLoggedIn()
+    or RedirectToLogin();
+
+$User->IsProjectFacilitator() || $User->IsSiteManager() || $User->IsProjectManager()
+    or die("Unauthorized");
 
 $sort = Arg("sort", "role");
 
@@ -32,3 +38,5 @@ echo html_head("Role List");
 echo "<h1 class='center'>Role List</h1>\n";
 $tbl->EchoTable();
 echo html_end();
+
+// vim: ts=4 sw=4 expandtab

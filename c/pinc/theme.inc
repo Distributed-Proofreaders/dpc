@@ -580,6 +580,7 @@ function show_admin_sidebar() {
         if($User->IsSiteManager() || $User->IsProjectFacilitator() || $User->IsProjectManager()) {
             echo "
     <a href='/c/tools/site_admin/user_roles.php'>Manage Roles for a User</a>
+    <a href='/c/tools/site_admin/role_list.php'>User Role Report</a>
     <a href='/c/tools/p1release.php'>Project P1 Release</a>
     <a href='/c/tools/pper.php'>Post Processor Report</a>
     <a href='/c/tools/site_admin/sitenews.php'>Site News Central</a>\n";
