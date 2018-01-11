@@ -8,12 +8,14 @@ include_once($relPath.'dpinit.php');
 $User->IsLoggedIn()
 	or RedirectToLogin();
 
-$User->IsAdmin() || $User->IsProjectManager() || $User->MayReleaseHold("queue")
+$queueHold = $User->MayReleaseHold("queue");
+
+$User->IsAdmin() || $User->IsProjectManager() || $queueHold
     or die("User not permitted here.");
 
 $release = ArgArray("release");
 
-if(count($release) > 0 && $User->MayReleaseHold("queue")) {
+if(count($release) > 0 && $queueHold) {
     foreach($release as $key => $value) {
         $project = new DpProject($key);
         $project->ClearQueueHold("P1");
@@ -67,7 +69,7 @@ $tbl->AddColumn("<Title", "nameofwork", "etitle");
 $tbl->AddColumn("<Author", "authorsname", "eauthor");
 $tbl->AddColumn("^Pages", "n_pages", "enpages");
 $tbl->AddColumn("^Days", "days_avail");
-if($User->MayReleaseHold("queue")) {
+if($queueHold) {
     $tbl->AddColumn("^Release", "projectid", "erelease");
 }
 $tbl->SetRows($rows);
@@ -97,20 +99,21 @@ theme("P1: Project Release", "header");
 
 <p>Projects have been released from the Preparation stage and are now
 considered suitable for proofing (having passed the QC check.) They are in the
-first round state (P1) but are waiting until DAvid releases them using this
-form. To use this form, a user needs to be assigned the Queuer role. (not
-enforced yet.)</p>
-
-<p>The old release mechanism is being used for now until we know that DAvid has
-the right information available and the necessary conditions are set to really
-release these projects. Then, we'll convert this to a "P1 Queue Hold" on the
-project (rather than a project state change) and the button will release the
-Hold. The behavior appears the same either way.</p>
-
+first round state (P1) but are waiting until a user with the P1QUEUE role
+releases them, either in this report, or directly on the Manage Holds
+under the individual projects.
+</p>
 
 <h2>Projects waiting in P1</h2>
 
 <?php
+
+if(!$queueHold) {
+    echo "
+        <p>You may <b>not</b> release the P1QUEUE hold. The Release button
+        will not show.</p>
+    ";
+}
 
 echo "<form id='frmprop' action='' method='POST' name='frmprop'>\n";
 $tbl->EchoTable();

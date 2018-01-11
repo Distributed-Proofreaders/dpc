@@ -550,15 +550,6 @@ class DpUser
         $dpdb->SqlExecutePS($sql, $args);
     }
 
-//    public function SetUserString($fieldname, $value) {
-//        global $dpdb;
-//        $username = $this->Username();
-//        $sql = "UPDATE users SET {$fieldname} = ?
-//                WHERE username = ?";
-//        $args = array(&$value, &$username);
-//        $dpdb->SqlExecute($sql, $args);
-//    }
-
     public function IsEmailUpdates() {
         return $this->_row['emailupdates'];
     }
@@ -616,14 +607,14 @@ class DpUser
             return true;
         }
         $username = $this->Username();
-        return $dpdb->SqlExists("
-            SELECT COUNT(1)
+        return $dpdb->SqlExistsPS("
+            SELECT 1
             FROM user_roles ur
             INNER JOIN hold_roles hr
                 ON hr.role_code = ur.role_code
-            WHERE hr.hold_code ='$holdcode'
+            WHERE hr.hold_code = ?
                 -- AND hr.set_or_release ='R'
-                AND ur.username = '$username'");
+                AND ur.username = ?", [&$holdcode, &$username]);
     }
 
     public function MaySetHold($holdcode) {
@@ -633,14 +624,15 @@ class DpUser
             return true;
         }
         $username = $this->Username();
-        return $dpdb->SqlExists("
+        $args = [&$username];
+        return $dpdb->SqlExistsPS("
             SELECT 1
             FROM user_roles ur
             INNER JOIN hold_roles hr
                 ON hr.role_code = ur.role_code
-            WHERE hr.hold_code ='$holdcode'
+            WHERE hr.hold_code = ?
                 -- AND hr.set_or_release ='S'
-                AND ur.username = '$username'");
+                AND ur.username = ?", [&$holdcode, &$username]);
     }
     
     public function GrantRole($role) {
@@ -648,25 +640,27 @@ class DpUser
         $username = $this->Username();
         $sql = "
             SELECT 1 FROM user_roles
-            WHERE username = '$username'
-                AND role_code = '$role'";
-        if(! $dpdb->SqlExists($sql)) {
+            WHERE username = ?
+                AND role_code = ?";
+        $args = [&$username, &$role];
+        if(! $dpdb->SqlExistsPS($sql, $args)) {
              $sql = "
                  INSERT INTO user_roles
-                 SET username = '$username',
-                     role_code = '$role'";
-             $dpdb->SqlExecute($sql);
+                 SET username = ?,
+                     role_code = ?";
+             $dpdb->SqlExecutePS($sql, $args);
        }
-         LogRoleGrant($username, $role);
+       LogRoleGrant($username, $role);
     }
 
     public function RevokeRole($role) {
         global $dpdb;
         $username = $this->Username();
-        $dpdb->SqlExecute("
+        $args = [&$username, &$role];
+        $dpdb->SqlExecutePS("
             DELETE FROM user_roles
-            WHERE username = '$username'
-                AND role_code = '$role'");
+            WHERE username = ?
+                AND role_code = ?", $args);
 
         LogRoleRevoke($username, $role);
     }

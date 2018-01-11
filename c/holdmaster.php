@@ -126,9 +126,8 @@
             There are no automatic User Holds.
 
   </pre>
-  <p>Warning: Restrictions are not in place yet, so you may be able to release
-  holds you aren't responsible for. Please ask first if you're not sure. User
-  holds that you orignally set are safe. If you are the PM, pm holds are safe.</p>
+  <p>If you do not have the appropriate permissions to release a hold,
+  the hold will show, but the Release button will not be available.</p>
 
   <div id='divwork'>
     <div class='center' id='divworkform'>\n";

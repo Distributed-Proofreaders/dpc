@@ -71,26 +71,6 @@ if($username != '') {
         ";
 
     $round_stats = $dpdb->SqlRows($sql);
-//    $rows = array();
-//    foreach($round_stats as $rstat) {
-//        switch($rstat["round_id"]) {
-//            case "P1":
-//                $rows[1] = $rstat;
-//                break;
-//            case "P2":
-//                $rows[2] = $rstat;
-//                break;
-//            case "P3":
-//                $rows[3] = $rstat;
-//                break;
-//            case "F1":
-//                $rows[4] = $rstat;
-//                break;
-//            case "F2":
-//                $rows[5] = $rstat;
-//                break;
-//        }
-//    }
 
     $tblstats = new DpTable("tblstats", "dptable bordered padded");
     $tblstats->AddColumn("<Round", "phase");
@@ -113,17 +93,27 @@ else if($role != "") {
 
 	$tblrole = new DpTable("tblrole");
 	$tblrole->AddColumn("^Username", "username", "euserquery");
-	$tblrole->AddColumn("^Revoke", "urid", "erevoke");
+    $tblrole->AddColumn("<Role", "role_code");
+	$tblrole->AddColumn("^Revoke", null, "erevoke");
 	$tblrole->SetRows($rows);
 }
 
 $no_stats = 1;
 theme("DPC User Roles", "header");
 
+if ($username)
+    echo "<h1>User Roles for $username</h1>";
+else if ($role)
+    echo "<h1>All Users with the Role $role</h1>";
+else
+    echo "<h1>User Roles</h1>";
 echo"
-<h1>User Roles</h1>
 <form name='frmroles' id='frmroles' method='POST'>
 <div id='divinput' class='controlbox w30 lfloat'>
+<p>Submit a Username to manipulate their roles.
+Alternatively, submit just a role to get a list of all users
+with that role.  Do not give both username and role.
+</p>
 	<div class='w50 clear lfloat'> Username </div>
 	<div class='w50 lfloat'>
 		<input type='text' name='username' id='username' value='$username'>
@@ -138,7 +128,7 @@ echo"
 	</div>
 </div> <!-- divinput -->
 
-<div id='divtable' class='w50 lfloat'>\n";
+<div id='divtable' class='w50 rfloat'>\n";
 
 if($username) {
     $tbluser->EchoTable();
@@ -156,6 +146,10 @@ if($username) {
     $tblstats->EchoTable();
 }
 else if($role) {
+    echo '
+        <p>Sorry, revoke does not work in the current context,
+        follow through the username, and you can revoke there.</p>
+    ';
 	$tblrole->EchoTable();
 }
 
@@ -171,10 +165,10 @@ function estatus($urid) {
     return $urid == "" ? "" : "Yes";
 }
 function egrant($row) {
-    return $row["urid"] ? "" : grant_button($row['role_code']);
+    return $row['urid'] ? "" : grant_button($row['role_code']);
 }
 function erevoke($row) {
-    return $row["urid"] ? revoke_button($row['role_code']) : "";
+    return $row['urid'] ? revoke_button($row['role_code']) : "";
 }
 function euserquery($username) {
 	return link_to_user_roles($username);

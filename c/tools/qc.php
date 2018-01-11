@@ -8,8 +8,8 @@ $relPath="./../pinc/";
 include_once($relPath.'dpinit.php');
 include_once($relPath.'site_news.inc');
 
-$User->MayReleaseHold("qc")
-    or die("This user not permitted to release a QC Hold.");
+//$User->MayReleaseHold("qc")
+//    or die("This user not permitted to release a QC Hold.");
 
 $chk_uncleared  = Arg("chk_uncleared", false);
 $chk_pmhold     = Arg("chk_pmhold", false);
@@ -79,6 +79,12 @@ requirements are met before inspecting the project.</p>
 Checkboxes are provided to indicate whether you also want to see other PREP projects.</p>
 
 <?php
+if(!$User->MayReleaseHold("qc")) {
+    echo "
+        <p>You do <b>not</b> have permissions to release QC holds.
+        Showing the projects on QC hold, but not the release buttons.</p>
+    ";
+}
 
 echo "
 <div class='center'>
@@ -149,7 +155,7 @@ function echo_qc_waiting_projects($excl_clearance, $excl_pm) {
     $tbl->AddColumn("<Clearance", "clearance", "eclearance");
     $tbl->AddColumn("<PM Hold?", "phpm_id", "epmhold");
 
-    if($User->MayReleaseHold("queue")) {
+    if($User->MayReleaseHold("qc")) {
         $tbl->AddColumn("^Release", "projectid", "erelease");
         $tbl->AddColumn("^Reset PM Hold", "projectid", "ereject");
     }
