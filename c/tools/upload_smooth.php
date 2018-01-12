@@ -2,9 +2,8 @@
 /*
  *
  * File: upload_smooth.php
- * Prompt to upload a zip file with fiels to be smoothed;
+ * Prompt to upload a zip file with files to be smoothed;
  * Also accept and process said file.
-
 */
 
 
@@ -19,6 +18,9 @@ $project        = new DpProject($projectid);
 $nameofwork     = $project->Title();
 $username       = $User->Username();
 
+if (!$project->UserMayManage())
+    die("No permission for uploading a project's smooth file");
+
 // The only upload
 if(isset($_FILES) && isset($_FILES["dpupload"])) {
     $isuploadfile       = true ;
@@ -26,6 +28,21 @@ if(isset($_FILES) && isset($_FILES["dpupload"])) {
     $uploadfilename     = $upfiles["name"];
     $uploadtmpfilename  = $upfiles["tmp_name"];
     $uploadfilesize     = $upfiles["size"];
+
+    if (empty($uploadtmpfilename)) {
+
+        $phpFileUploadErrors = array(
+            0 => 'There is no error, the file uploaded with success',
+            1 => 'The uploaded file exceeds the upload_max_filesize directive in php.ini',
+            2 => 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form',
+            3 => 'The uploaded file was only partially uploaded',
+            4 => 'No file was uploaded',
+            6 => 'Missing a temporary folder',
+            7 => 'Failed to write file to disk.',
+            8 => 'A PHP extension stopped the file upload.',
+        );
+        die("File upload failed: " . $phpFileUploadErrors[$_FILES['dpupload']['error']]);
+    }
 
     $back_url = url_for_project($projectid);
 
