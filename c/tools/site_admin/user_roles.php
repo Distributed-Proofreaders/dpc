@@ -45,9 +45,9 @@ if($username != '') {
         ON u.username = ur.username
         AND r.role_code = ur.role_code
 
-    WHERE u.username = '$username'
+    WHERE u.username = ?
     ";
-    $rows = $dpdb->SqlRows($sql);
+    $rows = $dpdb->SqlRowsPS($sql, [&$username]);
 
     $tbluser = new DpTable("tbluser");
     $tbluser->AddColumn("<Role", "role_code");
@@ -65,12 +65,12 @@ if($username != '') {
                 SUM(urp.page_count) page_count
         FROM user_round_pages urp
         JOIN rounds r ON urp.phase = r.roundid
-        WHERE urp.username = 'dkretz'
+        WHERE urp.username = ?
         GROUP BY urp.phase
         ORDER BY r.round_index
         ";
 
-    $round_stats = $dpdb->SqlRows($sql);
+    $round_stats = $dpdb->SqlRowsPS($sql, [&$username]);
 
     $tblstats = new DpTable("tblstats", "dptable bordered padded");
     $tblstats->AddColumn("<Round", "phase");
