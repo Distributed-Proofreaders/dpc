@@ -12,8 +12,8 @@ function showstartexts($limit, $metal) {
         Sign up, log in, and start helping!!!!"); }
     else if($metal == "Silver") {
         $desc = _("$nmetal In Progress.");
-        $text = _("These books have been proofed and for through our site but have
-        not yet posted - currently going through final proofreading and
+        $text = _("These books have been proofed and formatted through our site but have
+        not yet posted—currently going through final post processing and
         assembly.");
     }
     else {
