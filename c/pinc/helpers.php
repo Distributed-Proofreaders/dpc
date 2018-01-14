@@ -605,12 +605,6 @@ function error_box($errmsg) {
 EOT;
 }
 
-function IsMe() {
-	global $User;
-	return $User->Username() == 'dkretz';
-}
-
-
 function StackDump() {
 	$e = new Exception;
 	var_dump($e->getTraceAsString());
@@ -1830,12 +1824,6 @@ function text_to_words($text) {
     return $m[0];
 }
 
-function dkretz() {
-	global $User;
-	return $User->Username() == 'dkretz';
-}
-
-
 
 define( 'NONCE_SECRET', "XA'T+^Q84;#d`f8^");
 /**
@@ -1940,4 +1928,4 @@ class NonceUtil {
 		return $o;
 	}
 }
-
+// vim: ts=4 sw=4 expandtab
