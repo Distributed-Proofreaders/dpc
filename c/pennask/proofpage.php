@@ -93,8 +93,6 @@ $jslink                 = "
                 <script src='proofpage.js?ver=.125' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
-// $jslink  = link_to_url("proofpage.js");
-// $csslink = link_to_url("proofpage.css"); 
 
 $zoom_in_prompt         = _("Zoom image larger");
 $zoom_out_prompt        = _("Zoom image smaller");
@@ -485,3 +483,5 @@ function EchoFontSizeCombo($cursize) {
 function name_code($code, $name) {
     return "{$name} ($code)";
 }
+
+// vim: ts=4 sw=4 expandtab

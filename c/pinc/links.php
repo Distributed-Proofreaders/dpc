@@ -107,15 +107,6 @@ function redirect_no_page_available($projectid) {
     redirect_to_project($projectid, "No more pages available");
 }
 
-//function redirect_to_proof_next_page($projectid) {
-//    redirect_to_url(url_for_proof_next_page($projectid));
-//}
-
-//function url_for_proof_next_page($projectid) {
-//    global $proof_url;
-//    return $proof_url . "proof.php?projectid=$projectid";
-//}
-
 function redirect_to_proof_next($projectid) {
     redirect_to_url(url_for_proof_next($projectid));
 }
@@ -123,16 +114,6 @@ function redirect_to_proof_next($projectid) {
 function link_to_proof_next($projectid, $prompt) {
     return link_to_url(
         url_for_proof_next($projectid), $prompt);
-}
-
-function link_to_proof_frame_next($projectid, $prompt) {
-    return link_to_url(
-        url_for_proof_frame_next($projectid), $prompt);
-}
-
-function  url_for_proof_frame_next($projectid) {
-    global $proof_url;
-    return $proof_url . "proof_frame.php?projectid=$projectid";
 }
 
 function url_for_proof_next($projectid) {
@@ -178,29 +159,6 @@ function link_to_change_password($text = "") {
         $text = _("Change password");
     return link_to_url(url_for_change_password(), $text);
 }
-
-
-
-// -- processtext
-
-function url_for_proof_processpage() {
-    global $code_url;
-    return $code_url . "/proof/processpage.php";
-}
-
-function url_for_processpage() {
-    global $proof_url;
-    return $proof_url . "processpage.php";
-}
-
-//function url_for_processtext() {
-//    global $proof_url;
-//    return $proof_url . "processtext.php";
-//}
-//function url_for_iprocesstext() {
-//    global $proof_url;
-//    return $proof_url . "iprocesstext.php";
-//}
 
 
 // -- project
@@ -342,16 +300,6 @@ function link_to_create_project($prompt = "Create project") {
 function url_for_create_project() {
     global $pm_url;
     return "{$pm_url}/createproject.php";
-}
-
-// -- proof frame
-
-function url_for_proof_frame($projectid, $pagename) {
-    global $proof_url;
-
-    return $proof_url . "proof_frame.php"
-        ."?projectid={$projectid}"
-        . ($pagename ? "&amp;pagename={$pagename}" : "");
 }
 
 // -- proof page
@@ -1176,24 +1124,12 @@ function url_for_project_words($projectid) {
     ."?projectid={$projectid}";
 }
 
-function link_to_notify($username, $projectid, $prompt = "notify", $setclear = "set") {
-    return link_to_url(url_for_notify($username, $projectid, $setclear), $prompt);
-//    return link_to_url(url_for_notify($username, $projectid, $setclear));
-}
-
 function url_for_feedback() {
     global $forums_url;
     return "$forums_url/viewtopic.php?f=3&amp;t=388";
 }
 function link_to_feedback($prompt = "feedback", $isnew = false) {
     return link_to_url(url_for_feedback(), $prompt, $isnew);
-}
-function url_for_notify($username, $projectid, $setclear = "set") {
-    global $code_url;
-    return "$code_url/tools/proofers/posted_notice.php"
-        ."?projectid=$projectid"
-        ."&amp;username=$username"
-        ."&amp;setclear=$setclear";
 }
 
 // vim: sw=4 ts=4 expandtab
