@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Project page: Start Formatting, or Start Proofreading, link to
+ * tools/proofers/proof.php.  That file, diverts to us.
+ *
+ * Action of form directs to processpage.php; processpage either
+ * redirects back to us, or back to the project.
+ */
+
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -90,7 +98,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.125' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.138' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 

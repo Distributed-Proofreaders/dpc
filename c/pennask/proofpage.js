@@ -1,5 +1,5 @@
 /*
-    version 0.125
+    version 0.138
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -234,7 +234,10 @@ var digraphs = {
 var igraphs = {};
 
 function $(id) {
-    return doc.getElementById(id);
+    var obj = doc.getElementById(id);
+    if (!obj)
+	console.log("Cannot find " + id);
+    return obj;
 }
 
 function addEvent(obj, evType, fn) {
@@ -327,11 +330,11 @@ function eInit() {
     addEvent($('linkupload'),   "click",     eShowUpload);
     addEvent($('selfontface'),  "change",    eSetFontFace);
     addEvent($('selfontsize'),  "change",    eSetFontSize);
-    addEvent($('badbutton'),    "click",     eToggleBad);
+    addEvent($('opt_mark_bad'), "click",     eToggleBad);
     addEvent($('opt_submit_continue'),"click",     eOptToDo);
     addEvent($('opt_submit_quit'),"click",     eOptToDo);
     addEvent($('opt_draft_quit'),"click",     eOptToDo);
-    addEvent($('opt_save_quit'),"click",     eOptToDo);
+    // addEvent($('opt_return_quit'),"click",     eOptToDo);
     addEvent($('opt_draft_quit'),"click",     eOptToDo);
 
 
@@ -974,8 +977,8 @@ function AreYouSure(question) {
     return(confirm(translate(question)));
 }
 
-function Ask(question) {
-    return(prompt(translate(question)));
+function Confirm(question) {
+    return(confirm(translate(question)));
 }
 
 /**
@@ -1660,20 +1663,22 @@ function eSelToDo() {
     formedit.submit();
 }
 
-function eToggleBad() {
+function eToggleBad(e) {
     var answer;
-    if($("badbutton").alt == "notbad") {
-        answer = 
-            Ask("Page will be unavailable until fixed by PM.\nReason?");
-        if(answer == null || answer == "")
-            {
-                return;
-            }
+    //if($bad_state == "notbad") {
+    if (true) {
+        answer = Confirm("Page will be unavailable until fixed by PM.");
+        if (!answer) {
+	    console.log("Toggle bad: cancelled");
+	    e.stopPropagation();
+	    e.preventDefault();
+	    return false;
+	}
         $("badreason").value = answer;
         $("todo").value = "badpage";
+	console.log("Toggle bad: submitting");
         formedit.submit();
-    }
-    else {
+    } else {
         $("todo").value = "fixpage";
         formedit.submit();
     }
