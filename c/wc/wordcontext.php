@@ -109,8 +109,8 @@ echo "
 <link rel='shortcut icon' href='http://www.pgdpcanada.net/c/favicon.ico'>
 <title>DPC: Word Context</title>
 <script type='text/javascript'>
-    var AJAX_URL = 'http://www.pgdpcanada.net/c/wc.php';
-    var SITE_URL = 'http://www.pgdpcanada.net';
+    var AJAX_URL = '{$ajax_url}';
+    var SITE_URL = '{$site_url}';
 </script>
 <script type='text/javascript' src='/c/js/sorttable.js'></script>
 <script type='text/javascript' src='/c/js/wc.js'></script>
