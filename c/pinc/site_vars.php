@@ -9,7 +9,7 @@ $code_version = "0.9.2.1";
 $reldate = "24-Jul-2015";
 
 define("DPC_PATH", "/home/pgdpcanada/public_html/");
-define("DPC_URL", "http://www.pgdpcanada.net");
+define("DPC_URL", "https://www.pgdpcanada.net");
 define("TEMP_DIR", DPC_PATH . "d/temp");
 define("TEMP_URL", DPC_URL . "/d/temp");
 

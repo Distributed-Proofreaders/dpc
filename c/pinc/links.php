@@ -71,7 +71,7 @@ function link_to_help($prompt = "Help") {
 
 function url_for_proofing_guidelines() {
 //    return "/guidelines/proofguide.html";
-    return "http://www.pgdpcanada.net/wiki/index.php?title=FAQ_Proofreading_Guidelines";
+    return "/wiki/index.php?title=FAQ_Proofreading_Guidelines";
 }
 
 function link_to_proofing_guidelines($prompt = "Proofing Guidelines") {
@@ -80,7 +80,7 @@ function link_to_proofing_guidelines($prompt = "Proofing Guidelines") {
 
 function url_for_formatting_guidelines() {
 //    return "/guidelines/formatguide.html";
-    return "http://www.pgdpcanada.net/wiki/index.php?title=FAQ_Formatting_Guidelines";
+    return "/wiki/index.php?title=FAQ_Formatting_Guidelines";
 }
 
 function link_to_formatting_guidelines($prompt = "Formatting Guidelines") {

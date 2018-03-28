@@ -28,7 +28,7 @@ class DpTheme {
         <div class='w100'>
             <div id='logobox'>
                 <div id='logoleft'>
-                    <a href='http://www.pgdpcanada.net/c/default.php'>
+                    <a href='/c/default.php'>
                         <img width='336' height='68' alt='Distributed Proofreaders' src='http://www.pgdpcanada.net/c/graphics/dpclogo.png'>
                     </a>
                 </div>
@@ -52,10 +52,10 @@ class DpTheme {
     · <a class='nav' href='/c/search.php'>Project Search</a>
     · <a class='nav' href='/c/tools/proofers/my_projects.php'>My Projects</a>
     · <a class='nav' href='/c/userprefs.php'>My Preferences</a>
-    · <a class='nav' href='http://www.pgdpcanada.net/forumdpc/ucp.php?i=pm&amp;folder=inbox'>My Inbox</a>
-    · <a class='nav' href='http://www.pgdpcanada.net/forumdpc'>Forums</a>
-    · <a class='nav' href='http://www.pgdpcanada.net/wiki/index.php'>Wiki</a>
-    · <a class='nav' href='http://www.pgdpcanada.net/c/tools/logout.php'>Log out (dkretz)</a>
+    · <a class='nav' href='/forumdpc/ucp.php?i=pm&amp;folder=inbox'>My Inbox</a>
+    · <a class='nav' href='/forumdpc'>Forums</a>
+    · <a class='nav' href='/wiki/index.php'>Wiki</a>
+    · <a class='nav' href='/c/tools/logout.php'>Log out (dkretz)</a>
     </div>
     <div id='navright' class='nav rfloat'>
     <form class='nomargin' id='frmlogin' name='frmlogin' method='post'>
