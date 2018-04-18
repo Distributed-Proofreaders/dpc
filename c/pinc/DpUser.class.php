@@ -198,7 +198,7 @@ class DpUser
     }
 
     public function IsSiteNewsEditor() {
-	    return $this->HasRole("site_news_editor");
+	    return $this->HasRole("Editor");
     }
 
     public function Exists() {

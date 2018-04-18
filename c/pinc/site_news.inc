@@ -134,7 +134,7 @@ function show_news_for_page( $news_page_id ) {
     // Give site admin and news editors a link to add/edit/show/hide/delete
     // and otherwise manage news items for this page.
 
-    if ( $User->IsSiteManager() or $User->HasRole("Editor")) {
+    if ( $User->IsSiteManager() or $User->IsSiteNewsEditor()) {
         $url = "$code_url/tools/site_admin/sitenews.php?news_page_id=$news_page_id";
         $linktext = sprintf( _("Update News for %s"), $news_subject );
         echo _("News Editor"), ": <a href='$url'>$linktext</a>";
