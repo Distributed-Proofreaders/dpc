@@ -82,6 +82,7 @@ function handle_any_requested_db_updates( $news_page_id, $item_id, $action, $con
                        UNIX_TIMESTAMP(),
                        ?
 			   ";
+                $args = array(&$news_page_id, &$content);
 		    } else {
 		    $sql = "
                 INSERT INTO news_items
@@ -93,8 +94,8 @@ function handle_any_requested_db_updates( $news_page_id, $item_id, $action, $con
                        ?
                 FROM news_items AS ni
                 WHERE ni.news_page_id = ?";
+                $args = array(&$content, &$news_page_id);
 			}
-            $args = array(&$news_page_id, &$content );
             $dpdb->SqlExecutePS($sql, $args);
 
             // by default, new items go at the top
@@ -195,7 +196,7 @@ function show_item_editor( $news_page_id, $item_id, $action )
     }
 
     echo "
-    <form class='center' action='sitenews.php?news_page_id=$news_page_id&amp;action=$action_to_request' method='post'>
+    <form class='center' action='sitenews.php?news_page_id=$news_page_id&action=$action_to_request' method='post'>
     <textarea name='content' cols='80' rows='8'>" . htmlspecialchars($initial_content, ENT_QUOTES) . "</textarea>
     <br />
     <input type='submit' class='center' value='$submit_button_label' name='submit'>
