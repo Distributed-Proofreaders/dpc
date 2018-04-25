@@ -62,6 +62,7 @@ $issync       = CookieArg("issync", "1");
 
 $lineheight   = CookieArg("lineheight", "lh10");
 $iswordcheck  = CookieArg("iswordcheck", "1");
+$isrunalways  = CookieArg("runalways", "0");
 //$ispunc      = CookieArg("ispunc", "1");
 
 $prooftext      = h(rtrim($page->ActiveText())) . "\n";
@@ -98,7 +99,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.138' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.147' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -177,6 +178,7 @@ $csslink
   <legend>WordCheck</legend>
     <label><input type='checkbox' name='chkIsWC' id='chkIsWC' {$wcchecked}> Enabled </label><br>
     <label><input type='checkbox' name='chkIsPunc' id='chkIsPunc'> Hilite Punc </label>
+    <label><input type='checkbox' name='runAlways' id='runAlways'> Run Always </label>
 </fieldset>
 <input type='button' name='btnCloseGear' id='btnCloseGear' class='rfloat' value='Close'/>
 </div>

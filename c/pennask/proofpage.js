@@ -1,5 +1,5 @@
 /*
-    version 0.138
+    version 0.147
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -70,7 +70,7 @@ var seltodo;
 var regex;
 var chkIsWC;
 var chkIsPunc;
-var lineheight;
+var runAlways;
 var tweet;
 
 var formedit;
@@ -291,7 +291,7 @@ function eInit() {
     divGear         = $("divGear");
     chkIsWC         = $("chkIsWC");
     chkIsPunc       = $("chkIsPunc");
-    lineheight      = $("rdoLineHeight");
+    runAlways       = $("runAlways");
 
     addEvent(doc,           "keydown",   eKeyDown);
     addEvent(doc,           "keyup",     eKeyUp);
@@ -384,8 +384,17 @@ function eCtlInit() {
 
     chkIsWC.checked = (getIsWC() ? "checked" : "");
     chkIsPunc.checked = (getIsPunc() ? "checked" : "");
+    runAlways.checked = (getRunAlways() ? "checked" : "");
     if($("divctlwc")) {
         $("divctlwc").className = (getIsWC() ? "block" : "hide");
+    }
+
+    // Run wordcheck if set to run always, and we are proofing
+    if (runAlways.checked && $("imgpvw") == null) {
+	console.log("Run Always checked; initiating wordcheck");
+	chkIsWC.checked = "checked";
+	setIsWC();
+	requestWordcheck();
     }
 }
 
@@ -1383,6 +1392,9 @@ function eGearClick(e) {
         case "chkIsPunc":
             SaveIsPunc();
             break;
+	case "runAlways":
+	    SaveRunAlways();
+	    break;
         default:
             break;
     }
@@ -2655,6 +2667,21 @@ function getIsPunc() {
 function SaveIsPunc() {
     setlocalvalue("ispunc", chkIsPunc.checked ? "1" : "0");
     setnamevalue("ispunc", chkIsPunc.checked ? "1" : "0");
+}
+
+function getRunAlways() {
+    var runalways = getnamevalue("runalways");
+    if(! runalways) {
+        setlocalvalue("runalways", runAlways.checked ? "1" : "0");
+        setnamevalue("runalways", runAlways.checked ? "1" : "0");
+        return true;
+    }
+    return runalways == "1";
+}
+
+function SaveRunAlways() {
+    setlocalvalue("runalways", runAlways.checked ? "1" : "0");
+    setnamevalue("runalways", runAlways.checked ? "1" : "0");
 }
 
 function getEditorStyle() {
