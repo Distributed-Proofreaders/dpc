@@ -1,5 +1,5 @@
 /*
-    version 0.147
+    version 0.157
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1092,7 +1092,11 @@ function eSetBrackets() {
 
 function applyIsPunc(str) {
     var re = /[;:\.,!?]/g;
-    return str.replace(re, "<span class='punc'>$&</span>").replace("&amp<span class='punc'>;</span>", "&");
+    return str
+	.replace(re, "<span class='punc'>$&</span>")
+	.replace(/&amp<span class='punc'>;<\/span>/g, "&")
+	.replace(/&lt<span class='punc'>;<\/span>/g, "&lt;")
+	.replace(/&gt<span class='punc'>;<\/span>/g, "&gt;");
 }
 function eSetSmallCaps() {
     var sel = SelectedText();
@@ -2336,7 +2340,7 @@ function show_wordcheck() {
     }
 
     // var accepts = spanpreview.getElementsByTagName("accepted");
-    var str = _rsp.pvwtext.replace('~~', '&')
+    var str = _rsp.pvwtext.replace(/~~/g, '&')
         .replace(/\s"\s/g, "<span class='spacey'>$&</span>")
         .replace(/\s'\s/g, "<span class='spacey'>$&</span>")
         .replace(/\s[,;:?!]/g, "<span class='spacey'>$&</span>");
