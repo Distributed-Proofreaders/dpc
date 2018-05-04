@@ -34,6 +34,7 @@ $rows = $dpdb->SqlRows("
             p.genre,
             p.language,
             p.n_pages,
+            p.difficulty,
             p.username AS pm,
             LOWER(p.username) AS pmsort,
             (   SELECT COUNT(*) FROM project_holds
@@ -63,6 +64,7 @@ foreach($rows as $row) {
 $tbl = new DpTable();
 $tbl->AddColumn("^Genre", "genre");
 $tbl->AddColumn("^Language", "langname", "elanguage");
+$tbl->AddColumn("^Difficulty", "difficulty");
 $tbl->AddColumn("^Proj Mgr", "pm", "epm", "sortkey=pmsort");
 $tbl->AddColumn("^Mod Date", "moddate");
 $tbl->AddColumn("<Title", "nameofwork", "etitle");
