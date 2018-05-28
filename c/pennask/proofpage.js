@@ -1,5 +1,5 @@
 /*
-    version 0.157
+    version 0.163
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1465,6 +1465,10 @@ function eDeHyphen() {
         //str = SelectedText().replace(re, repl);
         //ReplaceText(str);
         //SetSelection(re.lastIndex, re.lastIndex);
+
+	if(_is_wordchecking) {
+	    requestWordcheck();
+	}
     }
 
     re.lastIndex = tatext.selectionStart;
@@ -2491,7 +2495,7 @@ function writeAjax(a_args) {
     // php end will rawurldecode this to recover it
     initAjax();
     var jq = 'jsonqry=' + encodeURIComponent(JSON.stringify(a_args));
-    console.debug(jq);
+    //console.debug(jq);
     _ajax.open("POST", AJAX_URL, true);     // no return value
     _ajax.setRequestHeader("Content-type",
         "application/x-www-form-urlencoded");     // no return value

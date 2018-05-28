@@ -644,7 +644,7 @@ function html_footer() {
     echo "<div id='divfooter' class='w100 em80 center white noserif redback'>"
         . _("Copyright Distributed Proofreaders Canada")
         . _(" (Page Build Time: {$strtime} ")
-        . _(" Version $code_version")
+        . _(" Version $code_version)")
         . "</div> <!-- divfooter -->\n";
 //    if($User->Username() == 'dkretz') {
 //        echo implode("<br>\n", timer_array());
