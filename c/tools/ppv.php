@@ -310,7 +310,7 @@ function echo_my_projects() {
     $tbl->AddColumn("^Proj Mgr", "pm", "epm", "sortkey=pmsort");
     $tbl->AddColumn("^PP", "postproofer", "epp");
     // $tbl->AddColumn("^PPV", "ppverifier", "eppv");
-    $tbl->AddColumn("^Days", "days_avail");
+    $tbl->AddColumn("^Days", "days_avail", "eint");
     $tbl->AddColumn("^Return<br/>to Pool", "projectid", "ereturn");
     $tbl->AddColumn("^Posted #", "postednum", "epostednum1");
     $tbl->AddColumn("^Post", "projectid", "epost1");
