@@ -68,7 +68,7 @@ if ( $User->IsProjectManager() ) {
 
 // ----------------------------------
 
-$cp_link = link_to_url("$code_url/fq/cp.php", "Find out how!");
+$cp_link = link_to_url("$code_url/faq/cp.php", "Find out how!");
 
 echo "
     <li>" . _("Providing Content") . "
