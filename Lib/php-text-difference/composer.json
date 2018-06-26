@@ -1,0 +1,23 @@
+{
+    "name": "adaptive/php-text-difference",
+    "description": "A comprehensive library for generating differences between two hashable objects (strings or arrays). Fork of a fork to add namespaces and psr-4 autoloading",
+    "keywords": [
+        "difference",
+        "php",
+        "text compare"
+    ],
+    "license": "BSD-3-Clause",
+
+    "authors": [
+        {
+            "name": "Adaptive Media",
+            "homepage": "http://www.adaptivemedia.se"
+        }
+    ],
+
+    "autoload": {
+        "psr-4": {
+            "Adaptive\\": "src"
+        }
+    }
+}

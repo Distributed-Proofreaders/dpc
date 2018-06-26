@@ -55,7 +55,6 @@ function difficulty_list($difficulty = "Average") {
 function image_source_list($image_source) {
     global $dpdb;
     // get info on image_sources
-//    $imso_result = mysql_query("
     $sql = "
         SELECT code_name, display_name
         FROM image_sources
@@ -64,16 +63,6 @@ function image_source_list($image_source) {
     ";
 
     $srcs = $dpdb->SqlRows($sql);
-    // it'd be nice to make this static, or something, so it only was loaded once
-//    $imso_array = array();
-
-    // put list into array
-//    while ($i_row = mysql_fetch_assoc($imso_result))
-//    {
-//        $show = $i_row['display_name'];
-//        $code = $i_row['code_name'];
-//        $imso_array["$code"] = $show;
-//    }
 
     // drop down select box for which image source
     echo "<select name='image_source'>";
@@ -86,8 +75,6 @@ function image_source_list($image_source) {
 
     // add the pre-defined image_sources
     foreach($srcs as $src) {
-//    foreach($imso_array as $k=>$v)
-//    {
         $code = $src["code_name"];
         $displ = h($src["display_name"]);
         echo "<option value='".$code."'";
