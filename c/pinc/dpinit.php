@@ -39,9 +39,10 @@ $u = Arg('userNM');
 $p = Arg('userPW');
 
 if($submit_login) {
+    if ($u == "" || $p == "")
+        divert($forum_login_url);
     $User = new DpThisUser($u, $p);
-}
-else {
+} else {
     $User = new DpSessionUser();
 }
 
@@ -60,4 +61,4 @@ $basic_header = "
 </head>
 <body >\n";
 
-
+// vim: sw=4 ts=4 expandtab

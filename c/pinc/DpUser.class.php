@@ -736,7 +736,12 @@ class DpThisUser extends DpUser
             $this->FetchUser($username);
 			$this->SetLatestVisit();
 			return;
-		}
+        }
+
+        // Login failed: send them to the forum login, where they can
+        // click on the I forgot my password link.
+        global $forum_login_url;
+        divert($forum_login_url);
 	}
 
     public function Bb() {
