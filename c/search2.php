@@ -392,12 +392,12 @@ if ($qfadedpage == "on" && ($qtitle != "" || $qauthor != "")) {
 
     $tbl = new DpTable("tblsearch", "dptable sortable w95");
     //$tbl->SetQBE();
-    $tbl->AddColumn("<FP ID",          "pid");
-    $tbl->AddColumn("<".$titleCaption,          "title");
-    $tbl->AddColumn("<".$authorCaption,         "authors", "eauthors");
-    $tbl->AddColumn("<Published",          "first_publication");
-    $tbl->AddColumn("<Pages",          "pages");
-        $tbl->AddColumn("^".$langCaption,           "lang");
+    $tbl->AddColumn("<FP ID", "pid", "fpBookLink");
+    $tbl->AddColumn("<".$titleCaption, "title");
+    $tbl->AddColumn("<".$authorCaption, "authors", "eauthors");
+    $tbl->AddColumn("<Published", "first_publication");
+    $tbl->AddColumn("<Pages", "pages");
+    $tbl->AddColumn("^".$langCaption, "lang");
     $tbl->SetRowCount(count($rows));
 
 	$nbooks = count($rows);
@@ -418,6 +418,23 @@ if ($qfadedpage == "on" && ($qtitle != "" || $qauthor != "")) {
         echo "<div class='center' onclick='eSetSort(event)'>\n";
         $tbl->EchoTable();
         echo "</div>";
+        echo "
+            <style type='text/css'>
+                .frame_div {
+                    width:100%;
+                    height:400px;
+                    display:none;
+                }
+                .bookdetails {
+                    width:100%;
+                    height:99%;
+                    border: 0;
+                }
+            </style>
+            <div id='frame_div' class='frame_div'>
+                <iframe class='bookdetails' name='bookdetails'></iframe>
+            </div>
+            ";
     }
 }
 
@@ -450,10 +467,14 @@ function eauthors($authors, $row) {
             $name .= " as $pn";
         }
         if ($names != "")
-            $names .= ", ";
+            $names .= " & ";
         $names .= $name;
     }
     return $names;
+}
+
+function fpBookLink($pid, $row) {
+    return "<a onclick=\"document.getElementById('frame_div').style.display='block'\" class='click_iframe' href='https://fadedpage.com/showbook.php?pid=$pid' target='bookdetails'>$pid</a>";
 }
 
 function ephase($phase, $row) {
