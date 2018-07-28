@@ -1,5 +1,13 @@
 <?php
 
+// This is the extended search form.
+// Accessed via the Extended Search link on the main search form, search.php
+// Search and Search2 should really be one file.
+// This one allows searching on extra criteria
+// - PPer and PPVer;
+// - Phases PP and PPV;
+// - Search title/author on fadedpage as well
+
 error_reporting(E_ALL);
 $relPath = "./pinc/";
 require_once $relPath."dpinit.php";
@@ -11,6 +19,7 @@ $qauthor        = Arg("qauthor");
 $qpm            = Arg("qpm");
 $qpp            = Arg("qpp");
 $qppv           = Arg("qppv");
+$qfadedpage     = Arg("qfadedpage");
 $qlang          = ArgArray("qlang");
 $qgenre         = ArgArray("qgenre");
 $qphase         = ArgArray("qphase");
@@ -207,6 +216,10 @@ echo "<h2 class='center m50em'>$title</h2>\n";
 
 echo html_comment($sql);
 
+if ($qfadedpage == "on")
+    $fp = "checked";
+else
+    $fp = "";
 echo "
 <form id='searchform' name='searchform' method='POST'>
 <div id='divsearch' class='center' onClick='eSetSort(event)'>
@@ -226,6 +239,13 @@ echo "
 			<div>
 				<div class='w20 left lfloat'>Author</div>
 				<input id='qauthor' name='qauthor' type='text' class='lfloat w75' value='$qauthor'>
+			</div>
+			<div>
+				<div class='w20 left lfloat'></div>
+                <div class='lfloat w75'>
+                <input id='qfadedpage' name='qfadedpage' type='checkbox' $fp>
+                Search title and author on Fadedpage.com as well as local projects.
+                </div>
 			</div>
 			<!--
 			<div>
@@ -328,6 +348,7 @@ echo "
 <!--
   $sql
 -->
+</form>
 \n";
 
 
@@ -336,25 +357,72 @@ if ( $nprojects == 0 ) {
 		echo _( "<p class='bold'>No projects matched the search criteria.</p>" );
 	}
 
-	theme("", "footer");
-	exit;
+} else {
+
+    echo _("<p class='hpadded'>$nprojects projects matched the search criteria.</p>");
+
+    $tbl->SetRowCount(count($rows));
+    //$tbl->SetPaging($pagenum, $rowsperpage);
+    $tbl->SetRows($rows);
+
+    echo "<div class='center' onclick='eSetSort(event)'>\n";
+    $tbl->EchoTable();
+    echo "</div>";
 }
 
-echo _("<p class='hpadded'>$nprojects projects matched the search criteria.</p>");
+if ($qfadedpage == "on" && ($qtitle != "" || $qauthor != "")) {
+    $post = array();
+    if($qtitle)
+        $post['title'] = $qtitle;
+    if($qauthor)
+        $post['authorlike'] = $qauthor;
+    //$post['debug'] = 'true';
+    echo html_comment(print_r($post, TRUE));
 
-$tbl->SetRowCount(count($rows));
-//$tbl->SetPaging($pagenum, $rowsperpage);
-$tbl->SetRows($rows);
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, "https://www.fadedpage.com/csearc2.php");
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_POST, 1);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $post);
+    $result = curl_exec($curl);
+    curl_close($curl);
+    $result = json_decode($result, $assoc = TRUE);
+    echo html_comment(print_r($result, TRUE));
+    $rows = $result['rows'];
 
-echo "<div class='center' onclick='eSetSort(event)'>\n";
-$tbl->EchoTable();
-echo "</div>
-</form>\n";
+    $tbl = new DpTable("tblsearch", "dptable sortable w95");
+    //$tbl->SetQBE();
+    $tbl->AddColumn("<FP ID",          "pid");
+    $tbl->AddColumn("<".$titleCaption,          "title");
+    $tbl->AddColumn("<".$authorCaption,         "authors", "eauthors");
+    $tbl->AddColumn("<Published",          "first_publication");
+    $tbl->AddColumn("<Pages",          "pages");
+        $tbl->AddColumn("^".$langCaption,           "lang");
+    $tbl->SetRowCount(count($rows));
 
+	$nbooks = count($rows);
+    $actual = $result['nrows'];
+    if ($nbooks == 0)
+        echo _("<p class='bold'>No books on FadedPage.com matched the search criteria.</p>");
+    else {
+
+        echo _("<p class='hpadded'>$actual books on FadedPage.com matched the search criteria.");
+        if ($actual != $nbooks)
+            echo " Only $nbooks have been returned, refine your search.";
+        echo "</p>";
+
+        $tbl->SetRowCount(count($rows));
+        //$tbl->SetPaging($pagenum, $rowsperpage);
+        $tbl->SetRows($rows);
+
+        echo "<div class='center' onclick='eSetSort(event)'>\n";
+        $tbl->EchoTable();
+        echo "</div>";
+    }
+}
 
 
 echo "
-</div>
 <br />\n";
 theme("", "footer");
 exit;
@@ -371,6 +439,21 @@ function elangname($langname, $row) {
 	       .  isset($row['seclangname'])
 		? "/". $row['seclangname']
 		: "";
+}
+
+function eauthors($authors, $row) {
+    $names = "";
+    foreach ($authors as $author) {
+        $name = $author['realname'];
+        if (isset($author['pseudoname'])) {
+            $pn = $author['pseudoname'];
+            $name .= " as $pn";
+        }
+        if ($names != "")
+            $names .= ", ";
+        $names .= $name;
+    }
+    return $names;
 }
 
 function ephase($phase, $row) {
