@@ -235,7 +235,7 @@ class ProjectInfoHolder
         }
         // Validate the posted number
         if ($this->postednum != '' && $this->postednum != 0)
-            if (!preg_match('/^2[01][0-9][0-9][01][0-9][0-9A-Z][0-9]$/', $this->postednum))
+            if (!preg_match('/^20[01][0-9][01][0-9][0-9A-Z][0-9]$/', $this->postednum))
                 $errors[] = "Posted Number is invalid<br>";
 
         $this->image_link       = Arg('image_link');
