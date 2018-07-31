@@ -34,9 +34,12 @@ by Michael Shepard and David Jones to support the digitization of Public Domain
 books. Our inspiration was <a href='www.pgdp.net'>Distributed Proofreaders
 International (DP)</a>, which was originally conceived to prepare texts for
 Project Gutenberg (PG). Just as DP is now the main
-source of PG e-books, we expect DPC to become the main source of e-books for <a
-href='http://www.gutenberg.ca'>Project Gutenberg Canada (PGC)</a> that started
-on July 1, 2007. All our proofreaders, managers, developers and so on are
+source of PG e-books, DPC now provides many of the books for the
+<a href='http://www.gutenberg.ca'>Project Gutenberg Canada (PGC)</a>
+that started on July 1, 2007.
+All our books are also posted to our own site,
+<a href='https://fadedpage.com/'>Faded Page</a>.
+All our proofreaders, managers, developers and so on are
 volunteers. The main principles of our mission are to: (1) preserve Canadiana,
 one page at a time, (2) take advantage of the favourable copyright laws in
 Canada to make books published after 1923, written by authors who died at least
