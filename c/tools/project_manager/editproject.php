@@ -233,6 +233,10 @@ class ProjectInfoHolder
                 $errors[] = "Posted Number is required.<br>";
             }
         }
+        // Validate the posted number
+        if ($this->postednum != '' && $this->postednum != 0)
+            if (!preg_match('/^2[01][0-9][0-9][01][0-9][0-9A-Z][0-9]$/', $this->postednum))
+                $errors[] = "Posted Number is invalid<br>";
 
         $this->image_link       = Arg('image_link');
         $this->scannercredit    = Arg('scannercredit');
@@ -347,7 +351,10 @@ class ProjectInfoHolder
             $this->row( _("Scanner Credit (deprecated)"), 'text_field',      $this->scannercredit,   'scannercredit' );
         }
         $this->row( _("Clearance Information"),       'text_field',          $this->clearance,       'clearance' );
-        $this->row( _("Posted Number"),               'text_field',          $this->postednum,       'postednum' );
+        $phase = $project->Phase();
+        $disable = ($phase != 'PPV' && $phase != 'POSTED');
+        $this->row(_("Posted Number"), 'text_field', $this->postednum,
+            'postednum', '', $disable);
         $this->row( _("Project Comments"),            'proj_comments_field', $this->comments         );
 
         // <input type='submit' name='saveAndQuit' value='"._("Save and Quit")."'>
@@ -372,13 +379,18 @@ class ProjectInfoHolder
 
     // -------------------------------------------------------------------------
 
-    public function row( $label, $show_func, $field_value, $field_name = NULL, $explan='' ) {
+    public function row($label, $show_func, $field_value, $field_name = NULL, $explan='',
+        $disabled = false)
+    {
         echo "<tr>";
         echo   "<td bgcolor='#CCCCCC'>";
         echo     "<b>$label</b>";
         echo   "</td>";
         echo   "<td>";
-        $show_func( $field_value, $field_name );
+        if ($disabled)
+            $show_func($field_value, $field_name, $disabled);
+        else
+            $show_func($field_value, $field_name);
         echo   "  ";
         echo   $explan;
         echo   "</td>";

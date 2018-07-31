@@ -9,9 +9,13 @@ function just_echo( $field_value ) {
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-function text_field( $field_value, $field_name ) {
+function text_field( $field_value, $field_name, $disabled = false ) {
     $enc_field_value = h($field_value);
-    echo "<input type='text' size='67' name='$field_name' value='$enc_field_value'>";
+    if (!$disabled)
+        $dis = '';
+    else
+        $dis = 'disabled';
+    echo "<input type='text' size='67' name='$field_name' value='$enc_field_value' $dis>";
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
