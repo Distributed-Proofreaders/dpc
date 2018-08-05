@@ -3,6 +3,7 @@
 error_reporting(E_ALL);
 $relPath = "./pinc/";
 require_once $relPath."dpinit.php";
+require_once $relPath."Spreadsheet.inc";
 
 $User->IsLoggedIn()
     or RedirectToLogin();
@@ -17,8 +18,11 @@ $tbl->AddColumn("<Title", "title");
 
 list($PGCbypid, $pgcrows) = loadPGC();
 list($FPbypid, $fprows) = loadFP();
+list($CSbypid, $csrows, $byCC) = loadClearance();
 
-$rows = merge($PGCbypid, $FPbypid, $fprows, $pgcrows);
+theme("Clearance Spreadsheet", "header");
+
+$rows = merge($PGCbypid, $FPbypid, $CSbypid, $byCC, $fprows, $pgcrows, $csrows);
 
 function byAuthor($row1, $row2)
 {
@@ -34,8 +38,6 @@ function byAuthor($row1, $row2)
 }
 
 uasort($rows, "byAuthor");
-
-theme("Clearance Spreadsheet", "header");
 
 $tbl->SetRowCount(count($rows));
 $tbl->SetRows($rows);
@@ -164,12 +166,53 @@ function loadFP()
     return array(&$bypid, &$rows);
 }
 
-function merge(&$PGC, &$FP, &$fprows, &$pgcrows)
+function loadClearance()
+{
+    $rows = loadClearanceSpreadsheet();
+
+    $bypid = array();
+    $byCC = array();
+    foreach ($rows as &$row) {
+        $pid = $row['id'];
+        if ($pid != '')
+            $bypid[$pid] = &$row;
+        $cc = $row['clearance'];
+        if ($cc != '')
+            $byCC[$cc] = &$row;
+    }
+    //print_r($rows[0]);
+    //print_r($rows[1]);
+    //print_r($rows[2]);
+    //print_r($bypid);
+
+    return array($bypid, $rows, $byCC);
+}
+
+function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
 {
     //echo "<pre>";
-    //print_r($PGC['20171208']);
-    //print_r($FP['20171208']);
+    //print_r($PGC['20130346']);
+    //print_r($FP['20130346']);
+    //print_r($CS['20130346']);
     //echo "</pre>";
+    echo '
+        <ul>
+        <li>pre-crash: On fadedpage & in clearance spreadsheet, but no
+        DPC project.
+        <li>normal: Both on fadedpage and a DPC project exists
+        <li>harvest: On fadedpage & in clearance spreadsheet, but
+        no copyright clearance in the spreadsheet.
+        <li>harvest †: On fadedpage, but not a project, and not in
+        the clearance spreadsheet. Probable harvest, which was never
+        added to the clearance spreadsheet.
+        <li><i>phase</i>: Not on fadedpage, but a project exists without
+        a posting number.
+        <li><i>phase</i> *: project without a copyright clearance. Should
+        always be in PREP.
+        <li><i>phase</i> ‡: project with clearance, but no such clearance
+        in the clearance spreadsheet.
+        </ul>
+    ';
     $result = array();
     $resultbypid = array();
     foreach ($fprows as &$fprow) {
@@ -184,19 +227,39 @@ function merge(&$PGC, &$FP, &$fprows, &$pgcrows)
             $row['author'] = eauthors($fprow['authors'], $fprow);
             $row['username'] = $pgcrow['username'];
             $row['clearance'] = $pgcrow['clearance'];
+            //$row['published'] = ?
+            $resultbypid[$pid] = &$row;
+        } else if (array_key_exists($pid, $CS)) {
+            // Posting number in the clearance spreadsheet.
+            // Since the project doesn't exist, probably pre-crash
+            $csrow = $CS[$pid];
+            if ($csrow['clearance'] != '')
+                $row['type'] = "pre-crash";
+            else
+                $row['type'] = "harvest";
+            $row['postednum'] = $pid;
+            $row['title'] = $csrow['title'];
+            $row['author'] = $csrow['author'];
+            $row['username'] = $csrow['pm'];
+            $row['clearance'] = $csrow['clearance'];
+            $row['published'] = $csrow['published'];
             $resultbypid[$pid] = &$row;
         } else {
-            $row['type'] = "harvest or pre-crash";
+            // Not either a DP project, or in the clearance spreadsheet
+            // Only other option is a harvest
+            $row['type'] = "harvest †";
             $row['postednum'] = $pid;
             $row['title'] = $fprow['title'];
             $row['author'] = eauthors($fprow['authors'], $fprow);
             $row['username'] = "";
             $row['clearance'] = "";
+            //$row['published'] = published date from fp
         }
         $result[] = $row;
     }
 
     // Process unresolved books, should be before POSTED
+    // i.e. find all current projects which don't exist on FP
     echo "<pre>";
     foreach ($pgcrows as &$r) {
         $pid = $r['postednum'];
@@ -210,6 +273,10 @@ function merge(&$PGC, &$FP, &$fprows, &$pgcrows)
         $row['author'] = $r['author'];
         $row['username'] = $r['username'];
         $row['clearance'] = $r['clearance'];
+        if ($row['clearance'] == '')
+            $row['type'] .= '*';
+        else if (!array_key_exists($row['clearance'], $byCC))
+            $row['type'] .= '‡';
         $result[] = $row;
     }
     echo "</pre>";
