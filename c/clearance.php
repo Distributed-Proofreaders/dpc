@@ -13,6 +13,7 @@ $tbl->AddColumn("<Type", "type");
 $tbl->AddColumn("<DPC Clearance Code #", "clearance");
 $tbl->AddColumn("<Posting Number at FP", "postednum");
 $tbl->AddColumn("<CP/PM", "username");
+$tbl->AddColumn("<Published", "published");
 $tbl->AddColumn("<Author", "author");
 $tbl->AddColumn("<Title", "title");
 
@@ -227,7 +228,7 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
             $row['author'] = eauthors($fprow['authors'], $fprow);
             $row['username'] = $pgcrow['username'];
             $row['clearance'] = $pgcrow['clearance'];
-            //$row['published'] = ?
+            $row['published'] = $fprow['first_publication'];
             $resultbypid[$pid] = &$row;
         } else if (array_key_exists($pid, $CS)) {
             // Posting number in the clearance spreadsheet.
@@ -253,7 +254,7 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
             $row['author'] = eauthors($fprow['authors'], $fprow);
             $row['username'] = "";
             $row['clearance'] = "";
-            //$row['published'] = published date from fp
+            $row['published'] = $fprow['first_publication'];
         }
         $result[] = $row;
     }
@@ -273,14 +274,33 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
         $row['author'] = $r['author'];
         $row['username'] = $r['username'];
         $row['clearance'] = $r['clearance'];
-        if ($row['clearance'] == '')
+        $row['published'] = getPublishedYearFromPGC($r);
+        $clearance = $row['clearance'];
+        if ($clearance == '')
             $row['type'] .= '*';
-        else if (!array_key_exists($row['clearance'], $byCC))
+        else if (!array_key_exists($clearance, $byCC))
             $row['type'] .= '‡';
+        else {
+            // If there wasn't a publication year on the end of the project's
+            // title; get it from the clearance spreadsheet.
+            $csrow = $byCC[$clearance];
+            if (!preg_match('/^[0-9][0-9][0-9][0-9]$/', $row['published']))
+                $row['published'] = $csrow['published'];
+        }
         $result[] = $row;
     }
     echo "</pre>";
     return $result;
+}
+
+// No explicit field on the project for the year, usually included
+// in the title as (1922) at the end.
+function getPublishedYearFromPGC($r)
+{
+    $title = $r['title'];
+    if (preg_match("/\(([12][0-9][0-9][0-9])\)/", $title, $match))
+        return end($match);
+    return '?';
 }
 
 // vim: sw=4 ts=4 expandtab
