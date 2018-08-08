@@ -27,8 +27,8 @@ $rows = merge($PGCbypid, $FPbypid, $CSbypid, $byCC, $fprows, $pgcrows, $csrows);
 
 function byAuthor($row1, $row2)
 {
-    $a1 = $row1['author'];
-    $a2 = $row2['author'];
+    $a1 = normalizeAuthor($row1['author']);
+    $a2 = normalizeAuthor($row2['author']);
     if ($a1 == $a2) {
         $t1 = $row1['title'];
         $t2 = $row2['title'];
@@ -36,6 +36,16 @@ function byAuthor($row1, $row2)
         return $t1 < $t2 ? -1 : 1;
     }
     return $a1 < $a2 ? -1 : 1;
+}
+
+// Remove anything past an open parenthesis.
+// Normally birth-death dates; or perhaps a pseudonym?
+function normalizeAuthor($a)
+{
+    $n = strpos($a, '(');
+    if ($n)
+        return trim(substr($a, 0, $n));
+    return trim($a);
 }
 
 uasort($rows, "byAuthor");
@@ -132,10 +142,7 @@ function loadPGC()
         $pid = trim($row['postednum']);
         if ($pid != "" && $pid != "0") {
             #echo "$pid " . $row['title'] . "\n";
-            if (preg_match('/^[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$/', $pid))
-                $bypid[$pid] = &$row;
-            else
-                echo "Bad posted number: " . print_r($row, true);
+            $bypid[$pid] = &$row;
         }
     }
     echo "</pre>";
@@ -175,8 +182,11 @@ function loadClearance()
     $byCC = array();
     foreach ($rows as &$row) {
         $pid = $row['id'];
-        if ($pid != '')
-            $bypid[$pid] = &$row;
+        if ($pid != '') {
+            $pids = splitpids($pid);
+            foreach ($pids as $pid)
+                $bypid[$pid] = &$row;
+        }
         $cc = $row['clearance'];
         if ($cc != '')
             $byCC[$cc] = &$row;
@@ -212,6 +222,7 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
         always be in PREP.
         <li><i>phase</i> ‡: project with clearance, but no such clearance
         in the clearance spreadsheet.
+        <li><i>posting number</i>&sect;: Posting number is invalid.
         </ul>
     ';
     $result = array();
@@ -230,6 +241,22 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
             $row['clearance'] = $pgcrow['clearance'];
             $row['published'] = $fprow['first_publication'];
             $resultbypid[$pid] = &$row;
+            $clearance = $pgcrow['clearance'];
+
+            // See if a clearance row exists, if so, should have same pid
+            if (array_key_exists($clearance, $byCC)) {
+                $csrow = $byCC[$clearance];
+                $pids = splitpids($csrow['id']);
+                $found = false;
+                foreach ($pids as $p)
+                    if ($p == $pid) {
+                        $found = true;
+                        break;
+                    }
+                if (!$found)
+                    $row['postednum'] .= " != " . $csrow['id'];
+            }
+
         } else if (array_key_exists($pid, $CS)) {
             // Posting number in the clearance spreadsheet.
             // Since the project doesn't exist, probably pre-crash
@@ -290,6 +317,15 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
         $result[] = $row;
     }
     echo "</pre>";
+
+    // Add bad posting number indicator
+    foreach ($result as &$row) {
+        $pid = $row['postednum'];
+        if ($pid == '0' || $pid == '')
+            $row['postednum'] = '';
+        else if (!preg_match('/^[0-9][0-9][0-9][0-9][0-9][0-9][0-9A-Z][0-9]$/', $pid))
+            $row['postednum'] .= "&sect;";
+    }
     return $result;
 }
 
@@ -301,6 +337,16 @@ function getPublishedYearFromPGC($r)
     if (preg_match("/\(([12][0-9][0-9][0-9])\)/", $title, $match))
         return end($match);
     return '?';
+}
+
+// The clearance spreadsheet may have multiple pids stored in the pid column
+// delimited by comma space.
+function splitpids($pidstr)
+{
+    $pids = array();
+    foreach (explode(',', $pidstr) as $pid)
+        $pids[] = trim($pid);
+    return $pids;
 }
 
 // vim: sw=4 ts=4 expandtab

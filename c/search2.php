@@ -191,9 +191,25 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 $title = _("Project Search");
 
 $args = array("js_file" => $js_url."/search.js");
-//$args = array("js_file" => $js_url."/search.js");
 $no_stats = 1;
 theme(_("Search projects"), "header", $args);
+
+echo "
+    <script type='text/javascript'>
+        function eclear2() {
+            $('qgenre[]').selectedIndex = -1;
+            $('qlang[]').selectedIndex = -1;
+            $('qpm[]').selectedIndex = -1;
+            $('qpp[]').selectedIndex = -1;
+            $('qppv[]').selectedIndex = -1;
+            $('qphase[]').selectedIndex = -1;
+            $('qtitle').value = '';
+            $('qauthor').value = '';
+            $('qfadedpage').checked = false;
+            $('qclearance').checked = false;
+        }
+    </script>
+";
 
 // get array of langcode => langname
 $optlanguages = $Context->ActiveLanguages();
@@ -236,7 +252,7 @@ echo "
 	    <div id='divsubmit' class='lfloat w35'>
 			<div class='right'>
 				<input type='submit' id='dosearch' name='dosearch' value='Submit'/>
-				<input type='button' id='doclear' name='doclear' value='Clear' onclick='eclear()'/>
+				<input type='button' id='doclear' name='doclear' value='Clear' onclick='eclear2()'/>
 			</div>
 			<div>
 				<div class='w20 left lfloat'>Title</div>
@@ -518,23 +534,12 @@ function fpBookLink($pid, $row) {
 }
 
 function ephase($phase, $row) {
-    return $phase . (($phase == 'P1' and $row['queued'] > 0) ? "/Queue" : "");
+    $postednum = $row['postednum'];
+    $name = $phase . (($phase == 'P1' and $row['queued'] > 0) ? "/Queue" : "");
+    if ($postednum != '' && $postednum != '0')
+        $name .= '/' . fpBookLink($postednum, $row);
+    return $name;
 }
-
-/*
-function roundid($row) {
-	return preg_match("/^(.+?)\..*_(.*)$/", $row['phase'], $matches) > 0
-		? $matches[1]."&nbsp;".$matches[2]
-		: "";
-}
-
-function status($row) {
-	return preg_match("/_(.*)$/", $row['phase'], $matches) > 0
-		? $matches[1]
-		: "";
-}
-*/
-
 
 function array_to_options($optarray, $is_blank = true,
 	$selected = null) {
@@ -582,7 +587,8 @@ function project_search_view_sql($where, $orderby = "nameofwork") {
                 p.n_pages AS pages_total,
                 p.username AS project_manager,
                 ph.sequence,
-                (SELECT 1 FROM project_holds ph WHERE ph.projectid = p.projectid AND ph.phase = 'P1' AND ph.hold_code = 'queue') queued
+                (SELECT 1 FROM project_holds ph WHERE ph.projectid = p.projectid AND ph.phase = 'P1' AND ph.hold_code = 'queue') queued,
+                p.postednum
             FROM projects p
             LEFT JOIN languages l1 ON p.language = l1.code
             LEFT JOIN languages l2 ON p.seclanguage = l2.code
