@@ -187,7 +187,7 @@ function loadClearance()
             foreach ($pids as $pid)
                 $bypid[$pid] = &$row;
         }
-        $cc = $row['clearance'];
+        $cc = trim($row['clearance']);
         if ($cc != '')
             $byCC[$cc] = &$row;
     }
@@ -300,14 +300,16 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
         $row['title'] = $r['title'];
         $row['author'] = $r['author'];
         $row['username'] = $r['username'];
-        $row['clearance'] = $r['clearance'];
+        $clearance = trim($r['clearance']);
+        $row['clearance'] = $clearance;
         $row['published'] = getPublishedYearFromPGC($r);
-        $clearance = $row['clearance'];
         if ($clearance == '')
             $row['type'] .= '*';
-        else if (!array_key_exists($clearance, $byCC))
+        else if (!array_key_exists($clearance, $byCC)) {
             $row['type'] .= '‡';
-        else {
+            //print_r($r);
+            //echo "XX" . $clearance . "XX\n";
+        } else {
             // If there wasn't a publication year on the end of the project's
             // title; get it from the clearance spreadsheet.
             $csrow = $byCC[$clearance];
