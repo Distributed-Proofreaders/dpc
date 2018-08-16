@@ -30,7 +30,8 @@ $sql = "
                DATEDIFF(DATE(FROM_UNIXTIME(p.smoothread_deadline)),
                     CURRENT_DATE()) days_left,
                p.username as PM,
-               LOWER(p.username) as pmsort
+               LOWER(p.username) as pmsort,
+               smoothcomments
         FROM projects p
         LEFT JOIN languages l1 ON p.language = l1.code
         LEFT JOIN languages l2 ON p.seclanguage = l2.code
@@ -62,6 +63,18 @@ $no_stats = 1;
 $header_text = _("Smooth Reading Projects");
 
 theme( $header_text, 'header');
+
+echo "
+    <style type='text/css'>
+        .smoothcomments {
+            margin-left:1em;
+            font-size:smaller;
+            font-style:italic;
+            margin-top:0;
+            margin-bottom:.5em;
+        }
+    </style>
+    ";
 echo "<div class='w95'>
 <h1 class='center'>$header_text</h1>\n";
 show_news_for_page( "SR" );
@@ -130,7 +143,11 @@ function epm($str) {
 
 function etitle($title, $row) {
     $projectid = $row["projectid"];
-    return link_to_project($projectid, $title);
+    $t = link_to_project($projectid, $title);
+    $comments = $row["smoothcomments"];
+    if ($comments != '')
+        $t .= "<p class='smoothcomments'>$comments</p>";
+    return $t;
 }
 
 // vim: sw=4 ts=4 expandtab

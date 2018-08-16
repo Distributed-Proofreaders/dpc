@@ -1285,4 +1285,4 @@ function RegexStringByteOffsets($str, &$text ) {
 
 // Class Versions - nothing but statics - virtual namespace
 
-
+// vim: sw=4 ts=4 expandtab
