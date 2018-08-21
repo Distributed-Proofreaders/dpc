@@ -18,6 +18,9 @@ $project        = new DpProject($projectid);
 $nameofwork     = $project->Title();
 $username       = $User->Username();
 
+$User->IsLoggedIn()
+    or RedirectToLogin();
+
 if (!$project->UserMayManage())
     die("No permission for uploading a project's smooth file");
 

@@ -28,6 +28,7 @@ define("PJ_EVT_PP_NOTIFY",  "pp_notify");
 define("PJ_EVT_POSTEDNUM",  "set_postednum");
 define("PJ_EVT_DELETE",     "delete");
 define("PJ_EVT_PP_UPLOAD",  "pp_upload");
+define("PJ_EVT_SMOOTH_UNZIP","smooth_unzip");
 
 class DpProject
 {
@@ -566,9 +567,6 @@ class DpProject
 		return ProjectSmoothUploadFilename($this->ProjectId());
 	}
 
-    public function LogSmoothUpload($filename) {
-        $this->LogProjectEvent(PJ_EVT_SMOOTH, "smooth project upload ($filename)");
-    }
     public function LogPPUpload($filename) {
         $this->LogProjectEvent(PJ_EVT_PP_UPLOAD, "PP upload ($filename)");
     }
@@ -671,6 +669,11 @@ class DpProject
         $zip->open($this->SmoothZipFilePath());
         $zip->extractTo($dest);
         $this->fix_smooth_paths();
+        $zip->close();
+
+        global $User;
+        $username = $User->Username();
+        $this->LogProjectEvent(PJ_EVT_SMOOTH_UNZIP, "$username unzip smooth file to $dest");
     }
 
     private function fix_smooth_paths() {
