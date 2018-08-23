@@ -41,15 +41,21 @@ function genre_list($genre) {
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-function difficulty_list($difficulty = "Average") {
-    $difs = array("Beginner", "Easy", "Average", "Hard");
+function difficulty_list($difficulty = "Normal") {
+    $difs = array(
+        "Beginner" => "Only the BEGIN Project Manager should use this difficulty.",
+        "Easy" => "Clear scans, good OCR without too many missing bits, nothing out of the ordinary apart from maybe a table of contents, one mainstream language, may contain short quotes in another language(s) or dialect. Pages of up to approx 300 words. A few pictures with captions.",
+        "Normal" => "Clear scans generally, good OCR, may be missing some punctuation or have scannos, may have a second language or dialect, some simple footnotes or endnotes, a few pictures with captions.",
+        "Hard" => "Scans may be blobby or faded, OCR may be missing bits or a fair number of scannos, fair amount of dialect or second language, tables, notes etc;  high concentration—Welsh, Esperanto, languages not in common use, poor scans, old English, complicated tables or layout, difficult to transcribe parts. Please describe in the Project Comments the reason for this rating."
+    );
 
-    foreach($difs as $dif) {
+    foreach($difs as $dif => $tip) {
         $checked = (strtolower($dif) == strtolower($difficulty)
                         ? " CHECKED"
                         : "");
         echo "
         <input type='radio' name='difficulty' value='$dif' 
+            title='$tip'
             $checked>$dif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
     }
 }

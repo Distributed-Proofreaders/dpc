@@ -106,7 +106,7 @@ class ProjectInfoHolder
 
         $this->projectid = $projectid;
         $this->projectmgr = $projectmgr;
-        $this->difficulty       = ( $projectmgr == "BEGIN" ? "Beginner" : "Average" );
+        $this->difficulty       = ( $projectmgr == "BEGIN" ? "Beginner" : "Normal" );
         $this->image_source     = '_internal';
         $this->image_preparer   = $projectmgr;
         $this->text_preparer    = $projectmgr;
