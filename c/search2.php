@@ -12,6 +12,7 @@ error_reporting(E_ALL);
 $relPath = "./pinc/";
 require_once $relPath."dpinit.php";
 require_once $relPath."Spreadsheet.inc";
+require_once $relPath."gutenberg.ca.inc";
 
 $Context = new DpContext();
 
@@ -22,6 +23,7 @@ $qpp            = Arg("qpp");
 $qppv           = Arg("qppv");
 $qfadedpage     = Arg("qfadedpage");
 $qclearance     = Arg("qclearance");
+$qgutca         = Arg("qgutca");
 $qlang          = ArgArray("qlang");
 $qgenre         = ArgArray("qgenre");
 $qphase         = ArgArray("qphase");
@@ -206,6 +208,7 @@ echo "
             $('qtitle').value = '';
             $('qauthor').value = '';
             $('qfadedpage').checked = false;
+            $('qgutca').checked = false;
             $('qclearance').checked = false;
         }
     </script>
@@ -233,6 +236,11 @@ $language_picker .= "
 echo "<h2 class='center m50em'>$title</h2>\n";
 
 echo html_comment($sql);
+
+if ($qgutca == "on")
+    $gutca = "checked";
+else
+    $gutca = "";
 
 if ($qfadedpage == "on")
     $fp = "checked";
@@ -274,6 +282,13 @@ echo "
                 <div class='lfloat w75'>
                 <input id='qclearance' name='qclearance' type='checkbox' $clearance>
                 Search title and author in the Clearance Spreadsheet.
+                </div>
+			</div>
+			<div>
+				<div class='w20 left lfloat'></div>
+                <div class='lfloat w75'>
+                <input id='qgutca' name='qgutca' type='checkbox' $gutca>
+                Search title and author on gutenburg.ca.
                 </div>
 			</div>
 			<!--
@@ -383,12 +398,12 @@ echo "
 
 if ( $nprojects == 0 ) {
 	if($dosearch) {
-		echo _( "<p class='bold'>No projects matched the search criteria.</p>" );
+		echo _( "<p class='bold'>No projects locally on DPC matched the search criteria.</p>" );
 	}
 
 } else {
 
-    echo _("<p class='hpadded'>$nprojects projects matched the search criteria.</p>");
+    echo _("<p class='hpadded'>$nprojects projects locally on DPC matched the search criteria.</p>");
 
     $tbl->SetRowCount(count($rows));
     //$tbl->SetPaging($pagenum, $rowsperpage);
@@ -494,12 +509,47 @@ if ($qclearance == "on" && ($qtitle != "" || $qauthor != "")) {
         echo "</div>";
     }
 }
+if ($qgutca == "on" && ($qtitle != "" || $qauthor != "")) {
+
+    $rows = searchGutenbergCA($qtitle, $qauthor);
+
+    $tbl = new DpTable("tblsearch", "dptable sortable w95");
+    $tbl->AddColumn("<directory", 'directory', 'egutdir');
+    $tbl->AddColumn("<".$titleCaption, 'title');
+    $tbl->AddColumn("<".$authorCaption, 'author');
+    $tbl->AddColumn("<description", 'description', 'egutdesc');
+    $tbl->SetRowCount(count($rows));
+
+	$nbooks = count($rows);
+    if ($nbooks == 0)
+        echo _("<p class='bold'>No books on gutenberg.ca matched the search criteria.</p>");
+    else {
+
+        echo _("<p class='hpadded'>$nbooks books on gutenberg.ca matched the search criteria.");
+        echo "</p>";
+
+        $tbl->SetRowCount($nbooks);
+        $tbl->SetRows($rows);
+
+        echo "<div class='center' onclick='eSetSort(event)'>\n";
+        $tbl->EchoTable();
+        echo "</div>";
+    }
+}
 
 
 echo "
 <br />\n";
 theme("", "footer");
 exit;
+
+function egutdesc($dir, $row) {
+    return "<span style='font-size:smaller;'>$dir</span>";
+}
+
+function egutdir($dir, $row) {
+    return "<a href='http://gutenberg.ca/ebooks/$dir/'>$dir</a>";
+}
 
 function is_available($row) {
 	return preg_match("/_avail/", $row['phase'])
