@@ -5,9 +5,11 @@ error_reporting(E_ALL);
 $gutFilename = 'gutenberg.ca.txt';
 $gutURL = "http://www.gutenberg.ca/index.html";
 
+//testGutenbergCA();
+
 function testGutenbergCA()
 {
-    $results = searchGutenbergCA('', 'fleming');
+    $results = searchGutenbergCA('chequer', 'shute');
     foreach ($results as $row)
         print_r($row);
 }
@@ -122,16 +124,16 @@ function parseGUT($result)
             // byAuthor is keyed the the author, value is an array
             // keyed by the title.
             if (isset($byAuthor[$author])) {
-                $titles = &$byAuthor[$author];
-                if (isset($titles[$title])) {
+                $directories = &$byAuthor[$author];
+                if (isset($directories[$directory])) {
                     //echo "Ignoring: $author, $title\n";
                     continue;
                 }
             } else {
-                $titles = array();
-                $byAuthor[$author] = $titles;
+                $byAuthor[$author] = array();
+                $directories = &$byAuthor[$author];
             }
-            $titles[$title] = TRUE;
+            $directories[$directory] = TRUE;
 
             $rows[] = array(
                 'author' => $author,
@@ -197,7 +199,7 @@ function getBooks($n, &$books)
 {
     do {
         if (isTitle($n)) {
-            $title = $n->textContent;
+            $title = trim($n->textContent);
             // Everything until an href to /ebooks is part of the descr
             $description = '';
             $directory = '';
