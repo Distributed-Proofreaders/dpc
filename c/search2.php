@@ -288,7 +288,7 @@ echo "
 				<div class='w20 left lfloat'></div>
                 <div class='lfloat w75'>
                 <input id='qgutca' name='qgutca' type='checkbox' $gutca>
-                Search title and author on gutenburg.ca.
+                Search title and author on gutenberg.ca.
                 </div>
 			</div>
 			<!--

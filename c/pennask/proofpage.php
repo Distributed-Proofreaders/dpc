@@ -99,7 +99,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.163' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.165' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -351,13 +351,13 @@ $csslink
 
 		if($is_foofing) {
 			echo "
-            <button title='italics' class='proofbutton'
+            <button title='italics ALT-i' class='proofbutton'
                 onclick='return top.eSetItalics();'>&lt;i&gt;</button>
 
-            <button title='bold'
+            <button title='bold ALT-b'
                 onclick='return top.eSetBold();'>&lt;b&gt;</button>
 
-            <button title='small-caps'
+            <button title='small-caps ALT-s'
                 onclick='return top.eSetSmallCaps()'>
                 &lt;sc&gt; </button>
 
@@ -386,23 +386,23 @@ $csslink
 
 		if($is_foofing) {
 			echo "
-            <button title='nowrap' onclick='return top.eSetNoWrap()'>
+            <button title='nowrap ALT-w' onclick='return top.eSetNoWrap()'>
                  /* */ </button>
 
-            <button title='block quote'
+            <button title='block quote ALT-q'
                 onclick='return top.eSetBlockQuote()'>
                  /# #/ </button>";
 		}
 
 		echo "
-            <button title='uppercase'
+            <button title='uppercase ALT-u'
                 onclick='return top.eSetUpperCase()'>
                  ABC </button>
 
-            <button title='title case'
+            <button title='title case ALT-t'
                 onclick='return top.eSetTitleCase()'> Abc </button>
 
-            <button title='lowercase'
+            <button title='lowercase ALT-l'
                 onclick='return top.eSetLowerCase()'> abc </button>
 
             <button title='brackets'
@@ -430,7 +430,7 @@ $csslink
 
 		echo "
             <button id='dehyphen' name='dehyphen' onclick='return top.eDeHyphen()'
-                title='Dehyphenate across line break. Be sure to include trailing space.'>
+                title='Dehyphenate across line break. Be sure to include trailing space. ALT-j'>
 				&gt;-&lt;</button>
             <button title='note' onclick='return top.eSetNote()'>
                 [** ]</button>

@@ -1,5 +1,5 @@
 /*
-    version 0.163
+    version 0.165
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -810,12 +810,28 @@ function eAltKeyPress(kCode) {
         case "#":
             eSetBlockQuote();
             break;
+        case "w":
+        case "*":
+            eSetNoWrap();
+            break;
         case "b":
             eSetBold();
             break;
+	case "u":
+	    eSetUpperCase();
+	    break;
+	case "l":
+	    eSetLowerCase();
+	    break;
+	case "t":
+	    eSetTitleCase();
+	    break;
         case "i":
             eSetItalics();
             break;
+	case "s":
+	    eSetSmallCaps();
+	    break;
         case "1":
             eLineHeight("lh10");
             break;
