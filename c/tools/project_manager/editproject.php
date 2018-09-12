@@ -426,7 +426,6 @@ function language_list($language) {
     <option value=''>Primary Language</option>\n";
 
     foreach($lang_codes as $code => $name) {
-        // for ($i = 0; $i<count($array_list); $i++) {
         echo "<option value='$code'";
 
         if ($langcode == $code) {
@@ -436,6 +435,7 @@ function language_list($language) {
     }
     echo "</select>\n";
 
+    /* This is currently commented out in set_from_post
     if(isset($lang_codes[$sec_language])) {
         $langcode = $sec_language;
         // $langname = $lang_codes[$sec_language];
@@ -459,6 +459,7 @@ function language_list($language) {
         echo "\n";
     }
     echo "</select>\n";
+     */
 }
 
 // vim: sw=4 ts=4 expandtab

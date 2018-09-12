@@ -806,46 +806,46 @@ function eKeyDown(e) {
 function eAltKeyPress(kCode) {
     var k = String.fromCharCode(kCode);
     switch (k) {
-        case "q":
-        case "#":
-            eSetBlockQuote();
-            break;
-        case "w":
-        case "*":
-            eSetNoWrap();
-            break;
-        case "b":
-            eSetBold();
-            break;
-	case "u":
-	    eSetUpperCase();
-	    break;
-	case "l":
-	    eSetLowerCase();
-	    break;
-	case "t":
-	    eSetTitleCase();
-	    break;
-        case "i":
-            eSetItalics();
-            break;
-	case "s":
-	    eSetSmallCaps();
-	    break;
-        case "1":
-            eLineHeight("lh10");
-            break;
-        case "5":
-            eLineHeight("lh15");
-            break;
-        case "2":
-            eLineHeight("lh20");
-            break;
-        case "j":
-            eDeHyphen();
-            break;
-        default:
-            break;
+    case "q":
+    case "#":
+        eSetBlockQuote();
+        break;
+    case "w":
+    case "*":
+        eSetNoWrap();
+        break;
+    case "b":
+        eSetBold();
+        break;
+    case "u":
+        eSetUpperCase();
+        break;
+    case "l":
+        eSetLowerCase();
+        break;
+    case "t":
+        eSetTitleCase();
+        break;
+    case "i":
+        eSetItalics();
+        break;
+    case "s":
+        eSetSmallCaps();
+        break;
+    case "1":
+        eLineHeight("lh10");
+        break;
+    case "5":
+        eLineHeight("lh15");
+        break;
+    case "2":
+        eLineHeight("lh20");
+        break;
+    case "j":
+        eDeHyphen();
+        break;
+    default:
+        break;
     }
 }
 
@@ -2766,3 +2766,5 @@ function getnamevalue(name) {
     }
     return "";
 }
+
+// vim: ts=4 sw=4 expandtab

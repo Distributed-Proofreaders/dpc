@@ -2099,12 +2099,25 @@ class DpProject
 		return $code == "" ? "" : $lang_codes[$code];
 	}
 
+    /*
+     * Note that language codes are supposed to be the two or sometimes
+     * slightly more than two letter keys found in the lang_codes array.
+     * However, historically, sometimes it has been stored as the full
+     * language name; and in the case of two languages it seems to be
+     *      lang1 with lang2
+     * While editproject appears to have a secondary language, it doesn't
+     * actually save a secondary language at this point!
+     */
     public function LanguageCode() {
         global $lang_codes;
 
-        $code = array_search($this->_row["language"], $lang_codes);
+        $c = $this->_row["language"];
+        if (isset($c))
+            return $c;
+
+        $code = array_search($c, $lang_codes);
         if(! $code) {
-            $code = lower(left($this->_row["language"], 2));
+            $code = lower(left($c, 2));
         }
         return $code;
     }
