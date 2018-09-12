@@ -2112,7 +2112,7 @@ class DpProject
         global $lang_codes;
 
         $c = $this->_row["language"];
-        if (isset($c))
+        if (isset($lang_codes[$c]))
             return $c;
 
         $code = array_search($c, $lang_codes);
