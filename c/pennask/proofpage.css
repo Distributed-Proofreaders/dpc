@@ -5,6 +5,10 @@
     -webkit-box-sizing:border-box; /* Safari */
 }
 
+.errline {
+    background-color: orangered;
+}
+
 i {
     color: red;
 }
@@ -295,6 +299,7 @@ table.tblpicker th {
 
     div#divtweet,
     div#divFandR,
+    div#divPreviewErrors,
     iframe#uploadframe {
         position: absolute;
         padding: .3em;
@@ -319,9 +324,14 @@ table.tblpicker th {
         margin: 0;
     }
 
+    div#divPreviewErrors div,
     div#divFandR div,
     div#divGear div {
         float: left;
+    }
+
+    div#divPreviewErrors {
+	overflow: auto;
     }
 
     table#tblFandR input[type=text] {

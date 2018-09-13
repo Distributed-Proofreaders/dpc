@@ -1,5 +1,5 @@
 /*
-    version 0.165
+    version 0.167
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -55,6 +55,7 @@ var imgpage;
 var divcontrols;
 var ctlpanel;
 var divFandR;
+var divPreviewErrors;
 var divtweet;
 var imgtweet;
 var divGear;
@@ -236,7 +237,7 @@ var igraphs = {};
 function $(id) {
     var obj = doc.getElementById(id);
     if (!obj)
-	console.log("Cannot find " + id);
+        console.log("Cannot find " + id);
     return obj;
 }
 
@@ -276,6 +277,7 @@ function eInit() {
     imgtweet        = $("imgtweet");
     tweet           = $("tweet");
     divFandR        = $("divFandR");
+    divPreviewErrors = $("divPreviewErrors");
     tatext          = $("tatext");
     imgpage         = $("imgpage");
 
@@ -459,6 +461,7 @@ function _applylayout() {
         divright.style.width        = "100%";
 
         divtweet.style.top          =
+        divPreviewErrors.style.top  =
         divFandR.style.top          = divright.offsetTop;
     }
 
@@ -481,6 +484,7 @@ function _applylayout() {
         divright.style.width        = px(rightwidth);
 
         divtweet.style.top          =
+        divPreviewErrors.style.top  =
         divFandR.style.top          = "0";
     }
     divtext_match_tatext();
@@ -1377,6 +1381,16 @@ function eCloseFandR() {
     }
 }
 
+function eShowPreviewErrors() {
+    divPreviewErrors.style.display = "block";
+    divPreviewErrors.style.top = px(divcontrols.offsetTop);
+    divPreviewErrors.style.height = px(divcontrols.offsetHeight);
+}
+
+function eHidePreviewErrors() {
+    divPreviewErrors.style.display = "none";
+}
+
 function eToggleGear() {
     if(divGear.className == "hide") {
         divGear.style.bottom = px(divstatusbar.offsetHeight);
@@ -1623,12 +1637,89 @@ function ePreviewFormat() {
     }
     else {
         // preview is hidden, it was clicked, show it, hide others
-        setPreviewText(tatext.value.replace('<tb>', '<hr>'));
+        var result = tatext.value;
+        result = formattedTextAnalysis(result);
+        result = result.replace('<tb>', '<hr>');
+        setPreviewText(result);
         hide_wordchecking();
         hide_text();
         show_preview();
         _is_previewing = true;
     }
+}
+
+function formattedTextAnalysis(str)
+{
+    var msgs = [];
+
+    str = blockAnalysis(str, msgs);
+    str = fontAnalysis(str, msgs);
+
+    if (msgs.length != 0)
+        displayFormattedTextAnalysisErrors(msgs);
+    return str;
+}
+
+function displayFormattedTextAnalysisErrors(msgs)
+{
+    //alert("Formatted text errors: " + msgs.join(", "));
+    $('divPreviewErrors').innerHTML = msgs.join('<br>\n');
+}
+
+function blockAnalysis(str, msgs)
+{
+    var blocks = [];
+    var lines = str.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+        var l = lines[i];
+        var last = (i > 0 ? lines[i-1] : "");
+        var next = (i+1 == lines.length ? "" : lines[i+1]);
+
+        if (l == "/*") {
+            if (blocks.indexOf("*") != -1)
+                lines[i] = err(msgs, l, "/* (no-wrap) may not be nested");
+            blocks.push("*");
+            if (last != "")
+                lines[i] = err(msgs, l, "/* (no-wrap) must be preceeded by a blank line or start of page");
+        } else if (l == "/#") {
+            if (blocks.indexOf("*") != -1)
+                lines[i] = err(msgs, l, "/# (block quote) inside a /* (no-wrap)");
+            blocks.push("#");
+            if (last != "")
+                lines[i] = err(msgs, l, "/# (block quote) must be preceeded by a blank line or start of page");
+        } else if (l == "*/") {
+            if (blocks.pop() != "*")
+                lines[i] = err(msgs, l, "*/ (end no-wrap) never opened");
+            if (next != "")
+                lines[i] = err(msgs, l, "*/ (end no-wrap) must be followed by a blank line or end of page");
+        } else if (l == '#/') {
+            if (blocks.pop() != "#")
+                lines[i] = err(msgs, l, "#/ (end block quote) never opened");
+            if (next != "")
+                lines[i] = err(msgs, l, "#/ (end no-wrap) must be followed by a blank line or end of page");
+        } else {
+            var marker;
+            for (marker in { "/*":0, "*/":0, "/#":0, "#/":0 }) {
+                if (l.indexOf(marker) != -1)
+                    lines[i] = err(msgs, l, marker + " embedded in line");
+            }
+        }
+    }
+    if (blocks.length != 0) {
+        msgs.push("Open /" + blocks.pop() + " at end of page");
+    }
+    return lines.join("\n");
+}
+
+function err(msgs, line, err)
+{
+    msgs.push(err);
+    return "<span class='errline' title='" + err + "'>" + line + "</span>";
+}
+
+function fontAnalysis(str, msgs)
+{
+    return str;
 }
 
 function h(str) {
@@ -1960,6 +2051,7 @@ function eSplitterUp(e) {
         divtweet.style.top          =
         divFandR.style.top          =
         divGear.style.top           =
+        divPreviewErrors.style.top  =
         divright.style.top          = px(e.clientY + divsplitter.offsetHeight);
     }
     else {
@@ -2012,6 +2104,7 @@ function show_preview() {
     }
     $("imgpvw").src                 = "/graphics/preview_on.png";
     prepreview.style.visibility     = "visible";
+    eShowPreviewErrors();
 }
 
 function hide_preview(){
@@ -2020,6 +2113,7 @@ function hide_preview(){
     }
     $("imgpvw").src                 = "/graphics/preview_off.png";
     prepreview.style.visibility     = "hidden";
+    eHidePreviewErrors();
 }
 
 function set_wordchecking() {

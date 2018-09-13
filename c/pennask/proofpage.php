@@ -99,7 +99,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.165' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.167' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -181,6 +181,10 @@ $csslink
     <label><input type='checkbox' name='runAlways' id='runAlways'> Run Always </label>
 </fieldset>
 <input type='button' name='btnCloseGear' id='btnCloseGear' class='rfloat' value='Close'/>
+</div>
+
+<div id='divPreviewErrors' class='previewErrors'>
+&#160;
 </div>
 
 <div id='divFandR'>
