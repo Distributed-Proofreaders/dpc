@@ -288,7 +288,9 @@ $csslink
             <img id='imgtweet' src='/graphics/tweet2.png' alt='$tweet_prompt' title='$tweet_prompt'>\n";
 		if($is_foofing) {
 			echo "
-			<img id='imgpvw' src='/graphics/preview_off.png' alt='$preview_prompt' title='$preview_prompt'>\n";
+                <img id='imgpvw' src='/graphics/preview_off.png' alt='$preview_prompt' title='$preview_prompt'>\n
+                <span id='span_fmtcount' style='visibility:hidden' class='ctlcombo'> 0 </span>
+            ";
 		}
 
 	echo "</div> <!-- divctlimg -->\n";

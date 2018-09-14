@@ -393,10 +393,10 @@ function eCtlInit() {
 
     // Run wordcheck if set to run always, and we are proofing
     if (runAlways.checked && $("imgpvw") == null) {
-	console.log("Run Always checked; initiating wordcheck");
-	chkIsWC.checked = "checked";
-	setIsWC();
-	requestWordcheck();
+        console.log("Run Always checked; initiating wordcheck");
+        chkIsWC.checked = "checked";
+        setIsWC();
+        requestWordcheck();
     }
 }
 
@@ -1496,9 +1496,9 @@ function eDeHyphen() {
         //ReplaceText(str);
         //SetSelection(re.lastIndex, re.lastIndex);
 
-	if(_is_wordchecking) {
-	    requestWordcheck();
-	}
+        if(_is_wordchecking) {
+            requestWordcheck();
+        }
     }
 
     re.lastIndex = tatext.selectionStart;
@@ -1665,10 +1665,13 @@ class TextAnalysis {
 
     displayErrors()
     {
-        if (this.msgs.length != 0)
-            $('divPreviewErrors').innerHTML = this.msgs.join('<br>\n');
+        $('divPreviewErrors').innerHTML = this.msgs.join('<br>\n');
+        $("span_fmtcount").innerHTML = (this.msgs.length).toString();
     }
 
+    /*
+     * Analyse block-quotes and no-wrap blocks.
+     */
     block()
     {
         var blocks = [];
@@ -1777,6 +1780,9 @@ class TextAnalysis {
                 accumulated += " " + l;
         }
 
+        if (accumulated.trim() == "<tb>")
+            return;
+
         this.balance(accumulated, false);
     }
 
@@ -1819,6 +1825,10 @@ class TextAnalysis {
                 if (startTag != token)
                     this.err(line, "End tag &lt;/" + token + "> does not match open tag &lt;" + startTag + ">");
             } else {
+                if (token == "tb") {
+                    this.err(line, "Non-isolated &lt;tb> tag: must be both preceeded and followed by a blank line.");
+                    continue;
+                }
                 if (fonts.length > 0)
                     if (fonts.includes(token))
                         this.err(line, "Open tag &lt;" + token + ">: this tag already open: " + fonts);
@@ -2218,6 +2228,7 @@ function show_preview() {
     }
     $("imgpvw").src                 = "/graphics/preview_on.png";
     prepreview.style.visibility     = "visible";
+    $("span_fmtcount").style.visibility = "visible";
     eShowPreviewErrors();
 }
 
@@ -2227,6 +2238,7 @@ function hide_preview(){
     }
     $("imgpvw").src                 = "/graphics/preview_off.png";
     prepreview.style.visibility     = "hidden";
+    $("span_fmtcount").style.visibility = "hidden";
     eHidePreviewErrors();
 }
 

@@ -366,7 +366,7 @@ table.tblpicker th {
         text-decoration: underline;
     }
 
-    span#span_wccount {
+    span#span_wccount,span#span_fmtcount {
         padding: .2em .5em;
         visibility: hidden;
     }
