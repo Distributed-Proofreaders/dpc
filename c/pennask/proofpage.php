@@ -99,7 +99,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.167' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.169' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 

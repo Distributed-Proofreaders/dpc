@@ -1,5 +1,5 @@
 /*
-    version 0.167
+    version 0.169
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1650,76 +1650,190 @@ function ePreviewFormat() {
 
 function formattedTextAnalysis(str)
 {
-    var msgs = [];
-
-    str = blockAnalysis(str, msgs);
-    str = fontAnalysis(str, msgs);
-
-    if (msgs.length != 0)
-        displayFormattedTextAnalysisErrors(msgs);
-    return str;
+    var analysis = new TextAnalysis(str);
+    analysis.block();
+    analysis.inline();
+    analysis.displayErrors();
+    return analysis.text;
 }
 
-function displayFormattedTextAnalysisErrors(msgs)
-{
-    //alert("Formatted text errors: " + msgs.join(", "));
-    $('divPreviewErrors').innerHTML = msgs.join('<br>\n');
-}
+class TextAnalysis {
+    constructor(str) {
+        this.text = str;
+        this.msgs = [];
+    }
 
-function blockAnalysis(str, msgs)
-{
-    var blocks = [];
-    var lines = str.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-        var l = lines[i];
-        var last = (i > 0 ? lines[i-1] : "");
-        var next = (i+1 == lines.length ? "" : lines[i+1]);
+    displayErrors()
+    {
+        if (this.msgs.length != 0)
+            $('divPreviewErrors').innerHTML = this.msgs.join('<br>\n');
+    }
 
-        if (l == "/*") {
-            if (blocks.indexOf("*") != -1)
-                lines[i] = err(msgs, l, "/* (no-wrap) may not be nested");
-            blocks.push("*");
-            if (last != "")
-                lines[i] = err(msgs, l, "/* (no-wrap) must be preceeded by a blank line or start of page");
-        } else if (l == "/#") {
-            if (blocks.indexOf("*") != -1)
-                lines[i] = err(msgs, l, "/# (block quote) inside a /* (no-wrap)");
-            blocks.push("#");
-            if (last != "")
-                lines[i] = err(msgs, l, "/# (block quote) must be preceeded by a blank line or start of page");
-        } else if (l == "*/") {
-            if (blocks.pop() != "*")
-                lines[i] = err(msgs, l, "*/ (end no-wrap) never opened");
-            if (next != "")
-                lines[i] = err(msgs, l, "*/ (end no-wrap) must be followed by a blank line or end of page");
-        } else if (l == '#/') {
-            if (blocks.pop() != "#")
-                lines[i] = err(msgs, l, "#/ (end block quote) never opened");
-            if (next != "")
-                lines[i] = err(msgs, l, "#/ (end no-wrap) must be followed by a blank line or end of page");
-        } else {
-            var marker;
-            for (marker in { "/*":0, "*/":0, "/#":0, "#/":0 }) {
-                if (l.indexOf(marker) != -1)
-                    lines[i] = err(msgs, l, marker + " embedded in line");
+    block()
+    {
+        var blocks = [];
+        var lines = this.text.split('\n');
+        for (var i = 0; i < lines.length; i++) {
+            var l = lines[i];
+            var last = (i > 0 ? lines[i-1] : "");
+            var next = (i+1 == lines.length ? "" : lines[i+1]);
+
+            if (l == "/*") {
+                if (blocks.indexOf("*") != -1)
+                    lines[i] = this.err(l, "/* (no-wrap) may not be nested");
+                blocks.push("*");
+                if (last != "")
+                    lines[i] = this.err(l, "/* (no-wrap) must be preceeded by a blank line or start of page");
+            } else if (l == "/#") {
+                if (blocks.indexOf("*") != -1)
+                    lines[i] = this.err(l, "/# (block quote) inside a /* (no-wrap)");
+                blocks.push("#");
+                if (last != "")
+                    lines[i] = this.err(l, "/# (block quote) must be preceeded by a blank line or start of page");
+            } else if (l == "*/") {
+                if (blocks.pop() != "*")
+                    lines[i] = this.err(l, "*/ (end no-wrap) never opened");
+                if (next != "")
+                    lines[i] = this.err(l, "*/ (end no-wrap) must be followed by a blank line or end of page");
+            } else if (l == '#/') {
+                if (blocks.pop() != "#")
+                    lines[i] = this.err(l, "#/ (end block quote) never opened");
+                if (next != "")
+                    lines[i] = this.err(l, "#/ (end no-wrap) must be followed by a blank line or end of page");
+            } else {
+                var marker;
+                for (marker in { "/*":0, "*/":0, "/#":0, "#/":0 }) {
+                    if (l.indexOf(marker) != -1)
+                        lines[i] = this.err(l, marker + " embedded in line");
+                }
             }
         }
+        if (blocks.length != 0) {
+            this.msgs.push("Open /" + blocks.pop() + " at end of page");
+        }
+        this.text = lines.join("\n");
     }
-    if (blocks.length != 0) {
-        msgs.push("Open /" + blocks.pop() + " at end of page");
+
+    /*
+     * Check a page for any font issues: split to paragraphs, and
+     * check each paragraph
+     */
+    inline()
+    {
+        var blocks = this.parseToParas();
+        for (var i = 0; i < blocks.length; i++)
+            this.balancedFonts(blocks[i]);
     }
-    return lines.join("\n");
-}
 
-function err(msgs, line, err)
-{
-    msgs.push(err);
-    return "<span class='errline' title='" + err + "'>" + line + "</span>";
-}
+    /*
+     *  Split a page into paragraphs based on blank lines.
+     *  Note no-wrap and block-quote lines are still in.
+     */
+    parseToParas()
+    {
+        var lines = this.text.split('\n');
+        var block = [];
+        var blocks = [];
+        for (var i = 0; i < lines.length; i++) {
+            var l = lines[i];
 
-function fontAnalysis(str, msgs)
-{
-    return str;
+            if (l == '') {
+                if (block.length > 0) {
+                    blocks.push(block);
+                    block = [];
+                }
+                continue;
+            }
+            block.push(l);
+        }
+        return blocks;
+    }
+
+    /*
+     * Check a single paragraph for font errors.
+     * There are still no-wrap and block-quote markers in the paragraphs,
+     * so we accumulate a line until we hit a no-wrap marker; then
+     * we check individual lines within the no-wrap markers.
+     */
+    balancedFonts(block)
+    {
+        var inNoWrap = false;
+        var accumulated = "";
+        for (var i = 0; i < block.length; i++) {
+            var l = block[i];
+
+            if (l == '/*') {
+                this.balance(accumulated, false);
+                accumulated = "";
+                inNoWrap = true;
+                continue;
+            } else if (l == '*/') {
+                inNoWrap = false;
+                continue;
+            }
+            if (inNoWrap)
+                this.balance(l, true)
+            else
+                accumulated += " " + l;
+        }
+
+        this.balance(accumulated, false);
+    }
+
+    /*
+     * Either a single line if in no-wrap; or an accumulated line for
+     * a paragraph.  In both cases, we require fonts correct within this
+     * entity.
+     */
+    balance(line, inNoWrap)
+    {
+        //console.log("balance: " + line);
+        var off = 0;
+        var fonts = [];
+        var st;
+        var errAppend = "";
+
+        if (inNoWrap)
+            errAppend = ". In a no-wrap block, each line must individually balance all fonts.";
+        while ((st = line.indexOf('<', off)) != -1) {
+            var end = line.indexOf('>', off);
+            off = st + 1;
+            if (end == -1)
+                continue;
+            var token = line.substring(off, end);
+            //console.log("token: " + token);
+            if (token == '')
+                // <>
+                continue;
+            if (token.indexOf('<') != -1)
+                // <xxx<xxx>
+                continue;
+            off = end+1;
+            if (token.startsWith('/')) {
+                token = token.substring(1);
+                if (fonts.length == 0) {
+                    this.err(line, "End tag &lt;/" + token + "> has no open tag");
+                    continue;
+                }
+                var startTag = fonts.pop();
+                if (startTag != token)
+                    this.err(line, "End tag &lt;/" + token + "> does not match open tag &lt;" + startTag + ">");
+            } else {
+                if (fonts.length > 0)
+                    if (fonts.includes(token))
+                        this.err(line, "Open tag &lt;" + token + ">: this tag already open: " + fonts);
+                fonts.push(token);
+            }
+        }
+        if (fonts.length > 0)
+            this.err(line, "Open tag &lt;" + fonts.pop() + "> not closed" + errAppend);
+    }
+
+    err(line, msg)
+    {
+        this.msgs.push(msg);
+        return "<span class='errline' title='" + msg + "'>" + line + "</span>";
+    }
 }
 
 function h(str) {
