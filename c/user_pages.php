@@ -58,7 +58,8 @@ if($phase != "" && $username != "") {
 			AND pv1.state = 'C'
 			AND pv2.state = 'C'
 			AND pv1.crc32 != pv2.crc32
-        ORDER BY pv1.version_time DESC";
+        ORDER BY pv1.version_time DESC
+        LIMIT 2000";
 
 	$rows = $dpdb->SqlRows($sql);
     if(count($rows) > 0) {
@@ -86,7 +87,9 @@ if($phase != "" && $username != "") {
 
         $tbl->SetRowCount(count($rows));
 
-        $tbl->SetPaging($pagenum, $rowsperpage);
+        // REMOVED paging. Paging means sorting doesn't work.
+        // Added arbitrary limit of 2000 rows instead.
+        //$tbl->SetPaging($pagenum, $rowsperpage);
 //    dump($reprows);
 //    die();
         $tbl->SetRows($rows);
