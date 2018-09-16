@@ -1661,10 +1661,12 @@ class TextAnalysis {
     constructor(str) {
         this.text = str;
         this.msgs = [];
+        this.references = [];
     }
 
     displayErrors()
     {
+        console.log("MSGS: " + this.msgs);
         $('divPreviewErrors').innerHTML = this.msgs.join('<br>\n');
         $("span_fmtcount").innerHTML = (this.msgs.length).toString();
     }
@@ -1726,6 +1728,11 @@ class TextAnalysis {
         var blocks = this.parseToParas();
         for (var i = 0; i < blocks.length; i++)
             this.balancedFonts(blocks[i]);
+
+        // Check if any footnote references remain
+        if (this.references.length > 0)
+            this.err('', "This page references footnote(s) " + this.references +
+                " but definition(s) were not found.");
     }
 
     /*
@@ -1741,6 +1748,7 @@ class TextAnalysis {
             var l = lines[i];
 
             if (l == '') {
+                // TODO: validate 1, 2, or 4 blank lines only
                 if (block.length > 0) {
                     blocks.push(block);
                     block = [];
@@ -1749,6 +1757,8 @@ class TextAnalysis {
             }
             block.push(l);
         }
+        if (block.length > 0)
+            blocks.push(block);
         return blocks;
     }
 
@@ -1766,7 +1776,7 @@ class TextAnalysis {
             var l = block[i];
 
             if (l == '/*') {
-                this.balance(accumulated, false);
+                this.oneUnit(accumulated, false);
                 accumulated = "";
                 inNoWrap = true;
                 continue;
@@ -1777,13 +1787,103 @@ class TextAnalysis {
             if (inNoWrap)
                 this.balance(l, true)
             else
-                accumulated += " " + l;
+                if (accumulated == "")
+                    accumulated = l;
+                else
+                    accumulated += " " + l;
         }
 
-        if (accumulated.trim() == "<tb>")
+        if (accumulated == "<tb>")
             return;
 
-        this.balance(accumulated, false);
+        this.oneUnit(accumulated, false);
+    }
+
+    /*
+     * Perform checks for a single-unit, i.e. a paragraph or a no-wrap line.
+     */
+    oneUnit(str, inNoWrap)
+    {
+        this.footnoteReferences(str, inNoWrap);
+        this.balance(str, inNoWrap);
+        this.squareTags(str, inNoWrap);
+    }
+
+    footnoteReferences(str, inNoWrap)
+    {
+        var re = /\[.\]/g;
+        var results = str.match(re);
+        if (results != null) {
+            for (var i = 0; i < results.length; i++) {
+                var c = results[i].substr(1, 1);
+                if (this.references.indexOf(c) == -1)
+                    this.references.push(c);
+                else
+                    this.err(str, "Multiple references to footnote " + c);
+            }
+        }
+    }
+
+    /*
+     * Validate the [XXXX form of markup.
+     */
+    squareTags(str, inNoWrap)
+    {
+        var tags = {
+            "[Illustration" : this.illustration,
+            // TODO: Sidenotes don't need to be isolated so need different code
+            //"[Sidenode" : this.sidenote,
+            "[Footnote" : this.footnote
+        };
+        for (var tag in tags) {
+            if (str.startsWith(tag)) {
+                if (inNoWrap)
+                    this.err(str, "Markup " + tag + " may not be inside a no-wrap block");
+                else
+                    tags[tag].call(this, str);
+            }
+            if (str.indexOf(tag, 1) != -1)
+                // Even if a valid tag, make sure another markup not embedded
+                this.err(str, "Markup " + tag + " must start the line, not be embedded");
+        }
+    }
+
+    illustration(str)
+    {
+        // Illustration doesn't need contents
+        if (str == "[Illustration]")
+            return;
+        if (!str.startsWith("[Illustration: ")
+        ||  !str.endsWith("]")) {
+            this.err(str, "Malformed Illustration markup");
+            return;
+        }
+    }
+
+    sidenote(str)
+    {
+        if (!str.startsWith("[Sidenote: ")
+        ||  !str.endsWith("]")) {
+            this.err(str, "Malformed Sidenote markup");
+            return;
+        }
+    }
+
+    footnote(str)
+    {
+        var re = /^\[Footnote .: .*\]\*?$/;
+        var results = str.match(re);
+        if (results == null) {
+            this.err(str, "Malformed footnote markup");
+            return 1;
+        }
+        var footnote = str.substr(10, 1);
+        var off = this.references.indexOf(footnote);
+        if (off == -1)
+            this.err(str, "Footnote " + footnote + " not referenced");
+        else
+            // Remove? Or handle multiple references?
+            this.references.splice(off, 1);
     }
 
     /*

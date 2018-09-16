@@ -289,7 +289,7 @@ $csslink
 		if($is_foofing) {
 			echo "
                 <img id='imgpvw' src='/graphics/preview_off.png' alt='$preview_prompt' title='$preview_prompt'>\n
-                <span id='span_fmtcount' style='visibility:hidden' class='ctlcombo'> 0 </span>
+                <span id='span_fmtcount' class='ctlcombo'> 0 </span>
             ";
 		}
 
