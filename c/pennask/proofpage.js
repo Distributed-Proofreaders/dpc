@@ -1,5 +1,5 @@
 /*
-    version 0.169
+    version 0.170
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -329,7 +329,8 @@ function eInit() {
     addEvent($('btnclose'),     "click",     eCloseFandR);
     addEvent($('linkwc'),       "click",     eLinkWC);
     addEvent($('seltodo'),      "change",    eSelToDo);
-    addEvent($('linkupload'),   "click",     eShowUpload);
+    addEvent($('showdigraphs'), "click",     eShowDigraphs);
+    addEvent($('digraph-close'),"click",     eHideDigraphs);
     addEvent($('selfontface'),  "change",    eSetFontFace);
     addEvent($('selfontsize'),  "change",    eSetFontSize);
     addEvent($('opt_mark_bad'), "click",     eToggleBad);
@@ -989,12 +990,34 @@ function SetSelection(start, end) {
 
 // std
 
-function eHideUpload() {
-    $("uploadframe").style.display = 'none';
+function eShowDigraphs() {
+    $("digraphframe").style.display = 'block';
+    createDigraphHTML();
 }
 
-function eShowUpload() {
-    $("uploadframe").style.display = 'block';
+function eHideDigraphs() {
+    $("digraphframe").style.display = 'none';
+}
+
+function createDigraphHTML()
+{
+    var t = $("digraph");
+    if (t.rows.length > 0)
+        return;
+
+    var col = 0;
+    var row;
+    for (k in digraphs) {
+        var v = digraphs[k];
+
+        if ((col % 10) == 0)
+            row = t.insertRow(-1);
+        var c = row.insertCell(-1);
+        c.innerHTML = "<pre>" + k + "</pre>";
+        c = row.insertCell(-1);
+        c.innerHTML = v;
+        col++;
+    }
 }
 
 function translate(str) {

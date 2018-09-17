@@ -299,8 +299,7 @@ table.tblpicker th {
 
     div#divtweet,
     div#divFandR,
-    div#divPreviewErrors,
-    iframe#uploadframe {
+    div#divPreviewErrors {
         position: absolute;
         padding: .3em;
         width:100%;
@@ -309,6 +308,48 @@ table.tblpicker th {
         border: 1px solid gray;
         background-color: #CDC0B0;
         z-index: 3;
+    }
+
+    #digraphframe {
+	position: fixed;
+	display: none;
+	border: 2px solid black;
+	width: 80%;
+	height: 80%;
+	top: 10%;
+	left: 10%;
+	z-index: 3;
+	background-color: floralwhite;
+	overflow: auto;
+    }
+
+    #digraph-content {
+	margin: auto;
+	padding: 20px;
+	border 2px solid black;
+	width: 80%;
+    }
+
+    #digraph-close {
+	color: #aaa;
+	float: right;
+	font-size: 28px;
+	font-weight: bold;
+    }
+
+    #digraph-close:hover,
+    #digraph-close:focus {
+	color: black;
+	text-decoration: none;
+	cursor: pointer;
+    }
+
+    #digraph {
+	margin: auto;
+    }
+
+    #digraph td {
+	padding-right:1em;
     }
 
     textarea#tweet{

@@ -99,7 +99,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.169' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.170' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -231,6 +231,21 @@ $csslink
 <div id='divtweet'>
    <textarea id='tweet' name='tweet'>$tweet</textarea>
 </div>   <!-- divtweet -->
+<div id='digraphframe'>
+    <div id='digraph-content'>
+        <span id='digraph-close'>&times;</span>
+        <h1 style='text-align: center;'>Digraph Codes</h1>
+        <p>Digraphs are ways to type special characters. They are two character
+        codes, which descripe a character not normally found on your keyboard.
+        In the editing pane, you type the two characters, separated by the
+        backspace key.  For example, if you type the letter e, backspace, then
+        the greater-than symbol, you get an e-circumflex: ê.</p>
+        <div style='overflow:auto;'>
+            <table id='digraph'>
+            </table>
+        </div>
+    </div>
+</div>
 \n"
 
 //. upload_widget_iframe($projectid, $pagename) . "
@@ -456,11 +471,9 @@ $csslink
 		({$User->Username()})
 		<a href='".url_for_help()."' target='_blank'> " . _("Help")."</a>
 		</div>
-	" . ($page->UserMayManage()
-			? "<div><a id='linkupload' class='likealink'>". _("Replace image")."</a></div>\n"
-			: "")
-		 . "<div><a target='_blank' href='"  . url_for_project($page->ProjectId())  . "'> " . _("Project comments") . "</a></div>
+		<div><a target='_blank' href='"  . url_for_project($page->ProjectId())  . "'> " . _("Project comments") . "</a></div>
 	   <div><a href='$url_guidelines' target='_blank'>" . _("Guidelines") . "</a></div>
+       <div><a id='showdigraphs' class='likealink'>". _("Digraphs")."</a></div>
 </div> <!-- divstatusbar -->
   </form>
 </body>
