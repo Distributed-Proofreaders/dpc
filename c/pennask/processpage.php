@@ -79,7 +79,11 @@ switch($seltodo) {
         break;
 
     case "opt_submit_continue" :
-        $page->SaveAsDone($tatext);
+        $msg = $page->SaveAsDone($tatext);
+        if ($msg != null) {
+            redirect_to_error_page($msg);
+            exit;
+        }
         $project = new DpProject($projectid);
         if($project->IsRoundCompleted()) {
             redirect_to_project($projectid, "Round Complete");
@@ -96,7 +100,11 @@ switch($seltodo) {
         break;
 
     case "opt_submit_quit" :
-        $page->SaveAsDone($tatext);
+        $msg = $page->SaveAsDone($tatext);
+        if ($msg != null) {
+            redirect_to_error_page($msg);
+            exit;
+        }
         redirect_to_project($projectid);
         break;
 

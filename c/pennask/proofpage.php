@@ -49,7 +49,8 @@ else {
     }
 }
 
-$is_foofing = ( $project->Phase() == "F1" || $project->Phase() == "F2" );
+$phase = $project->Phase();
+$is_foofing = ( $phase == "F1" || $phase == "F2" );
 
 
 $langcode     = ArgLangCode($project->LanguageCode());
@@ -143,7 +144,7 @@ $wcclass = ($iswordcheck ? "block" : "hide");
 $wcchecked = ($iswordcheck ? "checked" : "");
 
 $proofers = $page->Proofers();
-$page_info =  _("Page: ") . $page->PageName() . " &mdash; " . $proofers;
+$page_info =  _("Phase: ") . $phase . ", " . _("Page: ") . $page->PageName() . " &mdash; " . $proofers;
 
 
 echo
@@ -231,12 +232,12 @@ $csslink
 <div id='divtweet'>
    <textarea id='tweet' name='tweet'>$tweet</textarea>
 </div>   <!-- divtweet -->
-<div id='digraphframe'>
+<div id='digraphframe' style='display:none'>
     <div id='digraph-content'>
         <span id='digraph-close'>&times;</span>
         <h1 style='text-align: center;'>Digraph Codes</h1>
         <p>Digraphs are ways to type special characters. They are two character
-        codes, which descripe a character not normally found on your keyboard.
+        codes, which describe a character not normally found on your keyboard.
         In the editing pane, you type the two characters, separated by the
         backspace key.  For example, if you type the letter e, backspace, then
         the greater-than symbol, you get an e-circumflex: ê.</p>
@@ -269,6 +270,7 @@ $csslink
     <input type='hidden' name='projectid' value='$projectid'>
     <input type='hidden' name='langcode' value='$langcode'>
     <input type='hidden' name='pagename' value='{$pagename}'>
+    <input type='hidden' name='phase' value='{$phase}'>
     <input type='hidden' name='todo' value=''>
     <input type='hidden' name='acceptwords' value=''>
     <input type='hidden' name='badreason' value=''>

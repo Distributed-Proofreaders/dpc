@@ -427,9 +427,22 @@ class DpPage
     public function SaveAsDone($text) {
         global $User, $Context;
 
-        if(! $this->IsAvailable() &&  ! $this->ActiveUserIsEditor() && ! $this->UserIsPM() && ! $User->IsSiteManager()) {
-            assert(false);
-            return;
+        if (!$this->ActiveUserIsEditor()) {
+            // If this isn't the person who we think is editing it,
+            // then the PM can still edit it.
+            if(! $this->UserIsPM() && ! $User->IsSiteManager()) {
+                $owner = $this->Owner();
+                $user = $User->Username();
+                $status = $this->PageStatus();
+                $phase = $this->Phase();
+                $pagename = $this->PageName();
+                $ver = $this->LastVersionNumber();
+                $projectid = $this->ProjectId();
+                return "This page is no longer checked out to you.<br><br>
+                    Additional information:
+                    Owner=$owner, user=$user, status=$status, phase=$phase,
+                    pagename=$pagename, version=$ver, projectid=$projectid";
+            }
         }
 
 	    $Context->UpdateOpenVersion($this->ProjectId(), $this->PageName(), $this->LastVersionNumber(), "C", $text);
@@ -441,6 +454,7 @@ class DpPage
         // make a new project - old one may be out of date
         // $this->_project = new DpProject($this->ProjectId());
         // $this->_project->MaybeAdvanceRound();
+        return null;
     }
 
     public function ReturnToRound() {

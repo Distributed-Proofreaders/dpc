@@ -52,16 +52,6 @@ class DpRowVersion extends DpVersion {
 	}
 }
 
-class DpLastVersion extends DpVersion {
-	function __construct($projectid, $pagename) {
-		global $dpdb;
-		$version = $dpdb->SqlOneValue(
-				"SELECT version FROM page_last_versions
-				WHERE projectid = '$projectid' AND pagename = '$pagename'");
-		parent::__construct($projectid, $pagename, $version);
-	}
-}
-
 class DpVersion {
 	protected $_row;
 	protected $_version_number;
@@ -261,3 +251,4 @@ function AddPageVersionTexts($projectid) {
 	}
 }
 */
+// vim: sw=4 ts=4 expandtab
