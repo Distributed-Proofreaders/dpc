@@ -4,7 +4,6 @@ error_reporting(E_ALL);
 
 $relPath = "./../../pinc/";
 include_once($relPath.'dpinit.php');
-include_once($relPath.'comment_inclusions.inc');
 include_once('edit_common.inc');
 //include_once($relPath.'project_edit.inc');
 
