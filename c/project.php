@@ -31,6 +31,7 @@ $smoothcomments         = Arg("smoothcomments");
 
 $post_notify            = IsArg("post_notify");
 $smooth_notify          = IsArg("smooth_notify");
+$p1release_notify       = IsArg("p1release_notify");
 
 $submit_srcomments      = IsArg("submit_srcomments");
 $srdays                 = ArgInt("srdays");
@@ -48,6 +49,9 @@ if($smooth_notify) {
 }
 if($post_notify) {
     $project->TogglePostNotify();
+}
+if($p1release_notify) {
+    $project->ToggleP1QueueReleaseNotify();
 }
 if($submit_srcomments) {
     $project->SetSmoothDeadlineDays($srdays);
@@ -711,6 +715,14 @@ function sidebar_notify($project) {
         : _("Notify");
     $smoothsubmit = "<input type='submit' name='smooth_notify' id='smooth_notify' value='$smoothcaption'>";
 
+    if (!$project->IsP1QueueReleaseUserNotify()) {
+        $p1queuerelease = _("Request to be notified when this project is released from the P1 Queue, and ready for proofing.");
+        $p1queuesubmit = "<input type='submit' name='p1release_notify' id='p1release_notify' value='Notify'>";
+    } else {
+        $p1queuerelease = _("You will be notified when this project is released from the P1 Queue.");
+        $p1queuesubmit = "<input type='submit' name='p1release_notify' id='p1release_notify' value='Cancel'>";
+    }
+
         // ------------------------------------------------------------
 
     echo "
@@ -721,6 +733,8 @@ function sidebar_notify($project) {
                 <tr> <td>$postcaption</td> <td>$postsubmit </td>
                 </tr>
                 <tr> <td>$smoothintro</td> <td> $smoothsubmit</td>
+                </tr>
+                <tr> <td>$p1queuerelease</td> <td> $p1queuesubmit</td>
                 </tr>
             </table>
             </form>

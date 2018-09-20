@@ -434,6 +434,26 @@ class DpProject
         return array($subject, $msg);
     }
 
+    public function ConstructP1QueueReleaseMsg()
+    {
+        $title = $this->Title();
+        $author = $this->Author();
+        $projecturl = $this->ProjectLink('this project');
+        $projecturl = str_replace("\n", "", $projecturl);
+
+        $subject = "Released to P1 -- $title ($author)";
+        $msg = "
+            You are receiving this message because you asked to be informed when
+            $projecturl was released from the P1 Queue.
+
+            $title (by $author): $projecturl has been released from the P1 Queue
+            and is ready for proofing.
+
+            Thank you!";
+
+        return array($subject, $msg);
+    }
+
     public function SendPM($from, $to, $subject, $msg, $event) {
         $this->LogProjectEvent(PJ_EVT_MSG, "Send PM to $to on event $event from $from");
         DpContext::SendForumMessage($from, $to, $subject, $msg);
@@ -2267,13 +2287,40 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
     public function TogglePostNotify() {
         if($this->IsPublishUserNotify()) {
-            $this->ClearPublishUserNotify();
-        }
-        else {
-            $this->SetPublishUserNotify();
+            $this->ClearNotify('post');
+        } else {
+            $this->SetNotify('post', 'pm');
         }
     }
-    private function SetPublishUserNotify() {
+
+    public function ToggleSmoothNotify() {
+        if($this->IsSmoothUserNotify()) {
+            $this->ClearNotify('smooth');
+        } else {
+            $this->SetNotify('smooth', 'pm');
+        }
+    }
+
+    public function ToggleP1QueueReleaseNotify() {
+        if ($this->IsP1QueueReleaseUserNotify())
+            $this->ClearNotify('p1queue');
+        else
+            $this->SetNotify('p1queue', 'pm');
+    }
+
+	public function IsPublishUserNotify() {
+        return $this->IsNotify('post');
+    }
+
+    public function IsSmoothUserNotify() {
+        return $this->IsNotify('smooth');
+    }
+
+    public function IsP1QueueReleaseUserNotify() {
+        return $this->IsNotify('p1queue');
+    }
+
+    private function SetNotify($event, $mode) {
         global $dpdb, $User;
         $username = $User->Username();
         $projectid = $this->ProjectId();
@@ -2281,81 +2328,39 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $sql =  "REPLACE INTO notify
                  (projectid, username, event, mode)
                  VALUES
-                 (?, ?, 'post', 'pm')";
-        $args = [&$projectid, &$username];
+                 (?, ?, ?, ?)";
+        $args = [&$projectid, &$username, &$event, &$mode];
         $dpdb->SqlExecutePS($sql, $args);
     }
-    private function ClearPublishUserNotify() {
+
+    private function ClearNotify($event) {
         global $dpdb, $User;
         $username = $User->Username();
         $projectid = $this->ProjectId();
 
         $sql = "DELETE FROM notify
              WHERE projectid = ? AND username = ?
-                AND event = 'post'";
-        $args = [&$projectid, &$username];
+                AND event = ?";
+        $args = [&$projectid, &$username, &$event];
         $dpdb->SqlExecutePS($sql, $args);
     }
 
-	public function IsPublishUserNotify() {
+    public function IsNotify($event) {
 		global $User;
 		global $dpdb;
 
 		$username = $User->Username();
 		$projectid = $this->ProjectId();
 
-		return $dpdb->SqlOneValue("
-			SELECT COUNT(1) FROM notify
-             WHERE projectid = '$projectid'
-                   AND username = '$username'
-                   AND event = 'post'") > 0;
+        $sql = "SELECT COUNT(1) FROM notify
+             WHERE projectid = ?
+                   AND username = ?
+                   AND event = ?";
+
+        $args = [&$projectid, &$username, &$event];
+        return $dpdb->SqlOneValuePS($sql, $args) > 0;
 	}
 
-    public function ToggleSmoothNotify() {
-        if($this->IsSmoothUserNotify()) {
-            $this->ClearSmoothUserNotify();
-        }
-        else {
-            $this->SetSmoothUserNotify();
-        }
-    }
-    private function SetSmoothUserNotify() {
-        global $dpdb, $User;
-        $username = $User->Username();
-        $projectid = $this->ProjectId();
-
-        $sql =  "REPLACE INTO notify
-                 (projectid, username, event, mode)
-                 VALUES
-                 (?, ?, 'smooth', 'pm')";
-        $args = [&$projectid, &$username];
-        $dpdb->SqlExecutePS($sql, $args);
-    }
-    private function ClearSmoothUserNotify() {
-        global $dpdb, $User;
-        $username = $User->Username();
-        $projectid = $this->ProjectId();
-
-        $sql = "DELETE FROM notify
-             WHERE projectid = ? AND username = ?
-                AND event = 'smooth'";
-        $args = [&$projectid, &$username];
-        $dpdb->SqlExecutePS($sql, $args);
-    }
-
-    public function IsSmoothUserNotify() {
-        global $User;
-        global $dpdb;
-
-        $username = $User->Username();
-        $projectid = $this->ProjectId();
-
-        return $dpdb->SqlOneValue("
-			SELECT COUNT(1) FROM notify
-             WHERE projectid = '$projectid'
-                   AND username = '$username'
-                   AND event = 'smooth'") > 0;
-    }
 
     public function UserCheckedOutPageCount() {
         global $User;
@@ -2629,6 +2634,12 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->SendPM($pm, $pm, $subject, $email, $event);
         if (!empty($pp) && $pp != $pm)
             $this->SendPM($pm, $pp, $subject, $email, $event);
+    }
+
+    public function P1QueueReleaseNotify()
+    {
+        list($subject, $email) = $this->ConstructP1QueueReleaseMsg();
+        $this->Notify('p1queue', $this->PM(), $subject, $email);
     }
 
     public function LogPhaseTransition($fromphase, $tophase) {
@@ -3725,6 +3736,8 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                 AND hold_code = '$holdcode'");
         $this->LogProjectEvent(PJ_EVT_RELEASE, "release $holdcode Hold");
         $this->MaybeAdvanceRound();
+        if ($phase == "P1" && $holdcode == "queue")
+            $this->P1QueueReleaseNotify();
     }
 
     private function SetQueueHold($phase, $note = "") {
@@ -3793,6 +3806,8 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->LogProjectEvent(PJ_EVT_RELEASE,
                 "release {$hold->hold_code} Hold");
         $this->MaybeAdvanceRound();
+        if ($hold->phase == "P1" && $hold->hold_code == "queue")
+            $this->P1QueueReleaseNotify();
     }
 
     public function ExtraFilePaths() {
