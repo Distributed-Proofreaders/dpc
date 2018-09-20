@@ -1808,7 +1808,7 @@ class TextAnalysis {
                 continue;
             }
             if (inNoWrap)
-                this.balance(l, true)
+                this.oneUnit(l, true);
             else
                 if (accumulated == "")
                     accumulated = l;
@@ -1827,6 +1827,7 @@ class TextAnalysis {
      */
     oneUnit(str, inNoWrap)
     {
+        //console.log("oneUnit: " + inNoWrap + ", " + str);
         this.footnoteReferences(str, inNoWrap);
         this.balance(str, inNoWrap);
         this.squareTags(str, inNoWrap);
