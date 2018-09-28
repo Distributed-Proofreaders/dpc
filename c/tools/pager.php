@@ -72,7 +72,7 @@ function EchoHtmlHead($title = "DP Canada Template") {
     <html>
     <head>
 	<meta charset='utf-8'>
-	<link rel='shortcut icon' href='http://www.pgdpcanada.net/c/favicon.ico'>
+	<link rel='shortcut icon' href='/c/favicon.ico'>
 	<script type='text/javascript' src='/c/js/dp.js'></script>
 	<title>$title</title>
 	<link type='text/css' rel='Stylesheet' href='/c/css/dp.css'>

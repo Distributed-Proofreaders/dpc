@@ -8,19 +8,20 @@
 $code_version = "0.9.2.1";
 $reldate = "24-Jul-2015";
 
-define("DPC_PATH", "/home/pgdpcanada/public_html/");
-define("DPC_URL", "https://www.pgdpcanada.net");
+define("DPC_PATH", $_SERVER['DOCUMENT_ROOT'] . '/');
+define("DPC_URL", "https://" . $_SERVER['SERVER_NAME']);
 define("TEMP_DIR", DPC_PATH . "d/temp");
 define("TEMP_URL", DPC_URL . "/d/temp");
 
+define("IS_SANDBOX", strpos(DPC_URL, "sandbox") !== false);
+
 $site_url = DPC_URL;
-$logo_url = DPC_URL . "c/graphics/dpclogo.png";
 $ajax_url = "/c/wc.php";
 
 $code_url = '/c';
 $stats_url = '/c/stats';
 $pm_url   = $code_url . "/tools/project_manager";
-$wc_url   = DPC_URL . "/c/wc";
+$wc_url   = "/c/wc";
 
 $code_path = $code_dir = DPC_PATH . 'c/';
 $proof_dir = $code_dir . "tools/proofers/";
@@ -34,12 +35,11 @@ $css_url = $code_url . "/css";
 $projects_dir = DPC_PATH . 'projects';
 $projects_url = '/projects';
 
-// /home/pgdpcanada/public_html/archive
 $projects_archive_dir = DPC_PATH . 'archive';
-$projects_archive_url = $site_url . '/archive';
+$projects_archive_url = '/archive';
 
 $dyn_dir = DPC_PATH . 'd';
-$dyn_url = DPC_URL . '/d';
+$dyn_url = '/d';
 
 //$dynstats_dir = "$dyn_dir/stats";
 //$dynstats_url = "$dyn_url/stats";
@@ -62,13 +62,23 @@ $wiki_url = '/wiki/index.php';
 //$wikihiero_dir = DPC_PATH . 'wikihiero';
 //$wikihiero_url = DPC_URL . '/wikihiero';
 
-$site_name = "Distributed Proofreaders of Canada";
-$site_abbreviation = "DPC";
+if (IS_SANDBOX) {
+    $site_name = "Distributed Proofreaders of Canada — SANDBOX";
+    $site_abbreviation = "DPCSANDBOX";
+} else {
+    $site_name = "Distributed Proofreaders of Canada";
+    $site_abbreviation = "DPC";
+}
 
 // for phpbb3 to use
-$phpbb_root_path = '/home/pgdpcanada/public_html/forumdpc/';
-$phpbb_database_name = "newDPCForum";
-$forumdb        = "newDPCForum";
+$phpbb_root_path = DPC_PATH . 'forumdpc/';
+if (IS_SANDBOX) {
+    $phpbb_database_name = "sandbox_pgdpcanada";
+    $forumdb        = "sandbox_pgdpcanada";
+} else {
+    $phpbb_database_name = "newDPCForum";
+    $forumdb        = "newDPCForum";
+}
 $forumpfx       = "new_";
 $forum_users_table = "new_users";
 
@@ -111,11 +121,6 @@ $beginners_proofing_forum_url     = "$forums_url/viewforum.php?f=$beginners_proo
 $teams_forum_url                  = "$forums_url/viewforum.php?f=$teams_forum_idx";
 
 
-$uploads_dir = '/home/dpscans';
-$uploads_host = 'pgdpcanada.net';
-$uploads_account = 'dpscans';
-$uploads_password = '2C4ever';
-
 // -----------------------------------------------------------------------------
 
 $hunspell_path = '/usr/bin/aspell';
@@ -126,14 +131,19 @@ $system_locales_dir = '/usr/share/locale';
 
 // -----------------------------------------------------------------------------
 
-$no_reply_email_addr = 'no-reply@pgdpcanada.net';
-$general_help_email_addr = 'dphelp@pgdpcanada.net';
+if (IS_SANDBOX)
+    define("EMAIL_HOST", "sandbox.pgdpcanada.net");
+else
+    define("EMAIL_HOST", "pgdpcanada.net");
+
+$no_reply_email_addr = "no-reply@" . EMAIL_HOST;
+$general_help_email_addr = "dphelp@" . EMAIL_HOST;
 $site_manager_email_addr = $general_help_email_addr;
 $auto_email_addr = $general_help_email_addr;
-$db_requests_email_addr = 'db-requests@pgdpcanada.net';
-$promotion_requests_email_addr = 'dp-promote@pgdpcanada.net';
-$ppv_reporting_email_addr = 'ppv-reports@pgdpcanada.net';
-$image_sources_manager_addr = 'ism@pgdpcanada.net';
+$db_requests_email_addr = "db-requests@" . EMAIL_HOST;
+$promotion_requests_email_addr = "dp-promote@" . EMAIL_HOST;
+$ppv_reporting_email_addr = "ppv-reports@" . EMAIL_HOST;
+$image_sources_manager_addr = "ism@" . EMAIL_HOST;
 
 // -----------------------------------------------------------------------------
 

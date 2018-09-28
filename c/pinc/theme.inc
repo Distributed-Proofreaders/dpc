@@ -173,11 +173,69 @@ echo "
 <body $onload>\n";
 }
 
+$watermark = <<<EOD
+<style type="text/css">
+#watermark {
+    color: #d0d0d0;
+    font-size: 300pt;
+    -webkit-transform: rotate(-45deg);
+    -moz-transform: rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+    position: absolute;
+    left: 100px;
+    top: 400px;
+    opacity: 0.5;
+    z-index: 1;
+    pointer-events: none;
+}
+</style>
+<div id="watermark">
+SANDBOX
+</div>
+EOD;
+
+$liveDB = <<<EOD
+<style type="text/css">
+#livedb {
+    color: green;
+    font-size: 300pt;
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+    position: absolute;
+    left: 100px;
+    top: 400px;
+    opacity: 0.1;
+    z-index: 1;
+    pointer-events: none;
+}
+</style>
+<div id="livedb">
+LIVE DB
+</div>
+EOD;
+
+function isSandboxDatabase() {
+    global $db_name;
+    return strpos($db_name, "sandbox") !== false;
+}
+
 function html_logobar() {
     global $Context;
     global $code_url;
     global $User;
     global $completed_books_offset;
+
+    if (IS_SANDBOX) {
+        global $watermark;
+        echo $watermark;
+        if (isSandboxDatabase() === false) {
+            global $liveDB;
+            echo $liveDB;
+        }
+    }
 
     $numproj = $Context->PostedCount();
 
@@ -641,8 +699,10 @@ function html_footer() {
 
     $strtime = timer_string();
 
-    echo "<div id='divfooter' class='w100 em80 center white noserif redback'>"
-        . _("Copyright Distributed Proofreaders Canada")
+    echo "<div id='divfooter' class='w100 em80 center white noserif redback'>";
+    if (IS_SANDBOX)
+        echo "SANDBOX SERVER — NOT LIVE — CHANGES WILL BE LOST — ";
+    echo  _("Copyright Distributed Proofreaders Canada")
         . _(" (Page Build Time: {$strtime} ")
         . _(" Version $code_version)")
         . "</div> <!-- divfooter -->\n";
