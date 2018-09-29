@@ -352,9 +352,12 @@ class DpProject
             FROM notify
             WHERE projectid=? AND event=?
         ";
+        $sentTo = array();
         foreach ($dpdb->SqlValuesPS($sql, [&$projectid, &$event]) as $to) {
             $this->SendPM($from, $to, $subject, $email, $event);
+            $sentTo[] = $to;
         }
+        return $sentTo;
     }
 
     public function ConstructSmoothMsg()
@@ -444,10 +447,9 @@ class DpProject
         $subject = "Released to P1 -- $title ($author)";
         $msg = "
             You are receiving this message because you asked to be informed when
-            $projecturl was released from the P1 Queue.
+            $projecturl was released from the P1 Queue, or you are the PM.
 
-            $title (by $author): $projecturl has been released from the P1 Queue
-            and is ready for proofing.
+            $title (by $author): $projecturl has been released from the P1 Queue and is ready for proofing.
 
             Thank you!";
 
@@ -660,21 +662,7 @@ class DpProject
 //        }
         $this->UnzipSmoothZipFile();
     }
-    /*
-    function UnzipSmoothZipFile($projectid) {
-        $dest = SmoothDirectoryPath($projectid);
-        if(file_exists($dest)) {
-            return;
-        }
-        mkdir($dest);
-        chmod($dest, 0777);
-        $zip = new ZipArchive();
-        $zip->open(SmoothZipFilePath($projectid));
-        $zip->extractTo($dest);
 
-        fix_smooth_paths($dest);
-    }
-    */
     private function UnzipSmoothZipFile() {
         if(! file_exists($this->SmoothZipFilePath())) {
             die("Cannot unzip {$this->SmoothZipFilePath()}");
@@ -996,25 +984,6 @@ class DpProject
 		return $_names;
 	}
 
-    /*
-    public function LastPageVersions() {
-        global $dpdb;
-        static $_rows;
-        if(! isset($_rows)) {
-            $projectid = $this->ProjectId();
-            $_rows = $dpdb->SqlRows("
-                SELECT pv.pagename, pv.version, pp.imagefile
-                FROM page_last_versions pv
-                JOIN pages pp
-                ON pv.projectid = pp.projectid
-                    AND pv.pagename = pp.pagename
-                WHERE pv.projectid = '$projectid'
-                ORDER BY pv.pagename");
-        }
-        return $_rows;
-    }
-    */
-
     public function ImageFileForPageName($pagename) {
         return $this->_page_byte_offset_array[$pagename]["imagefile"];
     }
@@ -1092,42 +1061,6 @@ class DpProject
 		$to_path   = PageVersionPath($projectid, $pagename, $version + 1);
 		return copy($from_path, $to_path);
 	}
-
-	// clone the last page_versions (e.g. for a new Round)
-
-	/*
-	public function AddPageVersionRows($phase, $task, $state) {
-		global $dpdb;
-		$projectid = $this->ProjectId();
-		$sql = "INSERT INTO page_versions
-					(projectid, pagename, version, phase, task, username, state, version_time, crc32, textlen)
-				SELECT plv.projectid, plv.pagename, plv.version+1, ?, ?, '(auto)', ?, UNIX_TIMESTAMP(), crc32, textlen
-				FROM page_last_versions plv
-				WHERE plv.projectid = ?";
-
-		$args = array(&$phase, &$task, &$state, &$projectid);
-		return $dpdb->SqlExecutePS($sql, $args);
-	}
-	*/
-
-	/*
-	public function CloneLastVersionText($pagename) {
-		$projectid = $this->ProjectId();
-		$lastversion = $this->LastPageVersion($pagename);
-		$path = PageVersionPath($projectid, $pagename, $lastversion);
-		if(is_file($path)) {
-			return 0;
-		}
-		$penultimate_path = PageVersionPath($projectid, $pagename, $lastversion-1);
-		assert(is_file($penultimate_path));
-		$text = file_get_contents($penultimate_path);
-		$text = norm($text);
-		$crc32 = crc32($text);
-		$this->SetVersionCRC($pagename, $lastversion, $crc32);
-		assert( copy($penultimate_path, $path));
-		return $crc32;
-	}
-	*/
 
     public function History() {
         global $dpdb;
@@ -2607,10 +2540,10 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $this->SetPhaseDate();
         $this->MoveTopicToPhase($newphase);
 
-        # If this is a transition to posted, send notifications
+        // If this is a transition to posted, send notifications
         if ($phase != 'POSTED' && $newphase == 'POSTED')
             $this->PostedNotify();
-        # If this is a transition to PP, send notification to PM/PP
+        // If this is a transition to PP, send notification to PM/PP
         if ($phase != 'PP' && $newphase == 'PP')
             $this->PPNotify();
     }
@@ -2631,6 +2564,8 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $pp = $this->PPer();
         $event = "Transition to PP";
 
+        // Always send to the PM, and also send to the PP if they exist
+        // and differ from the PM
         $this->SendPM($pm, $pm, $subject, $email, $event);
         if (!empty($pp) && $pp != $pm)
             $this->SendPM($pm, $pp, $subject, $email, $event);
@@ -2639,7 +2574,14 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     public function P1QueueReleaseNotify()
     {
         list($subject, $email) = $this->ConstructP1QueueReleaseMsg();
-        $this->Notify('p1queue', $this->PM(), $subject, $email);
+        $event = 'p1queue';
+        $pm = $this->PM();
+        $sentTo = $this->Notify($event, $pm, $subject, $email);
+
+        // Send PM to the PM always, unconditionally (well, unless for
+        // some strange reason they registered!)
+        if (!in_array($pm, $sentTo))
+            $this->SendPM($pm, $pm, $subject, $email, $event);
     }
 
     public function LogPhaseTransition($fromphase, $tophase) {
@@ -2983,15 +2925,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             ON ph.hold_code = h.hold_code
             WHERE ph.projectid = '$projectid'
             ORDER BY set_time");
-    }
-
-    public function Holds() {
-        $rows = $this->HoldRows();
-        $aret = [];
-        foreach($rows as $row) {
-            $aret[] = new DpHold($row);
-        }
-        return $aret;
     }
 
     public function IsInRounds() {
@@ -3936,68 +3869,6 @@ class DpEvent
         return "$this->_event_time  $this->_event_type  $this->_username  {$this->Note()}";
     }
 
-}
-
-class DpHold
-{
-    private $_hold_code;
-    private $_set_by;
-    private $_set_time;
-    private $_hold_description;
-    private $_phase;
-    private $_note;
-
-    public function __construct($ary) {
-        global $dpdb;
-        if(isset($ary["holdid"])) {
-            $holdid = $ary["holdid"];
-            $ary = $dpdb->SqlOneRow("
-                SELECT  ph.hold_code,
-                        ph.set_time,
-                        ph.set_by,
-                        ph.phase,
-                        ph.note,
-                        ht.description hold_description
-                FROM project_holds ph
-                JOIN hold_types ht ON ph.hold_code = ht.hold_code
-                WHERE ph.id = $holdid");
-        }
-        $this->_hold_code = $ary['hold_code'];
-        $this->_set_by = $ary['set_by'];
-        $this->_set_time = $ary['set_time'];
-        $this->_hold_description = $ary['hold_description'];
-        $this->_phase = $ary['phase'];
-        $this->_note = $ary['note'];
-    }
-
-    public function Note() {
-        return $this->_note;
-    }
-
-    public function HoldCode() {
-        return $this->_hold_code;
-    }
-    public function SetBy() {
-        return $this->_set_by;
-    }
-    public function SetTime() {
-        return $this->_set_time;
-    }
-    public function HoldDescription() {
-        return $this->_hold_description;
-    }
-    public function Phase() {
-        return $this->_phase;
-    }
-
-    public function ToString() {
-        return "$this->_hold_code $this->_set_by $this->_set_time $this->_phase $this->_hold_description"
-            . "br />" . $this->_note;
-    }
-
-	public function Test() {
-
-	}
 }
 
 // vim: sw=4 ts=4 expandtab

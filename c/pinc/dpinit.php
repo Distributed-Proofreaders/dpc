@@ -54,7 +54,7 @@ $basic_header = "
 <html lang='en'>
 <head>
 <meta charset='utf-8'>
-<link rel='shortcut icon' href='http://www.pgdpcanada.net/c/favicon.ico'>
+<link rel='shortcut icon' href='/c/favicon.ico'>
 <title>DPC: Welcome</title>
 <link rel='Stylesheet' href='/c/css/dp.css'>
 <script type='text/javascript' src='/c/js/dp.js'></script>
