@@ -73,11 +73,11 @@ if (IS_SANDBOX) {
 // for phpbb3 to use
 $phpbb_root_path = DPC_PATH . 'forumdpc/';
 if (IS_SANDBOX) {
-    $phpbb_database_name = "sandbox_pgdpcanada";
-    $forumdb        = "sandbox_pgdpcanada";
+    $phpbb_database_name = "sandbox_DPCanada";
+    $forumdb        = "sandbox_DPCForum";
 } else {
-    $phpbb_database_name = "newDPCForum";
-    $forumdb        = "newDPCForum";
+    $phpbb_database_name = "newDPCForum"; //Reference allowed - part of IS_SANDBOX else
+    $forumdb        = "newDPCForum"; //Reference allowed - part of IS_SANDBOX else
 }
 $forumpfx       = "new_";
 $forum_users_table = "new_users";
