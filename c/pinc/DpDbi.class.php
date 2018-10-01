@@ -144,7 +144,9 @@ class DpDb
         }
         $stmt = $this->_mysqli->prepare($sql);
         if(! $stmt) {
-            dump($sql); dump($args); dump("prepare failed.");
+            dump("Prepare failed: (" . $this->_mysqli->errno . ") " .
+                $this->_mysqli->error);
+            dump($sql); dump($args);
             assert(false);
 //	        die();
 	        return null;
