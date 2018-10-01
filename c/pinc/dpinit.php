@@ -27,13 +27,6 @@ include_once($relPath . 'gettext_setup.inc');
 include_once($relPath . 'site_news.inc');
 include_once($relPath . 'RoundsInfo.php');
 
-//require_once $relPath . "udb_user.php";
-
-global $db_server, $db_user, $db_password, $db_name;
-
-mysqli_connect($db_server, $db_user, $db_password, $db_name);
-//mysqli_select_db($db_name);
-
 $submit_login = IsArg("submit_login");
 $u = Arg('userNM');
 $p = Arg('userPW');
