@@ -1,5 +1,5 @@
 /*
-    version 0.170
+    version 0.171
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1710,8 +1710,8 @@ class TextAnalysis {
                 if (blocks.indexOf("*") != -1)
                     lines[i] = this.err(l, "/* (no-wrap) may not be nested");
                 blocks.push("*");
-                if (last != "")
-                    lines[i] = this.err(l, "/* (no-wrap) must be preceeded by a blank line or start of page");
+                if (last != "" && last != "/#")
+                    lines[i] = this.err(l, "/* (no-wrap) must be preceeded by a blank line, start of page, or start of block-quote");
             } else if (l == "/#") {
                 if (blocks.indexOf("*") != -1)
                     lines[i] = this.err(l, "/# (block quote) inside a /* (no-wrap)");
@@ -1721,8 +1721,8 @@ class TextAnalysis {
             } else if (l == "*/") {
                 if (blocks.pop() != "*")
                     lines[i] = this.err(l, "*/ (end no-wrap) never opened");
-                if (next != "")
-                    lines[i] = this.err(l, "*/ (end no-wrap) must be followed by a blank line or end of page");
+                if (next != "" && next != "#/")
+                    lines[i] = this.err(l, "*/ (end no-wrap) must be followed by a blank line, end of page, or end of block-quote");
             } else if (l == '#/') {
                 if (blocks.pop() != "#")
                     lines[i] = this.err(l, "#/ (end block quote) never opened");
@@ -1946,7 +1946,7 @@ class TextAnalysis {
                     continue;
                 }
                 var startTag = fonts.pop();
-                if (startTag != token)
+                if (startTag != token && !startTag.startsWith("span class='errline'"))
                     this.err(line, "End tag &lt;/" + token + "> does not match open tag &lt;" + startTag + ">");
             } else {
                 if (token == "tb") {
