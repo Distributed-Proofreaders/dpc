@@ -324,9 +324,9 @@ function forum_user_id_for_username($username) {
     global $dpdb;
 	$username = lower($username);
 	$bb_users_table = build_forum_users_table();
-    return $dpdb->SqlOneValue("
+    return $dpdb->SqlOneValuePS("
             SELECT user_id FROM $bb_users_table
-            WHERE username_clean = '$username'");
+            WHERE username_clean = ?", [&$username]);
 }
 
 
@@ -345,9 +345,9 @@ class DpForumUser
 	    $username = lower($username);
 	    $bb_users_table = build_forum_users_table();
 
-        $this->_row = $dpdb->SqlOneRow(
+        $this->_row = $dpdb->SqlOneRowPS(
             "SELECT * FROM $bb_users_table
-             WHERE username_clean = '$username'");
+             WHERE username_clean = ?", [&$username]);
     }
 
     public function AvatarFile() {

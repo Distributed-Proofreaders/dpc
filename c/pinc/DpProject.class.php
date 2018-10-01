@@ -2388,18 +2388,20 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 			ON pv.projectid = ppv.projectid
 			   AND pv.pagename = ppv.pagename
                AND ppv.version = pv.version - 1
-		WHERE p.projectid = '{$this->ProjectId()}'
+		WHERE p.projectid = ?
 			AND pv.state = 'A'
 		   	AND
 		   	(
-		   	    IFNULL(ppv.username, '') != '$username'
+		   	    IFNULL(ppv.username, '') != ?
 		   	    || p.phase = 'F1'       -- allow sequential users P3 -> F1
             )
 		ORDER BY pv.pagename
 		LIMIT 1
 		";
 
-        $pagename = $dpdb->SqlOneValue($sql);
+        $id = $this->ProjectId();
+        $args = [ &$id, &$username ];
+        $pagename = $dpdb->SqlOneValuePS($sql, $args);
 
         return (empty($pagename))
             ? null
@@ -2942,12 +2944,14 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     public function UserPhaseHoldId($phase) {
         global $User, $dpdb;
         $username = $User->Username();
-        return $dpdb->SqlOneValue("
+        $id = $this->ProjectId();
+        $args = [&$id, &$username, &$phase];
+        return $dpdb->SqlOneValuePS("
             SELECT id FROM project_holds
-            WHERE projectid = '{$this->ProjectId()}'
+            WHERE projectid = ?
                 AND hold_code = 'user'
-                AND set_by = '$username'
-                AND phase = '$phase'");
+                AND set_by = ?
+                AND phase = ?", $args);
     }
 
 	public function IsQCHold() {
@@ -3003,11 +3007,12 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
         $sql = "
             SELECT COUNT(1) FROM project_holds
-            WHERE projectid = '$projectid'
-                AND phase = '$phase'
+            WHERE projectid = ?
+                AND phase = ?
                 AND hold_code = 'user'
-                AND set_by = '$username'";
-        $x = $dpdb->SqlOneValue($sql) > 0;
+                AND set_by = ?";
+        $args = [&$projectid, &$phase, &$username];
+        $x = $dpdb->SqlOneValuePS($sql, $args) > 0;
         return $x;
     }
     public function SetUserHold($phase, $note = "") {

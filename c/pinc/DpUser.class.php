@@ -503,44 +503,6 @@ class DpUser
         return $this->IsSiteManager();
     }
 
-/*
-    private function IsPostedNotice($projectid) {
-        global $dpdb;
-        $username = $this->Username();
-        return $dpdb->SqlExists("
-            SELECT 1 FROM user_posted_notices
-            WHERE username = '$username'
-                AND projectid = '$projectid'");
-    }
-
-    private function SetPostedNotice($projectid) {
-        global $dpdb;
-        if($this->IsPostedNotice($projectid)) {
-            $dpdb->SqlExecute("
-                INSERT INTO user_posted_notices
-                VALUES ('{$this->Username()}', $projectid)");
-        }
-    }
-
-    private function ClearPostedNotice($projectid) {
-        global $dpdb;
-        $username = $this->Username();
-        $dpdb->SqlExecute("
-            DELETE FROM user_posted_notices
-            WHERE username = '$username'
-                AND projectid = '$projectid'");
-    }
-
-    public function TogglePostedNotice($projectid) {
-        if($this->IsPostedNotice($projectid)) {
-            $this->ClearPostedNotice($projectid);
-        }
-        else {
-            $this->SetPostedNotice($projectid);
-        }
-    }
-*/
-
     public function SetCreditName($credit_name) {
         global $dpdb;
         $username = $this->Username();
@@ -905,22 +867,24 @@ function LogRoleGrant($username, $role) {
     global $User;
     global $dpdb;
     $actor = $User->Username();
-    $dpdb->SqlExecute("
+    $args = [ &$username, &$actor, &$role ];
+    $dpdb->SqlExecutePS("
         INSERT INTO access_log
             (timestamp, subject_username, modifier_username, action, activity)
         VALUES
-            (UNIX_TIMESTAMP(), '$username', '$actor', 'grant', '$role')");
+            (UNIX_TIMESTAMP(), ?, ?, 'grant', ?)", $args);
 }
 
 function LogRoleRevoke($username, $role) {
     global $User;
     global $dpdb;
     $actor = $User->Username();
+    $args = [ &$username, &$actor, &$role ];
     $dpdb->SqlExecute("
         INSERT INTO access_log
             (timestamp, subject_username, modifier_username, action, activity)
         VALUES
-            (UNIX_TIMESTAMP(), '$username', '$actor', 'revoke', '$role')");
+            (UNIX_TIMESTAMP(), ?, ?, 'revoke', ?)", $args);
 }
 
 // vim: sw=4 ts=4 expandtab

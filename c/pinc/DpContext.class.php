@@ -358,16 +358,16 @@ class DpContext {
 			return false;
 		}
 
-		return $dpdb->SqlOneValue( "
+		return $dpdb->SqlOneValuePS( "
             SELECT COUNT(1) FROM users
-            WHERE username = '$username'") > 0;
+            WHERE username = ?", [&$username]) > 0;
 	}
 
     public static function IsProjectId($projectid) {
         global $dpdb;
-        return $dpdb->SqlOneValue( "
+        return $dpdb->SqlOneValuePS( "
             SELECT COUNT(1) FROM projects
-            WHERE projectid = '$projectid'") > 0;
+            WHERE projectid = ?", [&$projectid]) > 0;
     }
 
     public function CreateUser( $username, $language ) {
@@ -405,9 +405,9 @@ class DpContext {
 			return false;
 		}
 
-		return $dpdb->SqlOneValue("
+		return $dpdb->SqlOneValuePS("
             SELECT COUNT(1) FROM teams
-            WHERE teamname = '$teamname'") > 0;
+            WHERE teamname = ?", [&$teamname]) > 0;
 	}
 
 	public function CreateTeam($teamname, $description) {
