@@ -163,7 +163,7 @@ addEvent(document, 'click', pgclick);
 
 <!--      begin page --------------->
 <form name='frmpager' id='frmpager' method='POST'>
-<input type='hidden' name='imageurl' id='imageurl' value='http://www.pgdpcanada.net/c/imgsrv.php'>
+<input type='hidden' name='imageurl' id='imageurl' value='/c/imgsrv.php'>
 <input type='hidden' name='projectid' id='projectid' value='$projectid'>'
 
 <select id='selpage' name='selpage' size='$npages'>
