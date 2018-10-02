@@ -29,12 +29,12 @@ if(count($pcheckout) > 0) {
 
 $username = $User->Username();
 
-$row = $dpdb->SqlOneRow("
+$row = $dpdb->SqlOneRowPS("
     SELECT  SUM(CASE WHEN LENGTH(postproofer) > 0 THEN 1 ELSE 0 END) navailable,
-            SUM(CASE WHEN postproofer = '$username' THEN 1 ELSE 0 END) nmine,
+            SUM(CASE WHEN postproofer = ? THEN 1 ELSE 0 END) nmine,
             COUNT(1) total
     FROM projects
-    WHERE phase = 'PP'");
+    WHERE phase = 'PP'", [&$username]);
 
 $navailable     = $row["navailable"];
 $nmine          = $row["nmine"];
@@ -107,7 +107,7 @@ function echo_available_projects() {
 
 //    timer_milestone("start echo available projects");
     $username = $User->Username();
-    $rows = $dpdb->SqlRows("
+    $rows = $dpdb->SqlRowsPS("
         SELECT
             projectid,
             nameofwork,
@@ -122,7 +122,7 @@ function echo_available_projects() {
             n_pages,
             username AS pm,
             LOWER(username) AS pmsort,
-            CASE WHEN username = '$username' THEN 0 ELSE 1 END AS mine,
+            CASE WHEN username = ? THEN 0 ELSE 1 END AS mine,
             DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(phase_change_date)) AS days_avail,
             project_type
         FROM projects p
@@ -130,7 +130,7 @@ function echo_available_projects() {
         LEFT JOIN languages l2 ON p.seclanguage = l2.code
         WHERE phase = 'PP'
             AND IFNULL(postproofer, '') = ''
-        ORDER BY mine, days_avail");
+        ORDER BY mine, days_avail", [&$username]);
 
 //    timer_milestone("after query");
 

@@ -88,18 +88,18 @@ $sql = "
     ON p.projectid = myph.projectid
         AND p.phase = myph.phase
         AND myph.hold_code = 'user'
-        AND myph.set_by = '$username'
+        AND myph.set_by = ?
 	LEFT JOIN page_versions AS pv
 	ON p.projectid = pv.projectid
             AND pv.state = 'C'
-    WHERE p.username = '$username'
+    WHERE p.username = ?
     " . ($is_all ? "" : "
         AND p.phase IN ('PREP', 'P1', 'P2', 'P3', 'F1', 'F2')") ."
     GROUP BY p.projectid
     ORDER BY phases.sequence, active_hold_count";
 
 echo(html_comment($sql));
-$rows = $dpdb->SqlRows($sql);
+$rows = $dpdb->SqlRowsPS($sql, [&$username, &$username]);
 $numrows = count($rows);
 $qual = $is_all ? " (All)" : " (Active)";
 

@@ -71,36 +71,6 @@ else {
 $no_stats = 1;
 theme( _("My Projects"), 'header');
 
-/*
-$smoothies = $dpdb->SqlRows("
-    SELECT
-        sr.username,
-        sr.projectid,
-        p.phase,
-        p.nameofwork,
-        p.authorsname,
-        p.username,
-        p.postproofer,
-        p.smoothread_deadline,
-        p.n_pages
-    FROM
-        smoothread sr
-        LEFT JOIN projects p
-            ON sr.projectid = p.projectid
-    WHERE phase IN ('PREP', 'P1', 'P2', 'P3', 'F1', 'F2', PP')
-        AND p.smoothread_deadline > UNIX_TIMESTAMP()
-        AND username = '$username'");
-
-if(count($smoothies) > 0) {
-    $tblsmooth = new DpTable("tblsmooth", "dptable", "Projects you volunteered to Smooth Read");
-    $tblsmooth->AddColumn("<Title", "nameofwork");
-    $tblsmooth->AddColumn("<Author", "authorsname");
-    $tblsmooth->AddColumn("^<PM", "username");
-    $tblsmooth->AddColumn("^<PPer", "postproofer");
-    $tblsmooth->SetRows($smoothies);
-}
-*/
-
 
 if ( $username == $User->Username() ) {
     $heading_proof = _("My Projects");
@@ -182,13 +152,12 @@ function open_page_counts($username) {
             FROM  page_last_versions pv
             JOIN  projects p
             ON pv.projectid = p.projectid
-            WHERE pv.username = '$username'
+            WHERE pv.username = ?
                 AND pv.state = 'O'
             GROUP BY pv.projectid
             ORDER BY pv.phase, p.nameofwork";
 
-
-    $rows = $dpdb->SqlRows($sql);
+    $rows = $dpdb->SqlRowsPS($sql, [&$username]);
 
 	return $rows;
 }
@@ -263,7 +232,7 @@ function echo_open_proofing_projects($username, $heading) {
 function echo_my_pp_projects($username) {
     global $dpdb;
 
-    $rows = $dpdb->SqlRows("
+    $rows = $dpdb->SqlRowsPS("
         SELECT
             projectid,
             nameofwork,
@@ -282,8 +251,8 @@ function echo_my_pp_projects($username) {
         LEFT JOIN languages l1 ON p.language = l1.code
         LEFT JOIN languages l2 ON p.seclanguage = l2.code
         WHERE phase = 'PP'
-            AND postproofer = '$username'
-        ORDER BY days_avail");
+            AND postproofer = ?
+        ORDER BY days_avail", [&$username]);
 
     if(count($rows) == 0) {
         return;
@@ -375,4 +344,4 @@ function eupload($projectid) {
     return "<input type='submit' name='upload[$projectid]' 
         style='background-color: $color;' value='$caption'>\n";
 }
-
+// vim: sw=4 ts=4 expandtab

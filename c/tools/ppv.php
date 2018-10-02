@@ -93,10 +93,10 @@ $ncomplete =  $dpdb->SqlOneValue("
     SELECT COUNT(1) FROM projects
     WHERE phase = 'PPV'
         AND postednum != ''");
-$nmine =  $dpdb->SqlOneValue("
+$nmine =  $dpdb->SqlOneValuePS("
     SELECT COUNT(1) FROM projects
     WHERE phase = 'PPV'
-        AND ppverifier = '$username'");
+        AND ppverifier = ?", [&$username]);
 
 $ntotal = $navailable + $ncheckedout + $ncomplete;
 
@@ -238,34 +238,6 @@ function echo_checked_out_projects() {
     $tbl->EchoTable();
 }
 
-/*
-function my_PPV_project_rows() {
-    static $_rows;
-    global $User, $dpdb;
-    $username = $User->Username();
-
-    if(! $_rows) {
-        $_rows = $dpdb->SqlRows("
-            SELECT
-                projectid,
-                nameofwork,
-                authorsname,
-                language,
-                genre,
-                n_pages,
-                username AS pm,
-                postproofer,
-                ppverifier,
-                DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(phase_change_date)) AS days_avail
-            FROM projects
-            WHERE phase = 'PPV'
-                AND ppverifier = '$username'
-            ORDER BY days_avail");
-    }
-    return $_rows;
-}
-*/
-
 function elangname($langname, $row) {
 	return $langname
 	       . ($row['seclangname'] == "" ? "" : "/" . $row['seclangname']);
@@ -276,7 +248,7 @@ function echo_my_projects() {
 
     $username = $User->Username();
     $dpdb->SetEcho();
-    $rows = $dpdb->SqlRows("
+    $rows = $dpdb->SqlRowsPS("
         SELECT
             projectid,
             nameofwork,
@@ -297,8 +269,8 @@ function echo_my_projects() {
         LEFT JOIN languages l1 ON p.language = l1.code
         LEFT JOIN languages l2 ON p.seclanguage = l2.code
         WHERE phase = 'PPV'
-            AND ppverifier = '$username'
-        ORDER BY days_avail");
+            AND ppverifier = ?
+        ORDER BY days_avail", [&$username]);
 
 
     $tbl = new DpTable();
