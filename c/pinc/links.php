@@ -202,19 +202,6 @@ function url_for_error_page($msg) {
             . "?error_message=" . urlencode($msg);
 }
 
-/*
-// -- differ
-
-function url_for_differ($projectid) {
-    global $proof_url;
-    return $proof_url . "differ.php?projectid={$projectid}";
-}
-
-function link_to_differ($projectid, $prompt) {
-    return link_to_url(url_for_differ($projectid), $prompt);
-}
-*/
-
 // -- diffs
 
 function url_for_my_diffs($roundid = "P1") {
@@ -239,7 +226,6 @@ function link_to_edit_project($projectid, $prompt, $newtab = false) {
 }
 
 // -- round page
-
 
 function link_to_round($roundid, $prompt = "") {
     if($prompt == "")
@@ -395,27 +381,6 @@ function url_for_view_text($projectid, $phase="latest", $include = "separator", 
         . "&amp;phase=$phase";
 }
 
-/*
-function link_to_project_text($projectid, $phase, $prompt, $include = "separator", $exact = false) {
-    $is_new_tab = true;
-    return link_to_url(url_for_project_text($projectid, $phase, $include, $exact), $prompt, $is_new_tab);
-}
-
-function url_for_project_text($projectid, $phase = "F2", $include = "separator", $exact = false) {
-    global $code_url;
-    return "$code_url/proj_text_srv.php"
-    . "?projectid=$projectid"
-    . "&amp;phase=$phase"
-    . ($exact ? "&amp;exact=$exact" : "")
-    . "&amp;include=$include";
-}
-*/
-
-
-//function link_to_download_text($projectid, $pagename, $phase, $prompt="View text", $isnew = false) {
-//    return link_to_url(url_for_download_text($projectid, $pagename, $phase), $prompt, $isnew);
-//}
-
 function url_for_zipped_images($projectid) {
     global $code_url;
     return "$code_url/tools/download_images.php"
@@ -433,30 +398,6 @@ function url_for_download_extras($projectid) {
 function link_to_zipped_extras($projectid, $prompt="Download extra files", $isnew = true) {
     return link_to_url(url_for_download_extras($projectid), $prompt, $isnew);
 }
-
-//function link_to_pp_text($projectid, $prompt = "Download PP text", $isnew = false) {
-//    return link_to_project_text($projectid, "PP", $prompt, $isnew);
-//}
-
-//function url_for_pp_text($projectid) {
-//    global $code_url;
-//    return "$code_url/proj_text_srv.php"
-//            . "?projectid=$projectid"
-//            . "&amp;phase=PP";
-//}
-// -- diff
-
-//function url_for_version_diff($projectid, $pagename, $version) {
-//	global $pm_url;
-//	return "$pm_url/diff.php"
-//	       ."?projectid={$projectid}"
-//	       . "&amp;pagename={$pagename}"
-//	       . "&amp;version={$version}";
-//}
-
-//function link_to_version_diff($projectid, $pagename, $version, $prompt = "Diff", $isnew = false) {
-//	return link_to_url(url_for_version_diff($projectid, $pagename, $version), $prompt, $isnew);
-//}
 
 function link_to_page_trace($projectid, $prompt = "Page Trace", $isnew = true) {
     return link_to_url(url_for_page_trace($projectid), $prompt, $isnew);
@@ -791,17 +732,6 @@ function url_for_modify_page($action, $projectid, $pagename) {
                 ."&amp;pagename=$pagename";
 }
 
-//function link_to_fix($projectid, $pagename, $prompt = "Fix") {
-//    return link_to_url(url_for_fix($projectid, $pagename), $prompt) ;
-//}
-
-//function url_for_fix($projectid, $pagename) {
-//    global $code_url;
-//    return "$code_url/tools/project_manager/handle_bad_page.php"
-//        ."?projectid=$projectid"
-//        ."&amp;pagename=$pagename";
-//}
-
 function url_for_project_trace($projectid = "") {
     global $code_url;
     return "$code_url/tools/trace.php"
@@ -815,14 +745,14 @@ function link_to_project_trace($projectid = "", $prompt = "trace") {
 // -- fadedpage
 
 function url_for_fadedpage_catalog( $postednum ) {
-    return "http://www.fadedpage.com/showbook.php?pid={$postednum}";
+    return "https://www.fadedpage.com/showbook.php?pid={$postednum}";
 }
 
 function link_to_fadedpage_catalog( $postednum, $prompt="FadedPage" ) {
     return link_to_url(url_for_fadedpage_catalog($postednum), $prompt);
 }
 function url_for_fadedpage() {
-    return "http://www.fadedpage.com";
+    return "https://www.fadedpage.com";
 }
 function link_to_fadedpage( $prompt = "FadedPage" ) {
     return link_to_url(url_for_fadedpage(), $prompt);
@@ -893,15 +823,6 @@ function url_for_quit_team($tid) {
     global $stats_url;
     return $stats_url . "/teams/quitteam.php?tid=$tid";
 }
-
-//function link_to_quit_team($tid) {
-//    return red_link_to_url(url_for_quit_team($tid), "Quit");
-//}
-
-//"<a href='../teams/jointeam.php?tid={$id}'>$quit</a>\n";
-//function link_to_join_team($tid) {
-//    return link_to_url(url_for_join_team($tid), "Join");
-//}
 
 function link_to_team_stats($tid, $roundid, $prompt = "") {
     if($prompt == "") {
