@@ -1136,22 +1136,13 @@ class DpProject
         return [];
     }
 
-	public function SetTags($tags) {
-		global $dpdb;
-		$projectid = $this->ProjectId();
-		$dpdb->SqlExecute("
-            UPDATE projects
-            SET tags = '$tags'
-            WHERE projectid = '$projectid'");
-		$this->_row['tags'] = $tags;
-	}
     public function SetPPer($username) {
         global $dpdb;
         $projectid = $this->ProjectId();
-        $dpdb->SqlExecute("
+        $dpdb->SqlExecutePS("
             UPDATE projects
-            SET postproofer = '$username'
-            WHERE projectid = '$projectid'");
+            SET postproofer = ?
+            WHERE projectid = ?", [&$username, &$projectid]);
         $this->_row['postproofer'] = $username;
     }
 
@@ -1168,10 +1159,10 @@ class DpProject
     public function SetPPVer($username) {
         global $dpdb;
         $projectid = $this->ProjectId();
-        $dpdb->SqlExecute("
+        $dpdb->SqlExecutePS("
             UPDATE projects
-            SET ppverifier = '$username'
-            WHERE projectid = '$projectid'");
+            SET ppverifier = ?
+            WHERE projectid = ?", [&$username, &$projectid]);
         $this->_row['ppverifier'] = $username;
     }
 
@@ -1180,10 +1171,10 @@ class DpProject
         $username = $User->Username();
         $projectid = $this->ProjectId();
 
-        $dpdb->SqlExecute("
+        $dpdb->SqlExecutePS("
             UPDATE projects
-            SET ppverifier = '$username'
-            WHERE projectid = '$projectid'");
+            SET ppverifier = ?
+            WHERE projectid = ?", [&$username, &$projectid]);
 
         $this->MaybeAdvanceRound();
 
@@ -1770,76 +1761,6 @@ class DpProject
 
     public function IsBad() {
         return $this->BadCount() > 0;
-    }
-
-
-    public function BackupTableName() {
-        return $this->ProjectId() . "_backup";
-    }
-
-    public function CloneProject() {
-        global $Context;
-        global $dpdb;
-
-        $new_project_id = $Context->NewProjectId();
-        $sql = "
-            INSERT INTO projects
-            (
-                 projectid,
-                 username,
-                 phase,
-                 nameofwork,
-
-                 authorsname,
-                 language,
-                 seclanguage,
-                 comments,
-                 difficulty,
-
-                 scannercredit,
-                 clearance,
-
-                 genre,
-                 image_source,
-                 image_link,
-                 image_preparer,
-                 text_preparer,
-                 extra_credits,
-                 project_type
-             )
-             SELECT
-
-                '{$new_project_id}',
-                p.username,
-                'project_new',
-                'PREP', 
-                CONCAT('Clone of ', p.nameofwork),
-                           
-                p.authorsname,
-                p.language,
-                p.seclanguage,
-                p.comments,
-                p.difficulty,
-                           
-                p.scannercredit,
-                p.clearance,
-                           
-                p.genre,
-                p.image_source,
-                p.image_link,
-                p.image_preparer,
-                p.text_preparer,
-                p.extra_credits,
-                p.project_type
-                           
-            FROM projects AS p
-            WHERE projectid = '{$this->ProjectId()}'";
-        $dpdb->SqlExecute($sql);
-//        $this->CreateProjectTable();
-        $this->LogProjectEvent(PJ_EVT_CLONE, "creating {$new_project_id}");
-        $this->SetAutoQCHold();
-        $this->SetPPHold();
-        return $new_project_id;
     }
 
 	public function IsRoundPhase() {
@@ -2441,16 +2362,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return $pg;
     }
 
-    public function MostRecentUserProofDate() {
-        global $dpdb;
-        global $User;
-        $username = $User->Username();
-        return $dpdb->SqlOneValue ("
-			SELECT MAX(version_time) FROM page_versions
-			WHERE username = '$username'
-				AND projectid = '{$this->ProjectId()}'");
-    }
-
     public function MostRecentSavePageDate() {
         global $dpdb;
         return $dpdb->SqlOneValue ("
@@ -2458,10 +2369,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 			WHERE state = 'C'
 				AND projectid = '{$this->ProjectId()}'");
     }
-
-//    private function PreviousRoundId() {
-//        return PreviousRoundIdForRoundId($this->Roundid());
-//    }
 
     private function NextRoundId() {
         return NextRoundIdForRoundId($this->RoundId());
@@ -2654,22 +2561,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return $dpdb->SqlOneValue($sql);
     }
 
-//    public function ImageFileBefore($imagefile) {
-//        global $dpdb;
-//        $sql = "
-//            SELECT MAX(image) FROM $this->_projectid
-//            WHERE image < '$imagefile'";
-//        return $dpdb->SqlOneValue($sql);
-//    }
-
-//    public function ImageFileAfter($imagefile) {
-//        global $dpdb;
-//        $sql = "
-//            SELECT MIN(image) FROM $this->_projectid
-//            WHERE image > '$imagefile'";
-//        return $dpdb->SqlOneValue($sql);
-//    }
-
     public function PageNameAfter($pagename) {
         global $dpdb;
         $sql = "
@@ -2677,22 +2568,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             WHERE projectid = '{$this->ProjectId()}'
             	AND pagename > '$pagename'";
         return $dpdb->SqlOneValue($sql);
-    }
-
-    public function LogPostedEvent() {
-        global $dpdb;
-        $phase = $this->Phase();
-        global $User;
-        $username = $User->Username();
-        $sql = "
-            INSERT INTO project_events
-            SET event_time = UNIX_TIMESTAMP(),
-                projectid = '{$this->ProjectId()}',
-                phase     = 'PPV',
-                username = '$username',
-                event_type = 'post',
-                details1 = 'Posted from phase $phase'";
-        $dpdb->SqlExecute($sql);
     }
 
     private function LogProjectEvent( $event_type, $remark = null, $phase = null) {
@@ -2706,12 +2581,14 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 	    $sql = "
 					INSERT INTO project_events
 						SET event_time   = UNIX_TIMESTAMP(),
-							projectid   = '{$projectid}',
-							phase       = '{$phase}',
-							username    = '{$User->Username()}',
-							event_type  = '$event_type',
-							details1    = '{$remark}'";
-	    $n = $dpdb->SqlExecute($sql);
+							projectid   = ?,
+							phase       = ?,
+							username    = ?,
+							event_type  = ?,
+							details1    = ?";
+        $username = $User->Username();
+        $args = [ &$projectid, &$phase, &$username, &$event_type, &$remark ];
+	    $n = $dpdb->SqlExecutePS($sql, $args);
         assert($n > 0);
     }
 
@@ -2778,86 +2655,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 		}
 		return new DpPage($projectid, $pgname);
 	}
-	/*
-    public function ProoferRoundImageFileBefore($imagefile, $roundid) {
-        global $dpdb;
-        $userfield = UserFieldForRoundId($roundid);
-        $sql = "
-            SELECT MAX(pp2.image) 
-            FROM $this->_projectid AS pp
-            JOIN $this->_projectid AS pp2 
-                ON pp.{$userfield} = pp2.{$userfield}
-                AND pp.image > pp2.image
-            WHERE pp.image = '$imagefile'";
-        return $dpdb->SqlOneValue($sql);
-    }
-
-	// DATE_FORMAT(FROM_UNIXTIME(phase_change_date), '%b %e %Y %H:%i') phase_date,
-
-    public function ProoferRoundImageFileAfter($imagefile, $roundid) {
-        global $dpdb;
-        $userfield = UserFieldForRoundId($roundid);
-        $sql = "
-            SELECT MIN(pp2.image) 
-            FROM $this->_projectid AS pp
-            JOIN $this->_projectid AS pp2 
-                ON pp.{$userfield} = pp2.{$userfield}
-                AND pp.image < pp2.image
-            WHERE pp.image = '$imagefile'";
-        return $dpdb->SqlOneValue($sql);
-    }
-	*/
-
-//	public function ProoferRoundPageNameBefore($pagename, $phase) {
-//		global $dpdb;
-//		$projectid = $this->ProjectId();
-//		return $dpdb->SqlOneValue("
-//			SELECT MAX(pagename)
-//			FROM page_versions pv
-//			WHERE pv.projectid = '$projectid'
-//				AND phase = '$phase'
-//				AND pagename < '$pagename'");
-//	}
-
-//    public function ProoferRoundPageNameAfter($pagename, $phase) {
-//        global $dpdb;
-//	    return $dpdb->SqlOneValue("
-//	        SELECT MIN(pv1.pagename) pagename
-//	        FROM page_versions pv
-//	        LEFT JOIN page_versions pv1
-//	        	ON pv.projectid = pv1.projectid
-//	        	AND pv.phase = pv1.phase
-//	        	AND pv.username = pv1.username
-//	        	AND pv.pagename < pv1.pagename
-//	        WHERE pv.projectid = '{$this->ProjectId()}'
-//	        	AND pv.phase = pv1.phase
-//    }
-//
-//
-//        $userfield = UserFieldForRoundId($roundid);
-//        $sql = "
-//            SELECT MAX(pp2.fileid)
-//            FROM $this->_projectid AS pp
-//            JOIN $this->_projectid AS pp2
-//                ON pp.{$userfield} = pp2.{$userfield}
-//                AND pp.fileid > pp2.fileid
-//            WHERE pp.fileid = '$pagename'";
-//        return $dpdb->SqlOneValue($sql);
-
-	/*
-    public function ProoferRoundPageNameAfter($pagename, $roundid) {
-        global $dpdb;
-        $userfield = UserFieldForRoundId($roundid);
-        $sql = "
-            SELECT MIN(pp2.fileid) 
-            FROM $this->_projectid AS pp
-            JOIN $this->_projectid AS pp2 
-                ON pp.{$userfield} = pp2.{$userfield}
-                AND pp.fileid < pp2.fileid
-            WHERE pp.fileid = '$pagename'";
-        return $dpdb->SqlOneValue($sql);
-    }
-	*/
 
     public function RecalcPageCounts() {
         global $dpdb;
@@ -3074,13 +2871,14 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                 AND phase = '$phase'") == 0) {
             $sql = "
                 INSERT INTO project_holds
-                SET hold_code = '$holdcode',
-                    projectid = '$projectid',
-                    phase     = '$phase',
-                    note      = '$note',
-                    set_by    = '$username',
+                SET hold_code = ?,
+                    projectid = ?,
+                    phase     = ?,
+                    note      = ?,
+                    set_by    = ?,
                     set_time  = UNIX_TIMESTAMP()";
-            $dpdb->SqlExecute($sql);
+            $args = [ &$holdcode, &$projectid, &$phase, &$note, &$username ];
+            $dpdb->SqlExecutePS($sql, $args);
             $this->LogProjectEvent(PJ_EVT_HOLD, "set $holdcode Hold");
         }
     }
