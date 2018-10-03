@@ -110,10 +110,12 @@ class DpProject
             LEFT JOIN page_last_versions pv
                 ON p.projectid = pv.projectid
                 AND p.phase = pv.phase
-            WHERE p.projectid = '{$projectid}'
+            WHERE p.projectid = ?
             GROUP BY p.projectid";
 	    //	    echo html_comment($sql);
-	    $this->_row = $dpdb->SqlOneRow( $sql );
+	    $this->_row = $dpdb->SqlOneRowPS($sql, [&$projectid]);
+        if (empty($this->_row))
+            die("Project does not exist: $projectid");
     }
 
 	/* rewrite */
@@ -258,9 +260,10 @@ class DpProject
 
     public function SetPhaseDate() {
         global $dpdb;
-        $dpdb->SqlExecute("
+        $projectid = $this->ProjectId();
+        $dpdb->SqlExecutePS("
                 UPDATE projects SET phase_change_date = UNIX_TIMESTAMP()
-                WHERE projectid = '{$this->ProjectId()}'");
+                WHERE projectid = ?", [&$projectid]);
     }
 
 //    public function ModifiedDateInt() {
@@ -991,19 +994,20 @@ class DpProject
         return $this->_page_byte_offset_array[$pagename]["version"];
     }
 
+    /* Unused (by pager) */
     public function RoundPageVersions($roundid) {
         global $dpdb;
         $projectid = $this->ProjectId();
-        return $dpdb->SqlRows("
+        return $dpdb->SqlRowsPS("
 			SELECT pv.pagename, pv.version, pp.imagefile
 			FROM page_versions pv
 			JOIN pages pp
             ON pv.projectid = pp.projectid
                 AND pv.pagename = pp.pagename
-			WHERE pv.projectid = '$projectid'
-			    AND pv.phase = '$roundid'
+			WHERE pv.projectid = ?
+			    AND pv.phase = ?
 			    AND pv.task IN ('PROOF', 'FORMAT')
-			ORDER BY pv.pagename");
+			ORDER BY pv.pagename", [&$projectid, &$roundid]);
     }
 
 	// Given a project, ad a new version for every page with phase, task, version state
@@ -1014,10 +1018,10 @@ class DpProject
 
 		$projectid = $this->ProjectId();
 
-		$rows = $dpdb->SqlRows("
+		$rows = $dpdb->SqlRowsPS("
 			SELECT projectid, pagename, version, crc32, textlen
 			FROM page_last_versions
-			WHERE projectid = '$projectid'");
+			WHERE projectid = ?", [&$projectid]);
 
 		foreach($rows as $row) {
 			$pagename = $row['pagename'];
@@ -1149,10 +1153,10 @@ class DpProject
     public function ClearPPer() {
         global $dpdb;
         $projectid = $this->ProjectId();
-        $dpdb->SqlExecute("
+        $dpdb->SqlExecutePS("
             UPDATE projects
             SET postproofer = ''
-            WHERE projectid = '$projectid'");
+            WHERE projectid = ?", [&$projectid]);
         $this->_row['postproofer'] = "";
     }
 
@@ -1208,10 +1212,10 @@ class DpProject
         global $dpdb;
         assert($this->Phase() == "PPV");
         $projectid = $this->ProjectId();
-        $dpdb->SqlExecute("
+        $dpdb->SqlExecutePS("
             UPDATE projects
             SET ppverifier = ''
-            WHERE projectid = '$projectid'");
+            WHERE projectid = ?", [&$projectid]);
         $this->_row['ppverifier'] = '';
     }
 
@@ -1488,7 +1492,7 @@ class DpProject
         $projectid = $this->_projectid;
 
         if(! isset($_pagerows) || $is_refresh) {
-	        $_pagerows = $dpdb->SqlRows("
+	        $_pagerows = $dpdb->SqlRowsPS("
                 SELECT
                 	pg.projectid,
                 	pv.phase,
@@ -1504,8 +1508,8 @@ class DpProject
                 	ON pg.projectid = pv.projectid
                 	AND pg.pagename = pv.pagename
 
-	            WHERE pg.projectid = '$projectid'
-                ORDER BY pg.pagename");
+	            WHERE pg.projectid = ?
+                ORDER BY pg.pagename", [&$projectid]);
         }
         return $_pagerows;
     }
@@ -1666,10 +1670,10 @@ class DpProject
     public function IsPage($pagename) {
         global $dpdb;
         $projectid = $this->ProjectId();
-        return $dpdb->SqlOneValue("
+        return $dpdb->SqlOneValuePS("
             SELECT COUNT(1) FROM pages
-            WHERE projectid = '$projectid'
-            AND pagename = '$pagename'") > 0;
+            WHERE projectid = ?
+            AND pagename = ?", [&$projectid, &$pagename]) > 0;
     }
 
     public function Page($pagename) {
@@ -1726,10 +1730,10 @@ class DpProject
         // Note this doesn't take into account the current phase,
         // so if there are any pages in subsequent phases it will be
         // wrong.
-		return $dpdb->SqlOneValue("
+		return $dpdb->SqlOneValuePS("
 	        SELECT COUNT(1) FROM page_last_versions
-	        WHERE projectid = '$projectid'
-            AND state = '$state'");
+	        WHERE projectid = ?
+            AND state = ?", [&$projectid, &$state]);
 	}
 	public function AvailableCount() {
 		return $this->StateCount("A");
@@ -1753,10 +1757,10 @@ class DpProject
 		global $dpdb;
 		$projectid = $this->ProjectId();
 		$sql = "SELECT COUNT(1) FROM page_last_versions
-				WHERE projectid = '$projectid'
+				WHERE projectid = ?
 					AND state = 'O'
 					AND version_time < UNIX_TIMESTAMP() - (60 * 60 * 4)";
-		return $dpdb->SqlOneValue($sql);
+		return $dpdb->SqlOneValuePS($sql, [&$projectid]);
 	}
 
     public function IsBad() {
@@ -1809,9 +1813,9 @@ class DpProject
         $sql = "
 			UPDATE projects
 			SET  postcomments = CONCAT(IFNULL(postcomments, ''), ?)
-			WHERE projectid = '$projectid'";
+			WHERE projectid = ?";
 
-        $args = [&$postcomments];
+        $args = [&$postcomments, &$projectid];
         $dpdb->SqlExecutePS($sql, $args);
 		$this->Refresh();
     }
@@ -1820,8 +1824,8 @@ class DpProject
         global $dpdb;
         $projectid = $this->ProjectId();
         $sql = "UPDATE projects SET postcomments = ?
-                WHERE projectid = '$projectid'";
-        $args = [&$str];
+                WHERE projectid = ?";
+        $args = [&$str, &$projectid];
         $dpdb->SqlExecutePS($sql, $args);
         $this->_row['postcomments'] = $str;
     }
@@ -2014,16 +2018,17 @@ class DpProject
         global $dpdb;
         $projectid = $this->ProjectId();
         if($postednum == "0" || $postednum == "") {
+            $args = [&$projectid];
             $sql = "
-            `   UPDATE projects SET postednum = NULL
+                UPDATE projects SET postednum = NULL
                 WHERE projectid = '$projectid'";
-        }
-        else {
+        } else {
+            $args = [&$postednum, &$projectid];
             $sql = "
-                UPDATE projects SET postednum = '{$postednum}'
-                WHERE projectid = '$projectid'";
+                UPDATE projects SET postednum = ?
+                WHERE projectid = ?";
         }
-        $dpdb->SqlExecute($sql);
+        $dpdb->SqlExecutePS($sql, $args);
         $this->LogProjectEvent(PJ_EVT_POSTEDNUM, $postednum);
     }
 
