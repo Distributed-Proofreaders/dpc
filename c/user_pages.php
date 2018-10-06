@@ -168,7 +168,7 @@ function eversion2($version, $row) {
 
 function epage($image, $row) {
     $projectid = $row['projectid'];
-    $pagename = imagefile_to_pagename($image);
+    $pagename = $row['pagename'];
     return link_to_view_image($projectid, $pagename);
 }
 
