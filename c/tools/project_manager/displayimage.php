@@ -123,6 +123,7 @@ function set_page_image(pgname) {
 	var pid = $('projectid').value;
 	var imgpath = serverpath + '?projectid=' + pid + '&pagename=' + pgname;
     $('pageimage').src = imgpath;
+    $('pagename').value = pgname;
 }
 
 function eJumpTo() {
@@ -192,4 +193,4 @@ echo "
 <br>
 <img id='pageimage' src='' style='border: 1px solid gray;' alt=''>
 </body></html>";
-
+// vim: sw=4 ts=4 expandtab

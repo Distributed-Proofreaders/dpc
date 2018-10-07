@@ -256,6 +256,22 @@ class DpPage
         copy($path, $topath);
     }
 
+	/*
+	 * Needs to be rewritten entirely
+	 */
+	public function ReplaceImage($path) {
+		if(! file_exists($path)) {
+			return;
+		}
+		$imgpath = $this->ImageFilePath();
+		if(file_exists($imgpath)) {
+			unlink($imgpath);
+		}
+        echo "copy $path->$imgpath";
+		copy($path, $imgpath);
+        $this->LogReplaceImage();
+	}
+
     public function ImageFileName() {
         if(count($this->_row) == 0) {
             return "";
@@ -1105,122 +1121,6 @@ The Administration"));
         $dpdb->SqlExecutePS($sql, $args);
     }
 }
-
-// A new page to be added from scratch
-
-class DpProtoPage extends DpPage
-{
-    private $_extimgfilepath;
-    private $_exttextfilepath;
-
-    public function IsExternalImageFile() {
-        return file_exists($this->_extimgfilepath);
-    }
-
-    public function IsExternalTextFile() {
-        return file_exists($this->_exttextfilepath);
-    }
-
-    public function SetExternalImageFilePath($f) {
-        $this->_extimgfilepath = $f;
-    }
-
-    public function SetExternalTextFilePath($f) {
-        $this->_exttextfilepath = $f;
-    }
-
-    public function Dispose() {
-        if($this->IsExternalImageFile() ||  $this->IsExternalTextFile()) {
-            $this->DisposeExternalFiles();
-        }
-        else {
-            $this->Delete();
-        }
-    }
-
-    public function DisposeExternalFiles() {
-        $this->DisposeExternalImageFile();
-        $this->DisposeExternalTextFile();
-    }
-
-    public function DisposeExternalTextFile() {
-        if( $this->IsExternalTextFile()) {
-            unlink($this->ExternalTextFilePath());
-        }
-    }
-
-    private function DisposeExternalImageFile() {
-        if($this->IsExternalImageFile()) {
-            unlink($this->ExternalImageFilePath());
-        }
-    }
-
-    public function ExternalTextFilePath() {
-        return $this->_exttextfilepath;
-    }
-
-    public function ExternalImageFilePath() {
-        return $this->_extimgfilepath;
-    }
-
-    public function ExternalImageFileName() {
-        return basename($this->ExternalImageFilePath());
-    }
-
-    public function ExternalTextFileName() {
-        return basename($this->ExternalTextFilePath());
-    }
-
-    public function UploadedTextFilePath() {
-        return $this->ExternalTextFilePath();
-    }
-
-    public function IsExternalText() {
-        return $this->IsExternalTextFile();
-    }
-
-    public function ExternalImageFileSize() {
-        return filesize($this->ExternalImageFilePath());
-    }
-
-	private function remove_utf8_bom($text) {
-		$bom = pack('H*','EFBBBF');
-		$text = preg_replace("/^$bom/", '', $text);
-		return $text;
-	}
-
-    public function ExternalText() {
-        $text = file_get_contents($this->ExternalTextFilePath());
-	    $text = $this->remove_utf8_bom($text);
-	    $text = preg_replace("/\t/", " ", $text);
-	    return $text;
-    }
-
-	/*
-	 * Needs to be rewritten entirely
-	 */
-	public function SetImageFile($path) {
-		if(! file_exists($path)) {
-			return;
-		}
-		$imgpath = $this->ImageFilePath();
-		if(file_exists($imgpath)) {
-			unlink($imgpath);
-		}
-		$topath = $this->ImageFilePath($path);
-		copy($path, $topath);
-	}
-
-    public function ImagePath() {
-        return $this->ImageFile() == ""
-            ? ""
-            : build_path($this->ProjectPath(), $this->ImageFile());
-    }
-
-}
-
-
-// end DpProtoPage
 
 function sql_project_page() {
     return "
