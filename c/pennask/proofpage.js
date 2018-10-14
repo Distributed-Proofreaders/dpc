@@ -1,5 +1,5 @@
 /*
-    version 0.171
+    version 0.172
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1857,7 +1857,8 @@ class TextAnalysis {
             "[Illustration" : this.illustration,
             // TODO: Sidenotes don't need to be isolated so need different code
             //"[Sidenode" : this.sidenote,
-            "[Footnote" : this.footnote
+            "*[Footnote" : this.footnote,
+            "[Footnote" : this.footnote,
         };
         for (var tag in tags) {
             if (str.startsWith(tag)) {
@@ -1865,6 +1866,10 @@ class TextAnalysis {
                     this.err(str, "Markup " + tag + " may not be inside a no-wrap block");
                 else
                     tags[tag].call(this, str);
+
+                // Don't look for [Footnote!
+                if (tag == "*[Footnote")
+                    break;
             }
             if (str.indexOf(tag, 1) != -1)
                 // Even if a valid tag, make sure another markup not embedded
@@ -1895,6 +1900,15 @@ class TextAnalysis {
 
     footnote(str)
     {
+        // Continued footnote, no letter, and no reference check
+        if (str.startsWith("*[Footnote")) {
+            if (!str.startsWith("*[Footnote: "))
+                this.err(str, "Incorrectly formatted footnote continuation");
+            if (!str.endsWith("]") && !str.endsWith("]*"))
+                this.err(str, "Incorrectly ended footnote continuation");
+            return;
+        }
+
         var re = /^\[Footnote .: .*\]\*?$/;
         var results = str.match(re);
         if (results == null) {
