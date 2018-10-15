@@ -1,5 +1,5 @@
 /*
-    version 0.172
+    version 0.173
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1143,7 +1143,8 @@ function applyIsPunc(str) {
 }
 function eSetSmallCaps() {
     var sel = SelectedText();
-    ReplaceText('<sc>' + sel + '</sc>');
+    if (sel != "")
+        ReplaceText('<sc>' + sel + '</sc>');
     return false;
 }
 
@@ -1249,7 +1250,8 @@ function eCurlyQuotes() {
 
 function eSetAntiqua() {
     var sel = SelectedText();
-    ReplaceText('<f>' + sel + '</f>');
+    if (sel != "")
+        ReplaceText('<f>' + sel + '</f>');
     return false;
 }
 
@@ -1269,7 +1271,8 @@ function eSetGuillemetsR() {
 
 function eSetGesperrt() {
     var sel = SelectedText();
-    ReplaceText('<g>' + sel + '</g>');
+    if (sel != "")
+        ReplaceText('<g>' + sel + '</g>');
     return false;
 }
 
@@ -1318,13 +1321,15 @@ function NewBlankWindow() {
 
 function eSetBold() {
     var sel = SelectedText();
-    ReplaceText('<b>' + sel + '</b>');
+    if (sel != "")
+        ReplaceText('<b>' + sel + '</b>');
     return false;
 }
 
 function eSetItalics() {
     var sel = SelectedText();
-    ReplaceText('<i>' + sel + '</i>');
+    if (sel != "")
+        ReplaceText('<i>' + sel + '</i>');
     return false;
 }
 
@@ -1934,6 +1939,7 @@ class TextAnalysis {
         //console.log("balance: " + line);
         var off = 0;
         var fonts = [];
+        var offsets = [];
         var st;
         var errAppend = "";
 
@@ -1960,8 +1966,15 @@ class TextAnalysis {
                     continue;
                 }
                 var startTag = fonts.pop();
+                var startOff = offsets.pop();
                 if (startTag != token && !startTag.startsWith("span class='errline'"))
                     this.err(line, "End tag &lt;/" + token + "> does not match open tag &lt;" + startTag + ">");
+
+                // Do any validation on the text between the tags
+                var text = line.substring(startOff, st);
+                //console.log(startTag + ": >>>" + text + "<<<");
+                if (text == "")
+                    this.err(line, "Empty font tag: &lt;" + token + ">&lt;" + token + "/> embedded in line.");
             } else {
                 if (token == "tb") {
                     this.err(line, "Non-isolated &lt;tb> tag: must be both preceeded and followed by a blank line.");
@@ -1971,6 +1984,7 @@ class TextAnalysis {
                     if (fonts.includes(token))
                         this.err(line, "Open tag &lt;" + token + ">: this tag already open: " + fonts);
                 fonts.push(token);
+                offsets.push(off);
             }
         }
         if (fonts.length > 0)
