@@ -1,5 +1,5 @@
 /*
-    version 0.174
+    version 0.176
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -391,6 +391,10 @@ function eCtlInit() {
     if($("divctlwc")) {
         $("divctlwc").className = (getIsWC() ? "block" : "hide");
     }
+
+    $('txtfind').value = getFind();
+    $('txtrepl').value = getRepl();
+    getAndSetFandRFlags();
 
     // Run wordcheck if set to run always, and we are proofing
     if (runAlways.checked && $("imgpvw") == null) {
@@ -1612,25 +1616,34 @@ function eFind() {
         // if something currently selected, use that for the target
         if (SelectedText().length > 0) {
             $('txtfind').value = SelectedText();
-        }
-        else {
+        } else {
             return false;
         }
     }
 
-    var key = $('txtfind').value;
-    if (!$('chkr')) {
-        key = key.replace('([[.\+*?[^]$(){}=!<>|:-])', '\\\1');
-    }
-    if ($('chkm')) {
-        key = key.replace(/\./, "[\s\S]");
-    }
-    var flags = 'g' + ($('chki').checked ? 'i' : '');
-    var regex = new RegExp(key, flags);
+    // Save current text&repl
+    setFandR();
+
+    var regex = getFandRRegex();
     var pos = SelectionBounds();
     regex.lastIndex = pos.start + 1;
 
     return find_regex(regex, pos);
+}
+
+function getFandRRegex() {
+    var key = $('txtfind').value;
+    // If regex isn't checked, then escape all regex-special characters
+    if (!$('chkr').checked) {
+        key = key.replace(/([[.\+*?^\]$(){}=!<>|:-])/g, '\\$1');
+    }
+    // If multi-line, replace spaces with any space including newline
+    if ($('chkm').checked) {
+        key = key.replace(/ /g, "[\\s]");
+    }
+    var flags = 'g' + ($('chki').checked ? 'i' : '');
+    console.log("Regex: " + key + ", flags: " + flags);
+    return new RegExp(key, flags);
 }
 
 function find_regex(regex, bounds) {
@@ -1658,13 +1671,18 @@ function find_regex(regex, bounds) {
 }
 
 function eReplace() {
-    if($('txtrepl').value.length == 0) {
+    var sb = SelectionBounds();
+    var start = sb.start;
+    if (start == sb.end)
+        // Nothing selected
         return;
-    }
-    var istart = SelectionBounds().start;
-    var rstr = SelectedText().replace($('txtfind').value, $('txtrepl').value);
+
+    // Note repl may have $1 in it, so make sure we do the match again
+    var repl = $('txtrepl').value;
+    var rstr = SelectedText().replace(getFandRRegex(), repl);
     ReplaceText(rstr);
-    SetCursor(istart + 1);
+    SetCursor(start + rstr.length);
+    return rstr.length;
 }
 
 function eReplaceNext() {
@@ -1673,11 +1691,24 @@ function eReplaceNext() {
 }
 
 function eReplaceAll() {
+    // Always start at the top.
+    var last = 0;
+    SetCursor(0);
     while (true) {
         if (!eFind()) {
             return;
         }
-        eReplace();
+
+        // In the case of a substitute which doesn't change something,
+        // e.g. XXX -> <i>XXX</i>
+        // make sure we don't go back to the beginning!
+        var start = SelectionBounds().start;
+        if (start <= last)
+            return;
+        last = start;
+
+        var len = eReplace();
+        last += len;
     }
 }
 
@@ -3093,6 +3124,33 @@ function getIsWC() {
         setIsWC();
     }
     return (getnamevalue("iswc") == "1") ;
+}
+
+function getFind() {
+    return getnamevalue("fandrFind");
+}
+
+function getRepl() {
+    return getnamevalue("fandrRepl");
+}
+
+function getAndSetFandRFlags() {
+    var flags = getnamevalue('fandrFlags');
+    if (!flags)
+        return;
+    $('chkm').checked = flags.includes('m');
+    $('chki').checked = flags.includes('i');
+    $('chkr').checked = flags.includes('r');
+}
+
+function setFandR() {
+    setnamevalue("fandrFind", $('txtfind').value);
+    setnamevalue("fandrRepl", $('txtrepl').value);
+    var m = $('chkm').checked;
+    var i = $('chki').checked;
+    var r = $('chkr').checked;
+    var flags = (m ? 'm' : ' ') + (i ? 'i' : ' ') + (r ? 'r' : ' ');
+    setnamevalue("fandrFlags", flags);
 }
 
 function setIsWC() {

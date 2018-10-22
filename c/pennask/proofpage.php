@@ -100,7 +100,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.174' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.176' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -195,9 +195,13 @@ $csslink
         <td class='r'>
           <input type='text' name='txtfind' tabindex=1 id='txtfind' size='20'>
         </td>
-        <td class='r'>
+        <td rowspan='2' class='r'>
           <input type='checkbox' name='chki' id='chki' title='ignore case'/>
-          ignore case
+          ignore case<br>
+          <input type='checkbox' name='chkr' id='chkr' title='regex'/>
+          regular expression<br>
+          <input type='checkbox' name='chkm' id='chkm' title='multiline'/>
+          multiline
         </td>
         <td rowspan='2'>
           <input type='button' value='Find' tabindex=3
@@ -216,15 +220,6 @@ $csslink
         <td>Replace</td>
         <td class='r'>
           <input type='text' name='txtrepl' id='txtrepl' tabindex=2 size='20'>
-        </td>
-        <td class='r'>
-          <input type='checkbox' name='chkm' id='chkm' title='multiline'/>
-          multiline
-        </td>
-      </tr>
-      <tr>
-        <td colspan='4' class='r'>
-          <input type='checkbox' name='chkr' id='chkr' title='regex'/>
         </td>
       </tr>
     </table>
