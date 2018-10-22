@@ -1,5 +1,5 @@
 /*
-    version 0.173
+    version 0.174
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1141,12 +1141,6 @@ function applyIsPunc(str) {
 	.replace(/&lt<span class='punc'>;<\/span>/g, "&lt;")
 	.replace(/&gt<span class='punc'>;<\/span>/g, "&gt;");
 }
-function eSetSmallCaps() {
-    var sel = SelectedText();
-    if (sel != "")
-        ReplaceText('<sc>' + sel + '</sc>');
-    return false;
-}
 
 //noinspection FunctionWithMoreThanThreeNegationsJS,FunctionWithMoreThanThreeNegationsJS,OverlyComplexFunctionJS,FunctionWithMultipleLoopsJS,FunctionTooLongJS,FunctionTooLongJS
 function eSetTitleCase() {
@@ -1248,13 +1242,6 @@ function eCurlyQuotes() {
     return false;
 }
 
-function eSetAntiqua() {
-    var sel = SelectedText();
-    if (sel != "")
-        ReplaceText('<f>' + sel + '</f>');
-    return false;
-}
-
 function eSetGuillemets() {
     var sel = SelectedText();
     sel = sel.replace(/"?([^"]*)"?/, '«$1»');
@@ -1266,13 +1253,6 @@ function eSetGuillemetsR() {
     var sel = SelectedText();
     sel = sel.replace(/"?([^"]*)"?/, '»$1«');
     ReplaceText(sel);
-    return false;
-}
-
-function eSetGesperrt() {
-    var sel = SelectedText();
-    if (sel != "")
-        ReplaceText('<g>' + sel + '</g>');
     return false;
 }
 
@@ -1315,22 +1295,96 @@ function eRemoveMarkup() {
     return false;
 }
 
-function NewBlankWindow() {
-    return window.open();
-}
-
 function eSetBold() {
-    var sel = SelectedText();
-    if (sel != "")
-        ReplaceText('<b>' + sel + '</b>');
+    setFont("b");
     return false;
 }
 
 function eSetItalics() {
-    var sel = SelectedText();
-    if (sel != "")
-        ReplaceText('<i>' + sel + '</i>');
+    setFont("i");
     return false;
+}
+
+function eSetAntiqua() {
+    setFont("f");
+    return false;
+}
+
+function eSetGesperrt() {
+    setFont("g");
+    return false;
+}
+
+function eSetSmallCaps() {
+    setFont("sc");
+    return false;
+}
+
+function setFont(tag) {
+    var startTag = "<" + tag + ">";
+    var endTag = "</" + tag + ">";
+    var sel = SelectedText();
+    if (sel == "")
+        return false;
+    if (selectionInNowrap())
+        sel = fontPerLine(sel, startTag, endTag);
+    else
+        sel = startTag + sel + endTag;
+    ReplaceText(sel);
+    return false;
+}
+
+/*
+ * In a no-wrap block, add font tags to each line.
+ */
+function fontPerLine(str, startTag, endTag) {
+    var lines = str.split('\n');
+    var result = "";
+
+    for (var i = 0; i < lines.length; i++) {
+        var l = lines[i];
+        if (l != "") {
+            var lead = "";
+            while (l.startsWith(" ")) {
+                l = l.substr(1);
+                lead += " ";
+            }
+
+            if (l.startsWith('"')) {
+                // Leading quote: result is: "<i>text
+                lead += '"';
+                l = l.substring(1);
+            }
+            var trailingQuote = l.endsWith('"');
+            if (trailingQuote)
+                // Trailing quote: result is: text</i>"
+                l = l.substr(0, l.length-1);
+            result += lead + startTag + l + endTag;
+            if (trailingQuote)
+                result += '"';
+        }
+        if (i != lines.length-1)
+            result += "\n";
+    }
+    return result;
+}
+
+/*
+ * Is the current selection in a no-wrap block?
+ */
+function selectionInNowrap() {
+    var lead = tatext.value.substring(0, tatext.selectionStart) 
+    var lines = lead.split('\n');
+    var inNowrap = false;
+    for (var i = 0; i < lines.length; i++) {
+        var l = lines[i];
+
+        if (l == "/*")
+            inNowrap = true;
+        else if (l == "*/")
+            inNowrap = false;
+    }
+    return inNowrap;
 }
 
 function eSetNoWrap() {
