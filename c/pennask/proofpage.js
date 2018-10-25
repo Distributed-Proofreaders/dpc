@@ -1,5 +1,5 @@
 /*
-    version 0.176
+    version 0.178
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -392,9 +392,7 @@ function eCtlInit() {
         $("divctlwc").className = (getIsWC() ? "block" : "hide");
     }
 
-    $('txtfind').value = getFind();
-    $('txtrepl').value = getRepl();
-    getAndSetFandRFlags();
+    loadFandR();
 
     // Run wordcheck if set to run always, and we are proofing
     if (runAlways.checked && $("imgpvw") == null) {
@@ -3127,11 +3125,39 @@ function getIsWC() {
 }
 
 function getFind() {
-    return getnamevalue("fandrFind");
+    return getnamevalue("fandrFind-0");
 }
 
 function getRepl() {
-    return getnamevalue("fandrRepl");
+    return getnamevalue("fandrRepl-0");
+}
+
+function loadFandR() {
+    loadFandRList('findlist', 'fandrFind-');
+    loadFandRList('repllist', 'fandrRepl-');
+    $('txtfind').value = getFind();
+    $('txtrepl').value = getRepl();
+    getAndSetFandRFlags();
+}
+
+function loadFandRList(list, name)
+{
+    var l = $(list);
+    // Remove everything first
+    while (l.hasChildNodes())
+        l.removeChild(l.firstChild);
+    var item = document.createElement('datalist');
+    item.setAttribute("id", list);
+    for (var i = 9; i >= 0; i--) {
+        var f = getnamevalue(name + i);
+        if (f) {
+            var option = document.createElement('option');
+            option.value = f;
+            item.appendChild(option);
+        }
+    }
+
+    l.replaceWith(item);
 }
 
 function getAndSetFandRFlags() {
@@ -3144,13 +3170,33 @@ function getAndSetFandRFlags() {
 }
 
 function setFandR() {
-    setnamevalue("fandrFind", $('txtfind').value);
-    setnamevalue("fandrRepl", $('txtrepl').value);
     var m = $('chkm').checked;
     var i = $('chki').checked;
     var r = $('chkr').checked;
     var flags = (m ? 'm' : ' ') + (i ? 'i' : ' ') + (r ? 'r' : ' ');
-    setnamevalue("fandrFlags", flags);
+    setnamevalue('fandrFlags', flags);
+
+    var find = $('txtfind').value;
+    if (getFind() != find)
+        shuffleNameValue("fandrFind-", find);
+    var repl = $('txtrepl').value;
+    if (getRepl() != repl)
+        shuffleNameValue("fandrRepl-", repl);
+
+    // Reload, which will set new values into the combos
+    loadFandR();
+}
+
+function shuffleNameValue(name, value)
+{
+    for (var i = 8; i >= 0; i--) {
+        var f = getnamevalue(name + i);
+        if (f) {
+            var n = i+1;
+            setnamevalue(name + n, f);
+        }
+    }
+    setnamevalue(name + "0", value);
 }
 
 function setIsWC() {

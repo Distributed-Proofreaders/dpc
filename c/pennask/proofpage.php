@@ -100,7 +100,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.176' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.178' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -193,7 +193,9 @@ $csslink
       <tr>
         <td>Find</td>
         <td class='r'>
-          <input type='text' name='txtfind' tabindex=1 id='txtfind' size='20'>
+          <input list='findlist' name='txtfind' tabindex=1 id='txtfind' size='20'>
+          <datalist id='findlist'>
+          </datalist>
         </td>
         <td rowspan='2' class='r'>
           <input type='checkbox' name='chki' id='chki' title='ignore case'/>
@@ -219,7 +221,9 @@ $csslink
       <tr>
         <td>Replace</td>
         <td class='r'>
-          <input type='text' name='txtrepl' id='txtrepl' tabindex=2 size='20'>
+          <input list='repllist' name='txtrepl' id='txtrepl' tabindex=2 size='20'>
+          <datalist id='repllist'>
+          </datalist>
         </td>
       </tr>
     </table>
