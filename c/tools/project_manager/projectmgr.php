@@ -61,10 +61,10 @@ $sql = "
             p.authorsname,
             p.difficulty,
             CASE WHEN p.phase = 'POSTED' THEN ''
-            ELSE p.n_available_pages
+                ELSE p.n_available_pages
             END n_available_pages,
             CASE WHEN p.phase = 'POSTED' THEN ''
-            ELSE p.n_pages
+                ELSE p.n_pages
             END n_pages,
             p.username,
             p.postproofer,
@@ -73,30 +73,33 @@ $sql = "
             IFNULL(myph.id, 0) holdid,
             phases.sequence,
             GROUP_CONCAT(DISTINCT CONCAT(ph.phase, '/', ph.hold_code)
-            ORDER BY phphases.sequence, ph.hold_code
-            SEPARATOR ',\\n') holdlist,
+                ORDER BY phphases.sequence, ph.hold_code
+                SEPARATOR ',\\n') holdlist,
             IFNULL(SUM(p.phase = ph.phase), 0) active_hold_count,
             CASE WHEN p.phase = 'POSTED' THEN ''
-            ELSE DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time)))
+            ELSE DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(
+                (
+                    SELECT MAX(pv.version_time) FROM page_versions AS pv
+                    WHERE pv.projectid = p.projectid and pv.state = 'C'
+                )
+            ))
             END AS last_save_days
     FROM projects p
-    JOIN phases ON p.phase = phases.phase
+    JOIN phases
+        ON p.phase = phases.phase
     LEFT JOIN project_holds ph
         ON p.projectid = ph.projectid
     LEFT JOIN phases phphases ON ph.phase = phphases.phase
     LEFT JOIN project_holds myph
-    ON p.projectid = myph.projectid
-        AND p.phase = myph.phase
-        AND myph.hold_code = 'user'
-        AND myph.set_by = ?
-	LEFT JOIN page_versions AS pv
-	ON p.projectid = pv.projectid
-            AND pv.state = 'C'
+        ON p.projectid = myph.projectid
+            AND p.phase = myph.phase
+            AND myph.hold_code = 'user'
+            AND myph.set_by = ?
     WHERE p.username = ?
     " . ($is_all ? "" : "
         AND p.phase IN ('PREP', 'P1', 'P2', 'P3', 'F1', 'F2')") ."
     GROUP BY p.projectid
-    ORDER BY phases.sequence, active_hold_count";
+    ORDER BY phases.sequence, active_hold_count, p.authorsname, p.nameofwork";
 
 echo(html_comment($sql));
 $rows = $dpdb->SqlRowsPS($sql, [&$username, &$username]);
@@ -284,3 +287,5 @@ function results_navigator($rows_per_page, $results_offset, $numrows) {
     }
 	return $sret;
 }
+
+// vim: sw=4 ts=4 expandtab
