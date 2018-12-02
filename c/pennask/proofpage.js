@@ -1,5 +1,5 @@
 /*
-    version 0.178
+    version 0.179
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1782,50 +1782,180 @@ class TextAnalysis {
         $("span_fmtcount").innerHTML = (this.msgs.length).toString();
     }
 
+    getLineType(l)
+    {
+        switch (l) {
+        case "":
+            return "blank-line";
+        case "/*":
+            return "open-no-wrap";
+        case "*/":
+            return "close-no-wrap";
+        case "/#":
+            return "open-block-quote";
+        case "#/":
+            return "close-block-quote";
+        case "[Illustration]":
+            return "illustration-no-caption";
+        default:
+            if (l.startsWith("[Illustration:"))
+                return "open-illustration";
+            if (l.startsWith("[Footnote"))
+                return "open-footnote";
+            if (l.startsWith("*[Footnote"))
+                return "open-footnote-continuation";
+            if (l.endsWith("]"))
+                return "close-illustration-or-footnote";
+            if (l.endsWith("]*"))
+                return "close-footnote-with-continuation";
+            return "text";
+        }
+    }
+
     /*
      * Analyse block-quotes and no-wrap blocks.
      */
     block()
     {
         var blocks = [];
-        var lines = this.text.split('\n');
+        var lines = this.text.replace(/\s+$/, '').split('\n');
+        var lastLineType = "start-of-page";
         for (var i = 0; i < lines.length; i++) {
             var l = lines[i];
             var last = (i > 0 ? lines[i-1] : "");
-            var next = (i+1 == lines.length ? "" : lines[i+1]);
+            var thisLineType = this.getLineType(l);
+            var nextLineType = (i+1 == lines.length ? "end-of-page" : this.getLineType(lines[i+1]));
 
-            if (l == "/*") {
+            this.footnoteReferences(l);
+
+            switch (thisLineType) {
+            case "open-no-wrap":
                 if (blocks.indexOf("*") != -1)
                     lines[i] = this.err(l, "/* (no-wrap) may not be nested");
                 blocks.push("*");
-                if (last != "" && last != "/#")
+                switch (lastLineType) {
+                case "start-of-page":
+                case "blank-line":
+                case "open-block-quote":
+                case "open-illustration":
+                case "open-footnote":
+                case "open-footnote-continuation":
+                    break;
+                default:
                     lines[i] = this.err(l, "/* (no-wrap) must be preceeded by a blank line, start of page, or start of block-quote");
-            } else if (l == "/#") {
+                    break;
+                }
+                break;
+
+            case "open-block-quote":
                 if (blocks.indexOf("*") != -1)
                     lines[i] = this.err(l, "/# (block quote) inside a /* (no-wrap)");
                 blocks.push("#");
-                if (last != "")
+                switch (lastLineType) {
+                case "start-of-page":
+                case "blank-line":
+                    break;
+                default:
                     lines[i] = this.err(l, "/# (block quote) must be preceeded by a blank line or start of page");
-            } else if (l == "*/") {
+                    break;
+                }
+                break;
+
+            case "close-no-wrap":
                 if (blocks.pop() != "*")
                     lines[i] = this.err(l, "*/ (end no-wrap) never opened");
-                if (next != "" && next != "#/")
-                    lines[i] = this.err(l, "*/ (end no-wrap) must be followed by a blank line, end of page, or end of block-quote");
-            } else if (l == '#/') {
+                switch (nextLineType) {
+                case "end-of-page":
+                case "blank-line":
+                case "close-block-quote":
+                case "close-illustration-or-footnote":
+                case "close-footnote-with-continuation":
+                    break;
+                default:
+                    lines[i] = this.err(l, "*/ (end no-wrap) must be followed by a blank line, end of page, or end of block-quote, or end of footnote or illustration");
+                    break;
+                }
+                break;
+
+            case "close-block-quote":
                 if (blocks.pop() != "#")
                     lines[i] = this.err(l, "#/ (end block quote) never opened");
-                if (next != "")
-                    lines[i] = this.err(l, "#/ (end no-wrap) must be followed by a blank line or end of page");
-            } else {
+                switch (nextLineType) {
+                case "end-of-page":
+                case "blank-line":
+                case "close-illustration-or-footnote":
+                case "close-footnote-with-continuation":
+                    break;
+                default:
+                    lines[i] = this.err(l, "#/ (end no-wrap) must be followed by a blank line or end of page, or end of footnote or illustration");
+                    break;
+                }
+                break;
+
+            case "illustration-no-caption":
+                break;
+
+            case "open-illustration":
+                if (!l.endsWith("]"))
+                    blocks.push("I");
+                break;
+
+            case "open-footnote":
+            case "open-footnote-continuation":
+                this.footnote(l);
+                if (!l.endsWith("]"))
+                    blocks.push("F");
+                break;
+
+            case "close-illustration-or-footnote":
+                if (blocks.length == 0)
+                    lines[i] = this.err(l, "] No open footnote or illustration");
+                else {
+                    var open = blocks.pop();
+                    if (open != "I" && open != "F")
+                        lines[i] = this.err(l, "] close with open /# or /*");
+                }
+                break;
+
+            case "close-footnote-with-continuation":
+                if (blocks.length == 0)
+                    lines[i] = this.err(l, "]* No open footnote");
+                else {
+                    var open = blocks.pop();
+                    if (open != "F")
+                        lines[i] = this.err(l, "]* close with open non-footnote");
+                    else
+                        if (nextLineType != "end-of-page")
+                            lines[i] = this.err(l, "]* must be followed by the end of page.");
+                }
+                break;
+
+            case "text":
                 var marker;
-                for (marker in { "/*":0, "*/":0, "/#":0, "#/":0 }) {
+                for (marker in { "/*":0, "*/":0, "/#":0, "#/":0, "[Footnote":0, "[Illustration":0 }) {
                     if (l.indexOf(marker) != -1)
                         lines[i] = this.err(l, marker + " embedded in line");
                 }
+                break;
+
+            case "blank-line":
+                break;
+
+            default:
+                lines[i] = this.err(l, "Internal error: " + thisLineType);
+                break;
             }
+
+            lastLineType = thisLineType;
         }
         if (blocks.length != 0) {
-            this.msgs.push("Open /" + blocks.pop() + " at end of page");
+            var open = blocks.pop();
+            if (open == "I")
+                this.msgs.push("Open Illustration at end of page");
+            else if (open == "F")
+                this.msgs.push("Open Footnote at end of page");
+            else
+                this.msgs.push("Open /" + blocks.pop() + " at end of page");
         }
         this.text = lines.join("\n");
     }
@@ -1916,12 +2046,10 @@ class TextAnalysis {
     oneUnit(str, inNoWrap)
     {
         //console.log("oneUnit: " + inNoWrap + ", " + str);
-        this.footnoteReferences(str, inNoWrap);
         this.balance(str, inNoWrap);
-        this.squareTags(str, inNoWrap);
     }
 
-    footnoteReferences(str, inNoWrap)
+    footnoteReferences(str)
     {
         var re = /\[.\]/g;
         var results = str.match(re);
@@ -1933,47 +2061,6 @@ class TextAnalysis {
                 else
                     this.err(str, "Multiple references to footnote " + c);
             }
-        }
-    }
-
-    /*
-     * Validate the [XXXX form of markup.
-     */
-    squareTags(str, inNoWrap)
-    {
-        var tags = {
-            "[Illustration" : this.illustration,
-            // TODO: Sidenotes don't need to be isolated so need different code
-            //"[Sidenode" : this.sidenote,
-            "*[Footnote" : this.footnote,
-            "[Footnote" : this.footnote,
-        };
-        for (var tag in tags) {
-            if (str.startsWith(tag)) {
-                if (inNoWrap)
-                    this.err(str, "Markup " + tag + " may not be inside a no-wrap block");
-                else
-                    tags[tag].call(this, str);
-
-                // Don't look for [Footnote!
-                if (tag == "*[Footnote")
-                    break;
-            }
-            if (str.indexOf(tag, 1) != -1)
-                // Even if a valid tag, make sure another markup not embedded
-                this.err(str, "Markup " + tag + " must start the line, not be embedded");
-        }
-    }
-
-    illustration(str)
-    {
-        // Illustration doesn't need contents
-        if (str == "[Illustration]")
-            return;
-        if (!str.startsWith("[Illustration: ")
-        ||  !str.endsWith("]")) {
-            this.err(str, "Malformed Illustration markup");
-            return;
         }
     }
 
@@ -1990,14 +2077,12 @@ class TextAnalysis {
     {
         // Continued footnote, no letter, and no reference check
         if (str.startsWith("*[Footnote")) {
-            if (!str.startsWith("*[Footnote: "))
+            if (!str.startsWith("*[Footnote:"))
                 this.err(str, "Incorrectly formatted footnote continuation");
-            if (!str.endsWith("]") && !str.endsWith("]*"))
-                this.err(str, "Incorrectly ended footnote continuation");
             return;
         }
 
-        var re = /^\[Footnote .: .*\]\*?$/;
+        var re = /^\[Footnote .:/;
         var results = str.match(re);
         if (results == null) {
             this.err(str, "Malformed footnote markup");
