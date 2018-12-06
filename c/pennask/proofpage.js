@@ -1,5 +1,5 @@
 /*
-    version 0.179
+    version 0.182
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1096,7 +1096,11 @@ function eSetFootnote() {
 
 function eSetIllustration() {
     var sel = SelectedText();
-    var txt = '[Illustration: ' + sel + ']';
+    var txt;
+    if (sel == '')
+        txt = '[Illustration]';
+    else
+        txt = '[Illustration: ' + sel + ']';
     ReplaceText(txt);
     return false;
 }
@@ -1640,7 +1644,6 @@ function getFandRRegex() {
         key = key.replace(/ /g, "[\\s]");
     }
     var flags = 'g' + ($('chki').checked ? 'i' : '');
-    console.log("Regex: " + key + ", flags: " + flags);
     return new RegExp(key, flags);
 }
 
@@ -1782,6 +1785,38 @@ class TextAnalysis {
         $("span_fmtcount").innerHTML = (this.msgs.length).toString();
     }
 
+    /**
+     * Check a line for a closing square, i.e. a [Footnote or [Illustration
+     * closing.
+     * Without this, if a line ended with [**xxx] or [X] (footnote reference)
+     * an erroneous closing.
+     */
+    endsInSquare(line)
+    {
+        var offsets = [];
+        var endpos = line.length - 1;
+
+        for (var i = 0; i <= endpos; i++) {
+            var letter = line[i];
+            switch (letter) {
+            case '[':
+                offsets.push(i);
+                continue;
+
+            case ']':
+                if (offsets.length > 0) {
+                    offsets.pop();
+                    continue;
+                }
+                if (i == endpos)
+                    return true;
+                break;
+            }
+        }
+        console.log("False");
+        return false;
+    }
+
     getLineType(l)
     {
         switch (l) {
@@ -1804,10 +1839,10 @@ class TextAnalysis {
                 return "open-footnote";
             if (l.startsWith("*[Footnote"))
                 return "open-footnote-continuation";
-            if (l.endsWith("]"))
-                return "close-illustration-or-footnote";
             if (l.endsWith("]*"))
                 return "close-footnote-with-continuation";
+            if (this.endsInSquare(l))
+                return "close-illustration-or-footnote";
             return "text";
         }
     }
