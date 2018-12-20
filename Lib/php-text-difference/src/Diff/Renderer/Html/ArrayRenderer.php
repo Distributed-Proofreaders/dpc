@@ -129,6 +129,8 @@ class ArrayRenderer extends AbstractRenderer
 						$lines = array_slice($b, $j1, ($j2 - $j1));
 						$lines =  $this->formatLines($lines);
 						$lines = str_replace(array("\0", "\1"), array('<ins>', '</ins>'), $lines);
+						// *****LOCAL CHANGES: Ins of just spaces is ignored by the browser
+						$lines = str_replace("<ins> </ins>", "<ins>&nbsp;</ins>", $lines);
 						$blocks[$lastBlock]['changed']['lines'] += $lines;
 					}
 				}
@@ -177,7 +179,7 @@ class ArrayRenderer extends AbstractRenderer
 		$lines = array_map(array($this, 'ExpandTabs'), $lines);
 		$lines = array_map(array($this, 'HtmlSafe'), $lines);
 		foreach($lines as &$line) {
-			$line = preg_replace_callback('# ( +)|^ #', __CLASS__."::fixSpaces", $line);
+			$line = preg_replace_callback('# ( +)|^ #', array($this, 'fixSpaces'), $line);
 		}
 		return $lines;
 	}
@@ -190,7 +192,10 @@ class ArrayRenderer extends AbstractRenderer
 	 */
 	public static function fixSpaces($matches)
 	{
-		$spaces = isset($matches[1]) ? $matches[1] : '';
+		// ****LOCAL CHANGES: was using matches[1]. However, our return value includes the
+		// leading space, which isn't part of the () in the pattern. This caused the
+		// deletion of the first space from each match. We don't know what was being done.
+		$spaces = isset($matches[0]) ? $matches[0] : '';
 		$count = strlen($spaces);
 		if($count == 0) {
 			return '';
