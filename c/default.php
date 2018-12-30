@@ -31,7 +31,7 @@ echo "<div id='home_main'>
 
 echo _("<p>Distributed Proofreaders Canada (DPC) was founded in 2007
 by Michael Shepard and David Jones to support the digitization of Public Domain
-books. Our inspiration was <a href='www.pgdp.net'>Distributed Proofreaders
+books. Our inspiration was <a href='https://www.pgdp.net'>Distributed Proofreaders
 International (DP)</a>, which was originally conceived to prepare texts for
 Project Gutenberg (PG). Just as DP is now the main
 source of PG e-books, DPC now provides many of the books for the
