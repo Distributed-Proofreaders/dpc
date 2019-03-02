@@ -259,6 +259,7 @@ class ProjectInfoHolder
             $this->nameofwork, $this->authorsname,
             $this->projectmgr, $User->Username(), $this->project_type);
 
+        $this->postednum = "";
         $this->save_to_db();
         $dpdb->commit();
         return $this->projectid;
