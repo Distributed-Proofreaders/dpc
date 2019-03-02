@@ -174,6 +174,7 @@ $wclangs = array(
     "fi" => "Finnish",
     "fr" => "French",
     "de" => "German",
+    "de-alt" => "German de-alt",
     "grc" => "Greek ancient",
     "el" => "Greek modern",
     "eo" => "Esperanto",
