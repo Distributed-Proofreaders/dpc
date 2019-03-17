@@ -1,5 +1,5 @@
 /*
-    version 0.182
+    version 0.183
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -791,6 +791,16 @@ function eKeyDown(e) {
         ? e.which 
         : e.keyCode;
 
+    // handle keyboard shortcuts
+    if(e.altKey) {
+        if(!e.ctrlKey && !e.metaKey) {
+            if (eAltKeyPress(kCode))
+                e.preventDefault();
+        }
+        _keystack = "";
+        return true;
+    }
+
     switch(kCode) {
         case  8:  // backspace
             //noinspection IfStatementWithTooManyBranchesJS,IfStatementWithTooManyBranchesJS
@@ -814,29 +824,37 @@ function eAltKeyPress(kCode) {
     var k = String.fromCharCode(kCode);
     switch (k) {
     case "q":
+    case "Q":
     case "#":
         eSetBlockQuote();
         break;
     case "w":
+    case "W":
     case "*":
         eSetNoWrap();
         break;
     case "b":
+    case "B":
         eSetBold();
         break;
     case "u":
+    case "U":
         eSetUpperCase();
         break;
     case "l":
+    case "L":
         eSetLowerCase();
         break;
     case "t":
+    case "T":
         eSetTitleCase();
         break;
     case "i":
+    case "I":
         eSetItalics();
         break;
     case "s":
+    case "S":
         eSetSmallCaps();
         break;
     case "1":
@@ -849,11 +867,13 @@ function eAltKeyPress(kCode) {
         eLineHeight("lh20");
         break;
     case "j":
+    case "J":
         eDeHyphen();
         break;
     default:
-        break;
+        return false;
     }
+    return true;
 }
 
 //noinspection FunctionWithMoreThanThreeNegationsJS,OverlyComplexFunctionJS,FunctionTooLongJS,FunctionTooLongJS
@@ -864,9 +884,8 @@ function eKeyPress(e) {
 
     // handle keyboard shortcuts
     if(e.altKey) {
-        if(!e.ctrlKey && !e.metaKey) {
-            eAltKeyPress(kCode);
-        }
+        // Alt keys used to be handled here; stopped working,
+        // now handled in keydown.
         _keystack = "";
         return true;
     }
@@ -1743,13 +1762,13 @@ function eSetFontSize() {
 
 // when the preview button is clicked
 function ePreviewFormat() {
+    if(_is_wordchecking)
+        clear_wordchecking();
+
     // if preview visible, display text (wc should be hidden)
     if(_is_previewing) {
-        hide_preview();
-        show_text();
-        _is_previewing = false;
-    }
-    else {
+        clear_previewing();
+    } else {
         // preview is hidden, it was clicked, show it, hide others
         var result = tatext.value;
         result = formattedTextAnalysis(result);
@@ -1813,7 +1832,6 @@ class TextAnalysis {
                 break;
             }
         }
-        console.log("False");
         return false;
     }
 
@@ -2275,14 +2293,14 @@ function eToggleBad(e) {
     if (true) {
         answer = Confirm("Page will be unavailable until fixed by PM.");
         if (!answer) {
-	    console.log("Toggle bad: cancelled");
-	    e.stopPropagation();
-	    e.preventDefault();
-	    return false;
-	}
+            console.log("Toggle bad: cancelled");
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        }
         $("badreason").value = answer;
         $("todo").value = "badpage";
-	console.log("Toggle bad: submitting");
+        console.log("Toggle bad: submitting");
         formedit.submit();
     } else {
         $("todo").value = "fixpage";
@@ -2672,6 +2690,12 @@ function clear_wordchecking() {
     }
 }
 
+function clear_previewing() {
+    hide_preview();
+    show_text();
+    _is_previewing = false;
+}
+
 function eLangcode(e) {
     if(!e) { e = window.event; }
     var tgt = e.target ? e.target : e.srcElement;
@@ -2912,11 +2936,14 @@ function eSwitchLayout() {
 // 3. editing, and wants to (resume) wordcheck.
 
 function eLinkWC() {
+    if (_is_previewing)
+        clear_previewing();
+
     // turn it off? Send accepted list
     if(_is_wordchecking) {
         clear_wordchecking();
-    }
-    else {
+    } else {
+        hide_preview();
         requestWordcheck();
     }
     return false;
@@ -2966,8 +2993,6 @@ function show_wordcheck() {
     $("span_wccount").innerHTML         = (wc_count() + bw_count());
     $("span_wccount").style.visibility  = "visible";
     prepreview.style.visibility         = "visible";
-
-    show_preview();
 }
 
 function putTweet() {
