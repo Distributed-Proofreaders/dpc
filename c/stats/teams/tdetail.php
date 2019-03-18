@@ -187,7 +187,7 @@ function showTeamProfile($team) {
     $rows[] = array( _("Forum"), $link_to_topic);
     // $rows[] = array( _("Members") . " <i>("._("Rank").")</i>",
         // number_format($team->MemberCount()) . "&nbsp;<i>(#{$team->MemberRank()})</i>" );
-    $rows[] = array( _("Current Members"), number_format(count($team->MemberCount())));
+    $rows[] = array( _("Current Members"), number_format($team->MemberCount()));
 //    $rows[] = array( _("Retired Members"), number_format($team->RetiredMembers()));
 
     $tbl->AddColumn("<", 0);    // caption
