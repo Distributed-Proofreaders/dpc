@@ -1,5 +1,5 @@
 /*
-    version 0.183
+    version 0.184
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -504,7 +504,11 @@ function _applylayout() {
 
 // still leaves a problem if the font is resized
 function set_text_size() {
-    divtext.style.height = px(tatext.scrollHeight);
+    // The heights might not be equal due to rounding.
+    if (prepreview.scrollHeight > tatext.scrollHeight)
+        divtext.style.height = px(prepreview.scrollHeight);
+    else
+        divtext.style.height = px(tatext.scrollHeight);
     divtext.style.width  = px(tatext.scrollWidth);
 }
 
@@ -1774,6 +1778,7 @@ function ePreviewFormat() {
         result = formattedTextAnalysis(result);
         result = result.replace('<tb>', '<hr>');
         setPreviewText(result);
+        divtext_match_tatext();
         hide_wordchecking();
         hide_text();
         show_preview();
