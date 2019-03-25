@@ -1052,13 +1052,15 @@ function send_file($path, $filename = null) {
     header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
     header("Pragma: public");
     header("Content-Length: " . filesize($path));
-//    ob_clean();
-//    flush();
-//	ignore_user_abort(true);
-    // Make sure buffering is not on, or we might run out of memory!
-    if (ob_get_level())
-        ob_end_clean();
-    readfile($path);
+
+    // If we don't do this manually, readfile will run us out of memory
+    $handle = fopen($path, 'rb');
+    while (!feof($handle)) {
+        print(@fread($handle, 1024 * 1024));
+        ob_flush();
+        flush();
+    }
+    fclose($handle);
     exit;
 }
 
