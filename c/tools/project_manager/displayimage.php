@@ -97,7 +97,7 @@ function init_zoom() {
     if(isNaN(pct)) {
         pct = 100;
 	}
-    pct = Math.max(pct, Math.min(pct, 200), 25);
+    pct = Math.max(pct, Math.min(pct, 200), 5);
 
     $('image_zoom').value = pct.toString();
     $('pageimage').style.width = pct.toString() + '%';
@@ -177,8 +177,8 @@ function eNextClick() {
     <select name='jumpto' id='jumpto' onChange='eJumpTo()'>
       $opts
     </select>
-    <input type='button' value='Previous' onClick='ePrevClick()'>
-    <input type='button' value='Next' onClick='eNextClick()'>
+    <input type='button' accesskey='p' value='Previous' onClick='ePrevClick()'>
+    <input type='button' accesskey='n' value='Next' onClick='eNextClick()'>
   </div>\n";
 
 if($project->UserMayManage()) {
