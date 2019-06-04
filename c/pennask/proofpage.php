@@ -100,7 +100,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.184' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.185' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -408,6 +408,9 @@ $csslink
 
 		if($is_foofing) {
 			echo "
+            <button title='left-justified paragraph'
+                onclick='return top.eSetNoIndent()'>[**noindent]</button>
+
             <button title='nowrap ALT-w' onclick='return top.eSetNoWrap()'>
                  /* */ </button>
 

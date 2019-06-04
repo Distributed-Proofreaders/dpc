@@ -1436,6 +1436,49 @@ function eSetSidenote() {
     return false;
 }
 
+function eSetNoIndent() {
+    var sb = SelectionBounds();
+    var start = sb.start;
+    if (start != sb.end)
+        // If any selection, ignore
+        return false;
+
+    var off = start;
+    var c = tatext.value.charAt(off);
+    if (c == '')
+        // Positioned at end of page, no idea what that means, ignore
+        return false;
+    if (c == '\n') {
+        // If positioned on a newline, move forward til first non-newline
+        // add before that character
+        while ((c = tatext.value.charAt(++off)) == '\n')
+            ;
+        if (c == '')
+            // end of text, ignore
+            return false;
+        // Add before off
+    } else {
+        // Positioned on a character, move backwards til last newline,
+        // add after the newline
+        while ((c = tatext.value.charAt(--off)) != '\n')
+            ;
+        if (c == '')
+            // start of text implies continued paragraph, ignore
+            return false;
+        // Add after off
+        off++;
+    }
+    InsertBefore(off, '[**noindent]');
+    divtext_match_tatext();
+    return false;
+}
+
+function InsertBefore(off, str) {
+    var s1 = tatext.value.substring(0, off);
+    var s2 = tatext.value.substring(off);
+    tatext.value = s1 + str + s2;
+}
+
 function eSetBlockQuote() {
     var sel = SelectedText();
     if(sel.length == 0 ) {
