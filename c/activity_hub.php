@@ -35,7 +35,7 @@ echo "
     <div class='center overflow'>
         <img src='$code_url/graphics/Activity_Hub.jpg' alt='$ahtitle'>
         <p class='center'>
-        ".link_to_metal_list("Gold", "Recently Published Ebooks")."
+        ".link_to_metal_list("Gold", "Recently Published eBooks")."
         </p>
     </div>\n";
 

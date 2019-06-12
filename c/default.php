@@ -20,9 +20,9 @@ $sql = "SELECT
     FROM users";
 
 $row = $dpdb->SqlOneRow($sql);
-$msg = _("{$row['users_day']} active users in the past 24 hours.<br>
-		  {$row['users_week']} active users in the past week.<br>
-		  {$row['users_month']} active users in the past month.");
+$msg = _("{$row['users_day']} active volunteers in the past 24 hours.<br>
+		  {$row['users_week']} active volunteers in the past week.<br>
+		  {$row['users_month']} active volunteers in the past month.");
 
 echo "<p class='center italic'>$msg</p>\n";
 
@@ -34,7 +34,7 @@ by Michael Shepard and David Jones to support the digitization of Public Domain
 books. Our inspiration was <a href='https://www.pgdp.net'>Distributed Proofreaders
 International (DP)</a>, which was originally conceived to prepare texts for
 Project Gutenberg (PG). Just as DP is now the main
-source of PG e-books, DPC now provides many of the books for the
+source of PG eBooks, DPC now provides many of the books for the
 <a href='http://www.gutenberg.ca'>Project Gutenberg Canada (PGC)</a>
 that started on July 1, 2007.
 All our books are also posted to our own site,
@@ -54,9 +54,9 @@ echo "<h3 class='red'>". _("Site Concept") ."</h3>\n";
 
 echo _("<p>This site provides a web-based method of easing the proofreading work
 associated with the digitization of Public Domain books into Project Gutenberg
-Canada e-books. By breaking the work into individual pages many proofreaders
+Canada eBooks. By breaking the work into individual pages many proofreaders
 can be working on the same book at the same time. This significantly speeds up
-the proofreading/e-book creation process.</p>");
+the proofreading/eBook creation process.</p>");
 
 echo _("<p>When a proofreader elects to proofread a page of a particular
 book, the text and image file are displayed on a single web page. This allows
@@ -71,7 +71,7 @@ interface.</p>");
 
 echo _("<p>Once all pages for a particular book have been processed, a
 post-processor joins the pieces, properly formats them into a Project Gutenberg
-Canada e-book, optionally makes it available to interested parties for 'smooth
+Canada eBook, optionally makes it available to interested parties for 'smooth
 reading', and submits it to the PGC archive.</p>\n");
 
 echo "<h3 class='red'>". _("How You Can Help") ."</h3>\n";
