@@ -3,7 +3,9 @@
 $relPath = "./../../pinc/";
 include_once($relPath.'dpinit.php');
 
-define( 'DEFAULT_N_RESULTS_PER_PAGE', 100 );
+// Note that paging doesn't work, and since I don't like paging anyhow
+// I'm just setting this to a huge number rather than wasting time fixing it.
+define( 'DEFAULT_N_RESULTS_PER_PAGE', 10000 );
 // -------------------------------------------------------------------
 
 $rows_per_page      = Arg('n_results_per_page');
@@ -263,7 +265,7 @@ function results_navigator($rows_per_page, $results_offset, $numrows) {
     // The REQUEST_URI must have at least one query-string parameter,
     // otherwise the response would have been just the search form,
     // and this function wouldn't have been called.
-    $url_base = $_SERVER['REQUEST_URI'] . '&';
+    $url_base = $_SERVER['REQUEST_URI'] . '?';
     $url_base = preg_replace('/results_offset=[^&]*&/', '', $url_base);
 
     if ( $results_offset > 0 ) {
