@@ -100,12 +100,13 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.185' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.186' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
 $zoom_in_prompt         = _("Zoom image larger");
 $zoom_out_prompt        = _("Zoom image smaller");
+$rotate_prompt          = _("Rotate image 90°");
 $hv_prompt              = ($layout == "vertical")
 							? _("Switch to horizontal layout")
 							: _("Switch to vertical layout");
@@ -294,6 +295,8 @@ $csslink
                 <img src='/graphics/zoomin.png' title='$zoom_in_prompt' alt='$zoom_in_prompt'></a>
 			<a id='linkzoomout'>
 				<img src='/graphics/zoomout.png' title='$zoom_out_prompt' alt='$zoom_out_prompt'></a>
+			<a id='linkrotate'>
+				<img src='gfx/rotate.png' title='$rotate_prompt' alt='$rotate_prompt'></a>
 			<a id='linklayout'><img src='$hv_png' id='switchlayout' title='$hv_prompt' alt='$hv_prompt'></a>\n";
 
 		EchoFontFaceCombo($fontface);

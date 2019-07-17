@@ -1,5 +1,5 @@
 /*
-    version 0.184
+    version 0.186
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -73,6 +73,7 @@ var chkIsWC;
 var chkIsPunc;
 var runAlways;
 var tweet;
+var rotation = 0;
 
 var formedit;
 
@@ -319,6 +320,7 @@ function eInit() {
     addEvent($('linksync'),     "click",     eToggleSync);
     addEvent($('linkzoomin'),   "click",     eZoomIn);
     addEvent($('linkzoomout'),  "click",     eZoomOut);
+    addEvent($('linkrotate'),   "click",     eRotate);
     addEvent($('linklayout'),   "click",     eSwitchLayout);
     addEvent($('imgpvw'),       "click",     ePreviewFormat);
     addEvent($('btnFandR'),     "click",     eToggleFandR);
@@ -2300,6 +2302,32 @@ function eZoomOut() {
     imgpage.style.width = (w * 10).toString() + "px";
     SaveZoom(w);
     return false;
+}
+
+// Rotate 90 degrees more than current.
+function eRotate() {
+    rotation += 1;
+    if (rotation >= 4)
+        rotation = 0;
+    degrees = rotation * 90;
+    if (rotation == 0) {
+        x = '0';
+        y = '0';
+    } else if (rotation == 1) {
+        x = '0';
+        y = '-100';
+    } else if (rotation == 2) {
+        x = '-100';
+        y = '-100';
+    } else if (rotation == 3) {
+        x = '-100';
+        y = '0';
+    }
+
+    imgpage.style.transformOrigin = '0 0';
+    imgpage.style.transform = 'rotate(' + degrees + 'deg)' +
+        'translateX(' + x + '%) ' +
+        'translateY(' + y + '%)';
 }
 
 function eLineHeight(lhclass) {
