@@ -26,7 +26,7 @@ to P1, the first proofing round.</p>
 2. Pages (images and text) need to be loaded.
 2. A Project Manager needs to be assigned.
 </pre>
-<p>They then advance to P1 with a Queueing Hold, which is released my a Queue Manager,
+<p>They then advance to P1 with a Queueing Hold, which is released by a Queue Manager,
     who considers several factors, such as active projects per author, projects per
     Project Manager, the total number of projects and pages in round, etc.</p>
 

@@ -114,7 +114,7 @@ $n_checked_out = $dpdb->SqlOneValue("
         WHERE postproofer='{$User->Username()}'
             AND phase='PP'");
 if ($n_checked_out) {
-    echo sprintf( _("You currently have %d projects checked out for Post Prcessing."), $n_checked_out );
+    echo sprintf( _("You currently have %d projects checked out for Post Processing."), $n_checked_out );
     echo "<br>\n";
 }
 
