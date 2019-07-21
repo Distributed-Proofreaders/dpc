@@ -213,6 +213,11 @@ function summarize_projects( $phase) {
              FROM projects where phase = '$phase'");
         $navail = $row["navail"];
         $ntotal = $row["ntotal"];
+        // If there are none in PPV, then we get an empty row.
+        if (empty($navail))
+            $navail = 0;
+        if (empty($ntotal))
+            $ntotal = 0;
         $nchecked_out = $ntotal - $navail;
         echo _("
         <table class='bordered hub_table'>
@@ -224,8 +229,4 @@ function summarize_projects( $phase) {
         <tr><td>$navail</td><td>$nchecked_out</td><td>$ntotal</td></tr>
         </table>\n";
     }
-
-
-
 }
-
