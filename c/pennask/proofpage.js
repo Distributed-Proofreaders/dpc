@@ -1,5 +1,5 @@
 /*
-    version 0.186
+    version 0.187
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1146,6 +1146,13 @@ function eSetBlankPage() {
 function eSetNote() {
     var sel = SelectedText();
     var txt = '[** ' + sel + ']';
+    ReplaceText(txt);
+    return false;
+}
+
+function eSpaceNote() {
+    var sel = SelectedText();
+    var txt = '[**space?]';
     ReplaceText(txt);
     return false;
 }

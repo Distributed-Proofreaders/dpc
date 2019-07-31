@@ -100,7 +100,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.186' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.187' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -462,6 +462,8 @@ $csslink
 				&gt;-&lt;</button>
             <button title='note' onclick='return top.eSetNote()'>
                 [** ]</button>
+            <button title='note' onclick='return top.eSpaceNote()'>
+                [**space?]</button>
 
             <button title='Blank Page'
                 onclick='return top.eSetBlankPage()'>
