@@ -28,6 +28,12 @@ f {
     color: pink;
 }
 
+span.blank-run {
+    font-size: 75%;
+    color: coral;
+    text-decoration: underline;
+}
+
 body#pfbody {
     margin: 0;
     padding: 0;

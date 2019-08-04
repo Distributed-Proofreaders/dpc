@@ -1,5 +1,5 @@
 /*
-    version 0.187
+    version 0.189
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -737,6 +737,10 @@ function ReplaceText(str) {
         str += ' ';
     }
 
+    if (false) {
+        var x = document.execCommand("insertText", false, str);
+    } else {
+
     // IE
     if(doc.selection  && doc.selection.createRange) {
         var sel = doc.selection;
@@ -753,6 +757,7 @@ function ReplaceText(str) {
             + str + tatext.value.substring(tatext.selectionEnd);
         tatext.selectionEnd = 
             tatext.selectionStart = istart + str.length;
+    }
     }
     consider_wordchecking();
     tatext.focus();
@@ -1363,6 +1368,8 @@ function setFont(tag) {
     var endTag = "</" + tag + ">";
     var sel = SelectedText();
     if (sel == "")
+        sel = SelectWord();
+    if (sel == "")
         return false;
     if (selectionInNowrap())
         sel = fontPerLine(sel, startTag, endTag);
@@ -1370,6 +1377,71 @@ function setFont(tag) {
         sel = startTag + sel + endTag;
     ReplaceText(sel);
     return false;
+}
+
+function isNonWord(c) {
+    var reWordChar = new RegExp(/^[-A-Za-z\u00C0-\u017F'’]$/);
+    return !reWordChar.test(c);
+}
+
+/*
+ * If there is no selection, apply to word the cursor is on.
+ */
+function SelectWord() {
+    var cursor = tatext.selectionStart;
+    var c = tatext.value.charAt(cursor);
+
+    // Look at the current character.  If it isn't a word char, then
+    // if the previous character is also not a word char, no word is available.
+    // However, if the previous character is a word char, it is the word we're
+    // selecting.
+    if (isNonWord(c)) {
+        if (cursor == 0)
+            return '';  // cursor at start of text, first char is white
+        c = tatext.value.charAt(cursor-1);
+        if (isNonWord(c))
+            return ''; // cursor between two whitespace chars.
+        cursor--;
+    }
+
+    // Character under cursor is a word character.
+    // Go back to the start of the word, i.e. first non-word char.
+    var dash = 0;
+    while (cursor > 0) {
+        c = tatext.value.charAt(cursor);
+        if (isNonWord(c)) {
+            cursor++;
+            break;
+        }
+        // Do not go back over --
+        if (c == '-') {
+            if (dash == 1) {
+                cursor += 2;
+                break;
+            }
+            dash++;
+        }
+        cursor--;
+    }
+    var text = tatext.value.substring(cursor);
+    //console.log("Matching against>>>" + text + "<<<");
+    var i = cursor;
+    while ((c = tatext.value.charAt(i)) != '') {
+        if (isNonWord(c))
+            break;
+        i++;
+    }
+    match = tatext.value.substring(cursor, i);
+    //console.log("Matched>>>" + match + "<<<");
+    var j = match.indexOf("--");
+    if (j != -1) {
+        match = match.substring(0, j);
+        i = cursor + j;
+        //console.log("-->>>" + match + "<<<");
+    }
+    tatext.selectionStart = cursor;
+    tatext.selectionEnd = i;
+    return match;
 }
 
 /*
@@ -1445,6 +1517,114 @@ function eSetSidenote() {
     return false;
 }
 
+function findStart(start) {
+    var off = start;
+    var c = tatext.value.charAt(off);
+    if (c == '')
+        // Positioned at end of page, no idea what that means, ignore
+        return -1;
+    if (c == '\n') {
+        // If positioned on a newline, move forward til first non-newline
+        while ((c = tatext.value.charAt(++off)) == '\n')
+            ;
+        if (c == '')
+            // end of text, ignore
+            return -1;
+        start = off;
+    } else {
+        if (off == 0)
+            // Start of page
+            return 0;
+
+        // Positioned on a character, move backwards til last newline,
+        while ((c = tatext.value.charAt(--off)) != '\n')
+            if (off == 0)
+                // Positioned on the first line of text
+                return 0;
+        start = off+1;
+    }
+    return start;
+}
+
+function findEnd(off) {
+    var c = tatext.value.charAt(off);
+
+    if (c == '')
+        // Positioned at end of page, no idea what that means, ignore
+        return -1;
+    if (c == '\n') {
+        // If positioned on a newline, already at end, move back over
+        // multiple newlines
+        while ((c = tatext.value.charAt(--off)) == '\n')
+            ;
+        // Point at trailing newline
+        return off+1;
+    }
+    // Positioned on a character, move forwards til newline
+    while ((c = tatext.value.charAt(++off)) != '\n')
+        ;
+    if (c == '')
+        // End of page, makes no sense.
+        return -1;
+
+    // If it isn't \n\n, then this is the middle of a paragraph
+    // which is probably wrong?  Should we move forward for \n\n?
+    if (tatext.value.charAt(off+1) != '\n')
+        return -1;
+
+    // points at trailing newline
+    return off;
+}
+
+function eSetChapter() {
+    var sb = SelectionBounds();
+    var start = sb.start;
+    var end = sb.end;
+
+    start = findStart(start);
+    if (start == -1)
+        return false;
+    end = findEnd(end);
+    if (end == -1)
+        return false;
+    //console.log("text: start=" + (start) + ", end=" + (end));
+
+    // Save the lines highlighted, then delete them
+    // Includes newline on last line
+    text = tatext.value.substring(start, end+1);
+    //console.log("text>>>" + text + "<<<");
+    Delete(start, end+1);
+
+    // Remove all the newlines.
+    var off = start;
+    var c;
+    if (off > 0) {
+        while ((c = tatext.value.charAt(--off)) == '\n')
+            if (off == 0)
+                break;
+        if (off > 0) {
+            off++; // point at trailing newline
+            off++; // point at following fully blank line
+        }
+    }
+    start = off;
+    while ((c = tatext.value.charAt(++off)) == '\n')
+        ;
+    if (c == '')
+        // End of page, cannot happen?
+        ;
+    else
+        // Pointing at first non-character
+        end = off;
+
+    //console.log("start=" + (start) + ", end=" + (end));
+    // Replace with the highlighted text, and the correct newlines.
+    Replace(start, end, "\n\n\n\n" + text + "\n\n");
+
+    divtext_match_tatext();
+    return false;
+}
+
 function eSetNoIndent() {
     var sb = SelectionBounds();
     var start = sb.start;
@@ -1486,6 +1666,19 @@ function InsertBefore(off, str) {
     var s1 = tatext.value.substring(0, off);
     var s2 = tatext.value.substring(off);
     tatext.value = s1 + str + s2;
+}
+
+function Delete(start, end) {
+    Replace(start, end, '');
+}
+
+/*
+ * Up to, but not including the end position
+ */
+function Replace(start, end, repl) {
+    var s1 = tatext.value.substring(0, start);
+    var s2 = tatext.value.substring(end);
+    tatext.value = s1 + repl + s2;
 }
 
 function eSetBlockQuote() {
@@ -1843,6 +2036,7 @@ function formattedTextAnalysis(str)
     var analysis = new TextAnalysis(str);
     analysis.block();
     analysis.inline();
+    analysis.number();
     analysis.displayErrors();
     return analysis.text;
 }
@@ -1859,6 +2053,26 @@ class TextAnalysis {
         console.log("MSGS: " + this.msgs);
         $('divPreviewErrors').innerHTML = this.msgs.join('<br>\n');
         $("span_fmtcount").innerHTML = (this.msgs.length).toString();
+    }
+
+    number()
+    {
+        var lines = this.text.split('\n');
+
+        var run = 0;
+        for (var i = 0; i < lines.length; i++) {
+            var l = lines[i];
+
+            if (l.length == 0) {
+                run++;
+                lines[i] = "<span class='blank-run'>" + run + "</span>";
+            } else {
+                if (run == 3 || run > 4)
+                    lines[i-1] += "<span class='errline'>Incorrect blank line count.</span>";
+                run = 0;
+            }
+        }
+        this.text = lines.join("\n");
     }
 
     /**
