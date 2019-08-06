@@ -1,5 +1,5 @@
 /*
-    version 0.189
+    version 0.190
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -2055,6 +2055,15 @@ class TextAnalysis {
         $("span_fmtcount").innerHTML = (this.msgs.length).toString();
     }
 
+    lineEmpty(l)
+    {
+        if (l.length == 0)
+            return true;
+        if (l.length == 1)
+            return l.charCodeAt(0) == 0xFEFF;
+        return false;
+    }
+
     number()
     {
         var lines = this.text.split('\n');
@@ -2063,7 +2072,7 @@ class TextAnalysis {
         for (var i = 0; i < lines.length; i++) {
             var l = lines[i];
 
-            if (l.length == 0) {
+            if (this.lineEmpty(l)) {
                 run++;
                 lines[i] = "<span class='blank-run'>" + run + "</span>";
             } else {
