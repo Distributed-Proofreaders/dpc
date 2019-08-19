@@ -1,5 +1,5 @@
 /*
-    version 0.190
+    version 0.191
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1650,7 +1650,8 @@ function eSetNoIndent() {
         // Positioned on a character, move backwards til last newline,
         // add after the newline
         while ((c = tatext.value.charAt(--off)) != '\n')
-            ;
+            if (off <= 0)
+                return false;
         if (c == '')
             // start of text implies continued paragraph, ignore
             return false;
