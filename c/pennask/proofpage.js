@@ -1,5 +1,5 @@
 /*
-    version 0.191
+    version 0.192
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -2108,7 +2108,8 @@ class TextAnalysis {
                     offsets.pop();
                     continue;
                 }
-                if (i == endpos)
+                /* Allow for trailing spaces after ] */
+                if (line.substring(i+1).match(/^ *$/))
                     return true;
                 break;
             }
@@ -2385,11 +2386,11 @@ class TextAnalysis {
 
     footnoteReferences(str)
     {
-        var re = /\[.\]/g;
+        var re = /\[(.|[0-9][0-9]?)\]/g;
         var results = str.match(re);
         if (results != null) {
             for (var i = 0; i < results.length; i++) {
-                var c = results[i].substr(1, 1);
+                var c = results[i].substring(1, results[i].length-1);
                 if (this.references.indexOf(c) == -1)
                     this.references.push(c);
                 else
@@ -2418,11 +2419,17 @@ class TextAnalysis {
 
         var re = /^\[Footnote .:/;
         var results = str.match(re);
-        if (results == null) {
-            this.err(str, "Malformed footnote markup");
-            return 1;
+        var footnote;
+        if (results != null)
+            footnote = str.substr(10, 1);
+        else {
+            results = str.match(/^\[Footnote [0-9][0-9]?:/)
+            if (results == null) {
+                this.err(str, "Malformed footnote markup");
+                return 1;
+            }
+            footnote = str.substr(10, 2);
         }
-        var footnote = str.substr(10, 1);
         var off = this.references.indexOf(footnote);
         if (off == -1)
             this.err(str, "Footnote " + footnote + " not referenced");
