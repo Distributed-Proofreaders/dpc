@@ -28,7 +28,8 @@ $dpdb->SetTiming();
 
 $rows = $dpdb->SqlRows("
     SELECT genre,
-            SUM(CASE WHEN p.phase = 'P1' THEN 1 ELSE 0 END) AS P1,
+            SUM(CASE WHEN p.phase = 'P1' AND hold_code = 'queue' THEN 1 ELSE 0 END) AS Q,
+            SUM(CASE WHEN p.phase = 'P1' AND hold_code IS NULL THEN 1 ELSE 0 END) AS P1,
             SUM(CASE WHEN p.phase = 'P2' THEN 1 ELSE 0 END) AS P2,
             SUM(CASE WHEN p.phase = 'P3' THEN 1 ELSE 0 END) AS P3,
             SUM(CASE WHEN p.phase = 'F1' THEN 1 ELSE 0 END) AS F1,
@@ -37,13 +38,13 @@ $rows = $dpdb->SqlRows("
         LEFT JOIN project_holds ph
             ON ph.projectid = p.projectid AND ph.phase = p.phase
         WHERE p.phase IN ('P1','P2','P3','F1','F2')
-            AND (hold_code != 'queue' OR hold_code IS NULL)
         GROUP BY genre
         ORDER BY genre
 ");
 
 $tblGenre = new DpTable();
 $tblGenre->AddColumn("<Genre", "genre");
+$tblGenre->AddColumn(">Q", "Q");
 $tblGenre->AddColumn(">P1", "P1");
 $tblGenre->AddColumn(">P2", "P2");
 $tblGenre->AddColumn(">P3", "P3");
@@ -53,7 +54,8 @@ $tblGenre->SetRows($rows);
 
 $rows = $dpdb->SqlRows("
     SELECT username,
-            SUM(CASE WHEN p.phase = 'P1' THEN 1 ELSE 0 END) AS P1,
+            SUM(CASE WHEN p.phase = 'P1' AND hold_code = 'queue' THEN 1 ELSE 0 END) AS Q,
+            SUM(CASE WHEN p.phase = 'P1' AND hold_code IS NULL THEN 1 ELSE 0 END) AS P1,
             SUM(CASE WHEN p.phase = 'P2' THEN 1 ELSE 0 END) AS P2,
             SUM(CASE WHEN p.phase = 'P3' THEN 1 ELSE 0 END) AS P3,
             SUM(CASE WHEN p.phase = 'F1' THEN 1 ELSE 0 END) AS F1,
@@ -62,13 +64,13 @@ $rows = $dpdb->SqlRows("
         LEFT JOIN project_holds ph
             ON ph.projectid = p.projectid AND ph.phase = p.phase
         WHERE p.phase IN ('P1','P2','P3','F1','F2')
-            AND (hold_code != 'queue' OR hold_code IS NULL)
         GROUP BY username
         ORDER BY username
 ");
 
 $tblPM = new DpTable();
 $tblPM->AddColumn("<PM", "username");
+$tblPM->AddColumn(">Q", "Q");
 $tblPM->AddColumn(">P1", "P1");
 $tblPM->AddColumn(">P2", "P2");
 $tblPM->AddColumn(">P3", "P3");
@@ -78,7 +80,8 @@ $tblPM->SetRows($rows);
 
 $rows = $dpdb->SqlRows("
     SELECT difficulty,
-            SUM(CASE WHEN p.phase = 'P1' THEN 1 ELSE 0 END) AS P1,
+            SUM(CASE WHEN p.phase = 'P1' AND hold_code = 'queue' THEN 1 ELSE 0 END) AS Q,
+            SUM(CASE WHEN p.phase = 'P1' AND hold_code IS NULL THEN 1 ELSE 0 END) AS P1,
             SUM(CASE WHEN p.phase = 'P2' THEN 1 ELSE 0 END) AS P2,
             SUM(CASE WHEN p.phase = 'P3' THEN 1 ELSE 0 END) AS P3,
             SUM(CASE WHEN p.phase = 'F1' THEN 1 ELSE 0 END) AS F1,
@@ -87,13 +90,13 @@ $rows = $dpdb->SqlRows("
         LEFT JOIN project_holds ph
             ON ph.projectid = p.projectid AND ph.phase = p.phase
         WHERE p.phase IN ('P1','P2','P3','F1','F2')
-            AND (hold_code != 'queue' OR hold_code IS NULL)
         GROUP BY difficulty
         ORDER BY difficulty
 ");
 
 $tblDiff = new DpTable();
 $tblDiff->AddColumn("<Difficulty", "difficulty");
+$tblDiff->AddColumn(">Q", "Q");
 $tblDiff->AddColumn(">P1", "P1");
 $tblDiff->AddColumn(">P2", "P2");
 $tblDiff->AddColumn(">P3", "P3");
@@ -103,7 +106,8 @@ $tblDiff->SetRows($rows);
 
 $rows = $dpdb->SqlRows("
     SELECT languages.name language,
-            SUM(CASE WHEN p.phase = 'P1' THEN 1 ELSE 0 END) AS P1,
+            SUM(CASE WHEN p.phase = 'P1' AND hold_code = 'queue' THEN 1 ELSE 0 END) AS Q,
+            SUM(CASE WHEN p.phase = 'P1' AND hold_code IS NULL THEN 1 ELSE 0 END) AS P1,
             SUM(CASE WHEN p.phase = 'P2' THEN 1 ELSE 0 END) AS P2,
             SUM(CASE WHEN p.phase = 'P3' THEN 1 ELSE 0 END) AS P3,
             SUM(CASE WHEN p.phase = 'F1' THEN 1 ELSE 0 END) AS F1,
@@ -113,13 +117,13 @@ $rows = $dpdb->SqlRows("
             ON ph.projectid = p.projectid AND ph.phase = p.phase
         LEFT JOIN languages ON p.language = languages.code
         WHERE p.phase IN ('P1','P2','P3','F1','F2')
-            AND (hold_code != 'queue' OR hold_code IS NULL)
         GROUP BY languages.name
         ORDER BY languages.name
 ");
 
 $tblLang = new DpTable();
 $tblLang->AddColumn("<Language", "language");
+$tblLang->AddColumn(">Q", "Q");
 $tblLang->AddColumn(">P1", "P1");
 $tblLang->AddColumn(">P2", "P2");
 $tblLang->AddColumn(">P3", "P3");
