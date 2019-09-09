@@ -1292,6 +1292,7 @@ class DpProject
                             GROUP_CONCAT(username) proofernames
                     FROM page_versions
                     WHERE state = 'C'
+                        AND projectid = ? /* Redundant, but fixes full scan */
                     GROUP BY projectid, pagename
                     ORDER BY VERSION
                 ) pv2
@@ -1301,7 +1302,10 @@ class DpProject
 			    	AND pv.phase = ?
 			    	AND pv.task IN ('PROOF', 'FORMAT', 'LOAD')
 		        ORDER BY pv.pagename";
-        $args = [&$projectid, &$phase];
+        // Note that we've added an extra projectid=? to the inner left join,
+        // so it doesn't full scan the huge page_versions table. 15 seconds
+        // before, zero after!
+        $args = [&$projectid, &$projectid, &$phase];
 		$pgs = $dpdb->SqlRowsPS($sql, $args);
 
 		$text = "";
