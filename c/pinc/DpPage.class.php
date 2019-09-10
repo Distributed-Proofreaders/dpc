@@ -445,8 +445,10 @@ class DpPage
 
         if (!$this->ActiveUserIsEditor()) {
             // If this isn't the person who we think is editing it,
-            // then the PM can still edit it.
-            if(! $this->UserIsPM() && ! $User->IsSiteManager()) {
+            // then the PM or a PF can still edit it.
+            if(!$this->UserIsPM()
+            && !$User->IsSiteManager()
+            && !$User->IsProjectFacilitator()) {
                 $owner = $this->Owner();
                 $user = $User->Username();
                 $status = $this->PageStatus();
@@ -1016,6 +1018,8 @@ The Administration"));
 
         // for each line
         $nwc = $nwcs = $nwcb = 0;
+        //$Log = new DpLog($site_log_path, true);
+        global $Log;
         for($i = 0; $i < count($tlines); $i++) {
             $tline = $tlines[$i];
             //
