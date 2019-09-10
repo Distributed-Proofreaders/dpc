@@ -343,7 +343,9 @@ function eedit($pagename, $row) {
     $projectid = $row['projectid'];
     $proofer = $row['proofer'];
     if(lower($proofer) == lower($User->Username())
-        || lower($row['pm']) == lower($User->Username()) || $User->IsSiteManager()) {
+    || lower($row['pm']) == lower($User->Username())
+    || $User->IsSiteManager()
+    || $User->isProjectFacilitator()) {
         return link_to_proof_page($projectid, $pagename, "Edit", true);
     }
     return "";
