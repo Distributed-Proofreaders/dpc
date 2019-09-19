@@ -68,13 +68,13 @@ if ( $User->IsProjectManager() ) {
 
 // ----------------------------------
 
-$cp_link = link_to_url("$code_url/faq/cp.php", "Find out how!");
+$cp_link = link_to_url("/forumdpc/viewforum.php?f=10", "Providing Content");
 
 echo "
     <li>" . _("Providing Content") . "
     <br> "
     . _("Want to help out the site by providing material for us to proofread? ")
-    . "$cp_link</li>\n";
+    . "Check out the $cp_link forum and leave a message that you want to help.</li>\n";
 
 /** @var Round $round */
 foreach ( $Context->Rounds() as $round ) {
@@ -200,7 +200,7 @@ function summarize_projects( $phase) {
         <tr class='navbar'><td rowspan='2'>All projects</td>
                            <td>Available<br>for $phase</td>
                            <td>Checked<br>Out</td>
-                           <td>Avail for<br>Smooth Reading</td>
+                           <td>Available for<br>Smooth Reading</td>
                            <td>Total<br>Projects</td></tr>\n");
         echo "
         <tr><td>$navail</td><td>$nchecked_out</td><td>$nsmooth</td><td>$ntotal</td></tr>
