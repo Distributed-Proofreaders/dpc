@@ -1,5 +1,5 @@
 /*
-    version 0.192
+    version 0.194
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -2024,7 +2024,6 @@ function ePreviewFormat() {
         result = formattedTextAnalysis(result);
         result = result.replace('<tb>', '<hr>');
         setPreviewText(result);
-        divtext_match_tatext();
         hide_wordchecking();
         hide_text();
         show_preview();
@@ -3471,6 +3470,7 @@ function readAjax() {
 
 function setPreviewText(str) {
     spanpreview.innerHTML = str;
+    divtext_match_tatext();
 }
 
 function eTextInput() {
