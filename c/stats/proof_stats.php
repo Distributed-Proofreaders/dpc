@@ -25,7 +25,8 @@ else {
 }
 $rows = $dpdb->SqlRows("
       SELECT IF(u.u_privacy != 0, 'Anonymous', p.username) username,
-             SUM(p.page_count) page_count
+        SUM(p.page_count) page_count,
+        DATE(FROM_UNIXTIME(MAX(count_time))) last_page_proofed
       FROM user_round_pages p
       JOIN users u ON u.username = p.username
       $where
@@ -36,9 +37,11 @@ $rows = $dpdb->SqlRows("
 $tbl = new DpTable("tbltop100", "dptable center sortable w50");
 $tbl->AddColumn("<Proofer", "username"); 
 $tbl->AddColumn(">Pages", "page_count"); 
+$tbl->AddColumn(">Most recent page", "last_page_proofed"); 
 $tbl->SetRows($rows);
 $tbl->EchoTableNumbered();
 
 
 theme("", "footer");
 ?>
+// vim: sw=4 ts=4 expandtab
