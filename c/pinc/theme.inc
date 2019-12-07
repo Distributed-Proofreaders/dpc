@@ -399,6 +399,9 @@ function show_round_specific_stats( $round_id ) {
     global $User;
     global $Context, $t;
 
+    if ($round_id == "ALL")
+        return;
+
     // Put the whole thing in a table, just so we can put a box around it.
     echo "
     <table id='tbl5' class='center w95 sidebar b111'>
