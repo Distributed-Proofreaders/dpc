@@ -30,12 +30,14 @@ if ( $usr->Privacy() > 0 && ! $User->IsAdmin()) {
 }
 
 EchoMemberDpProfile($usr);
-if( $roundid == "all") {
+if (lower($roundid) == "all") {
     EchoMemberAllStats($usr);
+	//EchoMemberPages($usr, $roundid);
 }
 else if ( $roundid ) {
 	EchoMemberRoundStats($usr, $roundid);
 	EchoMemberTeams($usr, $roundid);
+	//EchoMemberPages($usr, $roundid);
 	EchoMemberNeighbors($usr, $roundid);
 	if($usr->AgeDays() > 1 ) {
 		EchoMemberHistory($usrname, $roundid);
@@ -43,6 +45,7 @@ else if ( $roundid ) {
 }
 else {
 	EchoMemberAllStats($usr);
+	//EchoMemberPages($usr, $roundid);
 }
 
 theme("", "footer");
@@ -76,12 +79,47 @@ function EchoMemberStats($usrname) {
 }
 */
 
+function EchoMemberPages($usr, $roundid) {
+    global $dpdb;
+
+	$username = $usr->Username();
+    $day = new DateTimeImmutable();
+    $endday = $day->modify("+1 day");
+
+    $startdate = $day->format('Y-m-d');
+    $enddate = $endday->format('Y-m-d');
+
+    $args = [ &$username ];
+    if (lower($roundid) == "all")
+        $where = "";
+    else {
+        $where = "AND pp.phase = ?";
+        $args[] = &$roundid;
+    }
+
+    $rows = $dpdb->SqlRowsPS("
+        SELECT nameofwork, pagename, p.projectid
+            FROM page_versions pp
+            JOIN projects p on pp.projectid = p.projectid
+            WHERE pp.username = ?
+                AND pp.state = 'C'
+                $where
+                AND version_time >= UNIX_TIMESTAMP(DATE '$startdate')
+                AND version_time < UNIX_TIMESTAMP(DATE '$enddate')
+    ", $args);
+    $t = new DpTable("tblstats", "w75 dptable minitab", _("$roundid Pages Completed Today"));
+    $t->AddColumn("^Project", "nameofwork");
+    $t->AddColumn("^Page", "pagename");
+    $t->SetRows($rows);
+    $t->EchoTable();
+}
+
 /**
  * @param DpUser $usr
  * @param string $roundid
  */
 function EchoMemberRoundStats( $usr, $roundid ) {
-    if($roundid == "ALL") {
+    if (lower($roundid) == "all") {
         EchoMemberAllStats($usr);
         return;
     }
@@ -202,3 +240,4 @@ function url_for_user_history($username, $roundid, $range) {
     ."&amp;roundid=$roundid"
     ."&amp;range=$range";
 }
+// vim: sw=4 ts=4 expandtab
