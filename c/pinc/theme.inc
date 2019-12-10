@@ -399,7 +399,7 @@ function show_round_specific_stats( $round_id ) {
     global $User;
     global $Context, $t;
 
-    if ($round_id == "ALL")
+    if (lower($round_id) == "all")
         return;
 
     // Put the whole thing in a table, just so we can put a box around it.
@@ -644,7 +644,8 @@ function show_admin_sidebar() {
     <a href='/c/tools/site_admin/role_list.php'>User Role Report</a>
     <a href='/c/tools/p1release.php'>Project P1 Release</a>
     <a href='/c/tools/pper.php'>Post Processor Report</a>
-    <a href='/c/tools/site_admin/sitenews.php'>Site News Central</a>\n";
+    <a href='/c/tools/site_admin/sitenews.php'>Site News Central</a>
+    <a href='/c/stats/activity.php'>Round Activity</a>\n";
         }
         echo "
     </pre>\n";
