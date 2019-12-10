@@ -132,7 +132,7 @@ echo "
 
     $rows[] = array(
         "col01" => "<a href='pm_stats.php'>" . _("Project Manager Stats") . "</a>",
-        "col02" => ""
+        "col02" => "<a href='activity.php'>" . _("Daily Activity") . "</a>"
     );
 
     $tbl->AddColumn("<", "col01");
