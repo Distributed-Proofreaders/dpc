@@ -67,6 +67,8 @@ foreach ($phases as $phase) {
 
 $trows = [];
 $tot = [];
+foreach ($phases as $phase)
+    $tot[$phase] = 0;
 for ($rownum = 0; ; $rownum++) {
     $trow = [];
     $entry = False;
@@ -83,10 +85,7 @@ for ($rownum = 0; ; $rownum++) {
         $entry = True;
         $trow["username$phase"] = $user;
         $trow["count$phase"] = $count;
-        if (empty($tot[$phase]))
-            $tot[$phase] = $count;
-        else
-            $tot[$phase] += $count;
+        $tot[$phase] += $count;
     }
     if (!$entry)
         break;
