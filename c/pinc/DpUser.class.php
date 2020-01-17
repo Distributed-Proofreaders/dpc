@@ -60,6 +60,8 @@ class DpUser
 				if($this->IsSiteManager()) {
 					return true;
 				}
+                if ($this->HasRole($roundid . "Deny"))
+                    return false;
                 return true;
 
             case "P2":
@@ -70,6 +72,8 @@ class DpUser
                 if($this->DpAge() < 21)
                     return false;
                 if($this->PageCount() < 300)
+                    return false;
+                if ($this->HasRole($roundid . "Deny"))
                     return false;
                 return true;
 
