@@ -283,7 +283,9 @@ function echo_top_box($project) {
     <div class='center margined clear bordered w50'>\n";
 
     $phase = $project->Phase();
-    switch($phase) {
+    if ($project->ActiveHoldCount())
+        $proof_link = "Users are not allowed to work on the project in its current state.";
+    else switch($phase) {
         case "P1":
         case "P2":
         case "P3":
@@ -296,7 +298,10 @@ function echo_top_box($project) {
             break;
 
         default:
-            $proof_link = "Not available";
+            if (is_file($project->ProjectPath()))
+                $proof_link = "Not available, project has been archived";
+            else
+                $proof_link = "Not available";
             break;
     }
 
