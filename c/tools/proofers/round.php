@@ -102,7 +102,10 @@ $args = [&$phase];
 //echo html_comment($sql);
 $rows = $dpdb->SqlRowsPS($sql, $args);
 
-if(count($rows) < 1) {
+$n = count($rows);
+echo "<h3 class='center'>$n projects available in this round.</h3>\n";
+
+if($n < 1) {
 	echo "<br><h4>No projects found.</h4>";
 }
 else {
