@@ -13,6 +13,10 @@ i {
     color: red;
 }
 
+b {
+    color: SaddleBrown;
+}
+
 sc {
     font-variant: small-caps;
     color: green;
