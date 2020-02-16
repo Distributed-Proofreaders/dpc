@@ -266,9 +266,13 @@ sorttable = {
     return aa-bb;
   },
   sort_alpha: function(a,b) {
-    if (a[0]==b[0]) return 0;
-    if (a[0]<b[0]) return -1;
-    return 1;
+    // Change by alex to base code Feb 16/2020. This is a better way to sort!
+    return a[0].localeCompare(b[0], undefined, {
+	sensitivity: 'base', ignorePunctuation:true
+    });
+    //if (a[0]==b[0]) return 0;
+    //if (a[0]<b[0]) return -1;
+    //return 1;
   },
   sort_ddmm: function(a,b) {
     mtch = a[0].match(sorttable.DATE_RE);
