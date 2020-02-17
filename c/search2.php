@@ -55,7 +55,7 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	//$tbl->SetQBE();
 	$tbl->AddColumn("<".$titleCaption,          "title",            "title_link");
 	$tbl->AddColumn("<".$authorCaption,         "author");
-	$tbl->AddColumn("^".$langCaption,           "langname",               "elangname");
+	$tbl->AddColumn("^".$langCaption,           null,               "all_langs");
 	$tbl->AddColumn("^".$genreCaption,          "genre");
 	$tbl->AddColumn("^"._("avail<br>total"),    null,               "page_counts", "nosort");
 	$tbl->AddColumn("<".$pmCaption,             "project_manager",  "pmlink");
@@ -385,7 +385,7 @@ echo "
     <div class='w70 left search-instructions'>
         " ._("For titles and authors, matching uses
           wildcarding; 'ford' matches 'Oxford' and 'Stanford'.<br>
-           Task, language, etc. allow multiple choices
+           Genre, language, etc. allow multiple choices
           by pressing the control-key.")."
 	</div>
 </div>
@@ -557,11 +557,11 @@ function is_available($row) {
 		: "";
 }
 
-function elangname($langname, $row) {
-	return $langname
-	       .  isset($row['seclangname'])
-		? "/". $row['seclangname']
-		: "";
+function all_langs($row) {
+	return $row['langname']
+	       . ( empty($row['seclangname'])
+		? ""
+		: "/". $row['seclangname']);
 }
 
 function eauthors($authors, $row) {

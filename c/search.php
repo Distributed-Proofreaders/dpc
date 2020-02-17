@@ -279,7 +279,7 @@ echo "
     <div class='w70 left search-instructions'>
         " ._("For titles and authors, matching uses
           wildcarding; 'ford' matches 'Oxford' and 'Stanford'.<br>
-           Task, language, etc. allow multiple choices
+           Genre, language, etc. allow multiple choices
           by pressing the control-key.")."
 	</div>
 </div>
