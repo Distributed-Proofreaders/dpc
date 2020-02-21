@@ -2385,7 +2385,7 @@ class TextAnalysis {
 
     footnoteReferences(str)
     {
-        var re = /\[(.|[0-9][0-9]?)\]/g;
+        var re = /\[(.|[0-9]{1,3})\]/g;
         var results = str.match(re);
         if (results != null) {
             for (var i = 0; i < results.length; i++) {
@@ -2416,19 +2416,17 @@ class TextAnalysis {
             return;
         }
 
-        var re = /^\[Footnote .:/;
+        // Footnotes can either be a single letter/special character
+        // or if multiple, then they must be all numbers
+        var re = /^\[Footnote (.|[0-9]{1,3}):/;
         var results = str.match(re);
         var footnote;
-        if (results != null)
-            footnote = str.substr(10, 1);
-        else {
-            results = str.match(/^\[Footnote [0-9][0-9]?:/)
-            if (results == null) {
-                this.err(str, "Malformed footnote markup");
-                return 1;
-            }
-            footnote = str.substr(10, 2);
+        if (results == null) {
+            this.err(str, "Malformed footnote markup, must be <b>[Footnote X:</b> or <b>[Footnote ###:</b> in <b>" + str + "</b>");
+            return 1;
         }
+        footnote = results[1];
+
         var off = this.references.indexOf(footnote);
         if (off == -1)
             this.err(str, "Footnote " + footnote + " not referenced");
