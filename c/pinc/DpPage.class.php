@@ -292,18 +292,26 @@ class DpPage
 
     public function PrevImageUrl() {
         global $dpdb;
+
+        $projectid  = $this->ProjectId();
+        $pagename   = $this->PageName();
+
         $sql = "SELECT MAX(pagename) FROM pages
-                WHERE projectid = '{$this->ProjectId()}'
-                	AND pagename < '{$this->PageName()}'";
-        $pagename = $dpdb->SqlOneValue($sql);
+                WHERE projectid = ? AND pagename < ?";
+        $args = [ &$projectid, &$pagename ];
+        $pagename = $dpdb->SqlOneValuePS($sql, $args);
         return url_for_page_image($this->ProjectId(), $pagename);
     }
     public function NextImageUrl() {
         global $dpdb;
+
+        $projectid  = $this->ProjectId();
+        $pagename   = $this->PageName();
+
         $sql = "SELECT MIN(pagename) FROM pages
-                WHERE projectid = '{$this->ProjectId()}'
-                	AND pagename > '{$this->PageName()}'";
-        $pagename = $dpdb->SqlOneValue($sql);
+                WHERE projectid = ? AND pagename > ?";
+        $args = [ &$projectid, &$pagename ];
+        $pagename = $dpdb->SqlOneValuePS($sql, $args);
         return url_for_page_image($this->ProjectId(), $pagename);
     }
     public function Exists() {
@@ -881,15 +889,18 @@ The Administration"));
 
 	// special case to return to pre-PP Phase
 	// making the final Version available again.
+    // Note this doesn't make the page available again, but just marks
+    // it checked out again.  Is this correct?  In other phases,
+    // ClearPhase marks the page as available, and clears the user.
 	private function ClearPP() {
 		global $dpdb;
 
 		$projectid  = $this->ProjectId();
 		$pagename   = $this->PageName();
-		$phase      = $this->Phase();
+		$phase      = "F2"; // NOT current phase!
 		$sql = "
             UPDATE page_versions
-            SET version_time UNIX_TIMESTAMP(),
+            SET version_time = UNIX_TIMESTAMP(),
             	state = 'O'
             WHERE projectid = ?
             	AND pagename = ?
@@ -899,7 +910,10 @@ The Administration"));
 		$dpdb->SqlExecutePS($sql, $args);
 		$this->LogClearRound("PP");
 		$p = $this->Project();
-		$p->RevertPhase(false);
+        // true means do not add the F2 user hold. Shouldn't be needed, since
+        // the page is cleared, so the project shouldn't move back
+        // automatically.
+		$p->RevertPhase(false, false);
 		$this->RecalcProjectPageCounts();
 	}
 
@@ -927,8 +941,8 @@ The Administration"));
 	    return $dpdb->SqlExecutePS($sql, $args);
     }
 
-	public static function dp_log_page_event( $projectid, $pagename, $event_type,
-								$username, $phase, $version = null, $remark = null ) {
+	public static function dp_log_page_event($projectid, $pagename, $event_type,
+        $username, $phase, $version = null, $remark = null ) {
 		global $dpdb;
 
 		$sql = "

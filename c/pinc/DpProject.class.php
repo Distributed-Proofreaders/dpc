@@ -2342,6 +2342,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         global $dpdb, $User;
 	    $projectid = $this->ProjectId();
         $username = $User->Username();
+        // See DpPage.Reclaim for comment on page_last_versions view
 	    $sql = "
 			SELECT pv.pagename, pv.version
 			FROM page_last_versions pv
@@ -2349,19 +2350,20 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                 ON pv.projectid = ppv.projectid
                    AND pv.pagename = ppv.pagename
 				   AND ppv.version = pv.version - 1
-			WHERE pv.projectid = '$projectid'
+			WHERE pv.projectid = ?
 				AND pv.state = 'O'
-				AND pv.username != '$username'
+				AND pv.username != ?
                 AND
                 (
-                    IFNULL(ppv.username, '') != '$username'
+                    IFNULL(ppv.username, '') != ?
                     || pv.phase = 'F1'       -- allow sequential users P3 -> F1
                 )
 				AND pv.version_time < UNIX_TIMESTAMP() - 60 * 60 * 4
 			ORDER BY pv.version_time
 			LIMIT 1
 		";
-        $pagename = $dpdb->SqlOneValue($sql);
+        $args = [ &$projectid, &$username, &$username ];
+        $pagename = $dpdb->SqlOneValuePS($sql, $args);
 
         if ($pagename == "")
             return null;
@@ -2404,7 +2406,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return $Context->IndexPhase($idx + 1);
     }
 
-    public function RevertPhase($is_clear = false) {
+    public function RevertPhase($is_clear = false, $set_user_hold = true) {
         global $Context;
         /** @var DpContext $Context */
         $oldphase = $this->Phase();
@@ -2415,7 +2417,8 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                 $newphase = 'PREP';
 
 	    if(! $is_clear) {
-		    $this->SetUserHold( $newphase, "from reverting project from $oldphase" );
+            if ($set_user_hold)
+                $this->SetUserHold( $newphase, "from reverting project from $oldphase" );
 	    }
         $this->SetPhase($newphase);
         $this->LogProjectEvent(PJ_EVT_REVERT, "$oldphase to $newphase");
@@ -2888,7 +2891,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                     set_time  = UNIX_TIMESTAMP()";
             $args = [ &$holdcode, &$projectid, &$phase, &$note, &$username ];
             $dpdb->SqlExecutePS($sql, $args);
-            $this->LogProjectEvent(PJ_EVT_HOLD, "set $holdcode Hold");
+            $this->LogProjectEvent(PJ_EVT_HOLD, "set $holdcode Hold ($note)");
         }
     }
 
