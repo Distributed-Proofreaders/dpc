@@ -300,6 +300,8 @@ class DpPage
                 WHERE projectid = ? AND pagename < ?";
         $args = [ &$projectid, &$pagename ];
         $pagename = $dpdb->SqlOneValuePS($sql, $args);
+        if ($pagename == null)
+            return null;
         $p = $this->Project();
         $prev = new DpPage($projectid, $pagename);
         return $prev->ImageUrl();
@@ -314,6 +316,8 @@ class DpPage
                 WHERE projectid = ? AND pagename > ?";
         $args = [ &$projectid, &$pagename ];
         $pagename = $dpdb->SqlOneValuePS($sql, $args);
+        if ($pagename == null)
+            return null;
         $p = $this->Project();
         $next = new DpPage($projectid, $pagename);
         return $next->ImageUrl();

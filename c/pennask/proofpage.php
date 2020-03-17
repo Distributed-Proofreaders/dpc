@@ -72,6 +72,14 @@ $tweet          = $page->Tweet();
 $imgurl         = $page->ImageUrl();
 $previmgurl     = $page->PrevImageUrl();
 $nextimgurl     = $page->NextImageUrl();
+if ($previmgurl != null)
+    $setprevimg = "document.getElementById('imgprev').src = '$previmgurl';";
+else
+    $setprevimg = "";
+if ($nextimgurl != null)
+    $setnextimg = "document.getElementById('imgnext').src = '$nextimgurl';";
+else
+    $setnextimg = "";
 
 if($page->IsBad()) {
     $bad_icon = "gfx/broken.png";
@@ -266,8 +274,8 @@ $csslink
 <script>
 function loaded() {
     eInit();
-    document.getElementById('imgnext').src = '$nextimgurl';
-    document.getElementById('imgprev').src = '$previmgurl';
+    $setprevimg
+    $setnextimg
 }
 </script>
 
