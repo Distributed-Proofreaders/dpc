@@ -25,6 +25,9 @@ class DpContext {
 	public function __construct() {
 		$this->init_phases();
 //		$this->init_holds();
+        // Timer used to be initialized in theme, but reports are very erratic
+        // as to when theme is called; much sql done before header!
+        $this->TimerInit();
 	}
 
 	private function init_phases() {
@@ -573,11 +576,11 @@ class DpContext {
  * A page is added when we hae an image file and text.
  *
  * 1. Copy the image file into the project directory
- * 2. Archive the image file
+ * 2. Archive the image file -- no longer done
  * 3. Add a pages record
  * 4. Add a page_versions record, version 0
  * 5. Copy the text file to a version file
- * 6. Archive the text file
+ * 6. Archive the text file -- no longer done
  * 7. delete the image file
  * 8. delete the text file
 */
@@ -593,7 +596,6 @@ class DpContext {
 		$crc32 = crc32($text);
 		$textlength = mb_strlen($text);
 		$imagefile = basename($fromimagepath);
-		$toarchivepath  = build_path(ProjectArchivePath($projectid), $imagefile);
 		$toimagepath    = build_path(ProjectPath($projectid), $imagefile);
 
 
@@ -619,11 +621,6 @@ class DpContext {
 
 		$args = [&$projectid, &$pagename, &$crc32, &$textlength];
 		$dpdb->SqlExecutePS( $sql, $args );
-
-		if ( file_exists( $toarchivepath ) ) {
-			unlink( $toarchivepath );
-		}
-		copy( $fromimagepath, $toarchivepath );
 
 		if ( file_exists( $toimagepath ) ) {
 			unlink( $toimagepath );

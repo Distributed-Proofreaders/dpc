@@ -20,7 +20,8 @@ function theme($nameofpage, $location, $extra_args = []) {
     global $no_stats;
 
     $t = [];
-    $t[] = $Context->TimerInit();
+    // Now initialized in DpContent.__construct, so we catch it all
+    //$t[] = $Context->TimerInit();
 
 	if(! $User->IsLoggedIn()) {
 		$no_stats = 1;
@@ -645,7 +646,9 @@ function show_admin_sidebar() {
     <a href='/c/tools/p1release.php'>Project P1 Release</a>
     <a href='/c/tools/pper.php'>Post Processor Report</a>
     <a href='/c/tools/site_admin/sitenews.php'>Site News Central</a>
-    <a href='/c/stats/activity.php'>Round Activity</a>\n";
+    <a href='/c/stats/activity.php'>Round Activity</a>
+    \n";
+//    <a href='/c/tools/site_admin/archive.php'>Project Archiving</a>
         }
         echo "
     </pre>\n";
