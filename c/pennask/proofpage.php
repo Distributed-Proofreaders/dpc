@@ -161,7 +161,7 @@ $jslink
 $csslink
 <title>$title</title>
 
-<body id='pfbody' onresize='eResize()' onload='eInit()'>
+<body id='pfbody' onresize='eResize()' onload='loaded()'>
 
 <form accept-charset='UTF-8' name='formedit' id='formedit' method='POST' action='processpage.php'>
 <div id='divGear' class='hide'>
@@ -253,15 +253,23 @@ $csslink
 
 . "<div id='divleft'>
     <div id='divprevimage'>
-        <img id='imgprev' src='$previmgurl' alt=''>
+        <img id='imgprev' alt=''>
     </div> <!-- divprevimage -->
     <div id='divimage'>
         <img id='imgpage' src='$imgurl' alt=''>
     </div> <!-- divimage -->
     <div id='divnextimage'>
-    <img id='imgnext' src='$nextimgurl' alt=''>
+    <img id='imgnext' alt=''>
     </div> <!-- divnextimage -->
 </div> <!-- divleft -->
+
+<script>
+function loaded() {
+    eInit();
+    document.getElementById('imgnext').src = '$nextimgurl';
+    document.getElementById('imgprev').src = '$previmgurl';
+}
+</script>
 
 <div id='divsplitter'> </div>
 

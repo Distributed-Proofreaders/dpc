@@ -300,7 +300,9 @@ class DpPage
                 WHERE projectid = ? AND pagename < ?";
         $args = [ &$projectid, &$pagename ];
         $pagename = $dpdb->SqlOneValuePS($sql, $args);
-        return url_for_page_image($this->ProjectId(), $pagename);
+        $p = $this->Project();
+        $prev = new DpPage($projectid, $pagename);
+        return $prev->ImageUrl();
     }
     public function NextImageUrl() {
         global $dpdb;
@@ -312,7 +314,9 @@ class DpPage
                 WHERE projectid = ? AND pagename > ?";
         $args = [ &$projectid, &$pagename ];
         $pagename = $dpdb->SqlOneValuePS($sql, $args);
-        return url_for_page_image($this->ProjectId(), $pagename);
+        $p = $this->Project();
+        $next = new DpPage($projectid, $pagename);
+        return $next->ImageUrl();
     }
     public function Exists() {
         return count($this->_row) > 0;
