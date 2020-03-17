@@ -40,4 +40,5 @@ $n = $dpdb->SqlExecute("
 
 dump("$n user/round counts before today summed in total_user_round_pages.");
 
+// vim: sw=4 ts=4 expandtab
 ?>

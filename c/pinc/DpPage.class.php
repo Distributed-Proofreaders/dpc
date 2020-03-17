@@ -908,8 +908,9 @@ The Administration"));
 		$phase      = "F2"; // NOT current phase!
 		$sql = "
             UPDATE page_versions
-            SET version_time = UNIX_TIMESTAMP(),
-            	state = 'O'
+            SET state = 'A',
+            	username = NULL,
+            	version_time = NULL
             WHERE projectid = ?
             	AND pagename = ?
             	AND phase = ?
