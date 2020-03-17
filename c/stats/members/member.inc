@@ -3,7 +3,6 @@
 
 global $relPath;
 // $relPath = "../../pinc/";
-include_once $relPath . 'access_log.inc';
 require_once $relPath . 'RoundsInfo.php';
 require_once $relPath . 'DpPhpbb3.class.php';
 
