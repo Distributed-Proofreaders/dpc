@@ -27,46 +27,57 @@ echo "<h1 class='center'>$title</h1>\n";
 
 $sql = "
     SELECT  p.projectid,
-            CASE WHEN p.nameofwork LIKE '[BEGIN]%' THEN CONCAT('**', p.nameofwork) ELSE p.nameofwork END AS nameofwork,
-            p.authorsname,
-            p.language,
-            p.genre,
-            p.difficulty,
-            p.username,
-            LOWER(p.username) pmsort,
-            SUM(1) n_pages,
-            SUM(pv.state = 'A') n_available_pages,
-            CASE WHEN p.nameofwork LIKE '[BEGIN]%' THEN 0 ELSE
-            IFNULL(DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pe.event_time))),
-                   DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date))) END AS days_avail,
---            DATEDIFF(current_date(), FROM_UNIXTIME(MAX(pe.event_time))) AS since_hold,
---            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date)) AS days_avail,
-            DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time))) AS last_save_days
+        CASE WHEN p.nameofwork LIKE '[BEGIN]%'
+            THEN CONCAT('**', p.nameofwork)
+            ELSE p.nameofwork
+        END AS nameofwork,
+        p.authorsname, p.language, p.genre,
+        p.difficulty, p.username,
+        LOWER(p.username) pmsort,
+        SUM(1) n_pages,
+        SUM(pv.state = 'A') n_available_pages,
+        CASE WHEN p.nameofwork LIKE '[BEGIN]%'
+            THEN 0
+            ELSE IFNULL(
+                DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(
+                    (
+                        -- Look for the largest release hold event for
+                        -- this phase
+                        SELECT MAX(event_time) FROM project_events
+                            WHERE projectid = p.projectid
+                            AND phase = p.phase
+                            AND event_type='release_hold'
+                    )
+                )),
+                DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date))
+            )
+        END AS days_avail,
+--      DATEDIFF(current_date(), FROM_UNIXTIME(MAX(pe.event_time))) AS since_hold,
+--      DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date)) AS days_avail,
+        DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time))) AS last_save_days
     FROM projects p
 
     LEFT JOIN page_versions pv
         ON p.projectid = pv.projectid
 
-    LEFT JOIN project_holds ph
-        ON p.projectid = ph.projectid
-AND p.phase = ph.phase
-
-    LEFT JOIN project_events pe
-        ON p.projectid = pe.projectid
-        AND p.phase = pe.phase
-        AND pe.event_type = 'release_hold'
-
-
     WHERE p.phase = ?
-        AND ph.id IS NULL
 
-     AND NOT EXISTS (
-        SELECT 1 FROM page_versions
-        WHERE projectid = pv.projectid
-            AND pagename = pv.pagename
-            AND version > pv.version
-     )
-GROUP BY p.projectid
+        -- Exclude any project with a hold in this phase
+        AND NOT EXISTS (
+            SELECT 1 FROM project_holds
+            WHERE   projectid = p.projectid
+            AND     phase = p.phase
+        )
+
+        -- Exclude any page which already exists in a later round
+        AND NOT EXISTS (
+            SELECT 1 FROM page_versions
+            WHERE projectid = pv.projectid
+                AND pagename = pv.pagename
+                AND version > pv.version
+        )
+
+    GROUP BY p.projectid
     ORDER BY days_avail, nameofwork
     ";
 /*
