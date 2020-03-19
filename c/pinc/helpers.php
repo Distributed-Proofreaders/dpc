@@ -1136,12 +1136,13 @@ function ProjectPath($projectid) {
 	EnsureWriteableDirectory($path);
 	return $path;
 }
+/*
 function ProjectArchivePath($projectid) {
     global $projects_archive_dir;
     $path = build_path($projects_archive_dir, $projectid);
     EnsureWriteableDirectory($path);
     return $path;
-}
+}*/
 
 //function SmoothZipFileName($projectid) {
 //    return $projectid . "_smooth_avail.zip";
@@ -1297,8 +1298,9 @@ function PageVersionPath($projectid, $pagecode, $version_number) {
 }
 
 function PageVersionText($projectid, $pagename, $version_number) {
-	assert(file_exists(PageVersionPath($projectid, $pagename, $version_number)));
-	return file_get_contents(PageVersionPath($projectid, $pagename, $version_number));
+    $path = PageVersionPath($projectid, $pagename, $version_number);
+	assert(file_exists($path));
+	return file_get_contents($path);
 }
 
 /*
