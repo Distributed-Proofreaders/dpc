@@ -169,3 +169,4 @@
     function link_to_release_holdid($holdid) {
         return "<input type='submit' name='releasehold[$holdid]' value='Release'>\n";
     }
+// vim: sw=4 ts=4 expandtab
