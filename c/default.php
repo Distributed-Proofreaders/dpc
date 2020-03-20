@@ -76,6 +76,7 @@ reading', and submits it to the PGC archive.</p>\n");
 
 echo "<h3 class='red'>". _("How You Can Help") ."</h3>\n";
 
+/*
 echo sprintf(_("<p>The first step to take to help us out would be to <a
 href='$registration_url'>register</a> to be a new proofreader.
 ($registration_url also appears at the top of the screen.)  After you register
@@ -95,6 +96,22 @@ as often or as seldom as you like, and as many or as few pages as you like.  We
 encourage people to do 'a page a day', but it's entirely up to you! We hope you
 will join us in our mission of 'preserving the literary history of the world in
 a freely available form for everyone to use'.</p>");
+ */
+
+echo _("<p>The first thing to do is register as a new user (button at top right).
+Choose a user name and a password. After you register
+be sure to read over both the email you receive as well as the <a
+href='/wiki/index.php/getting_started.php'>Getting started</a> information page
+which provides helpful resources on how to proofread. After
+you have registered and read through some of the intro documents, we have special projects
+with the BEGIN identifier which will give you an introduction to the proofreading process. If you proofread
+in a BEGIN project there will be helpful mentors to offer constructive feedback on your work.
+All of our initial projects can be found in the <a href='/c/tools/proofers/round.php?roundid=P1'>P1 list</a> (button at top right).</p>
+<p>You can also have a look at the <a href='/c/tools/post_proofers/smooth_reading.php'>Smooth Reading Projects List</a>
+where you can read some of the newly finished books. These have yet to be posted to our eBook archive,
+<a href='https://www.fadedpage.com/'>Faded Page</a> and we use this place to get some final feedback.</p>
+<p>Proofread whenever you like. We encourage people to do ‘a page a day’, but it's entirely up to you! We hope you
+will join us in our mission of ‘preserving the literary history of the world’ one book at a time.</p>");
 
 echo "<hr class='w100 margined' style='margin: 1em auto'>\n";
 
