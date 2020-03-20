@@ -58,8 +58,7 @@ if(! $page->IsAvailable() && ! $page->UserIsOwner()) {
 	LogMsg("Owner is " . $page->Owner() . " and User is " . $User->Username() . "
 		Action: $seltodo
 		Projectid: $projectid
-		Page: $pagename
-		Phase: $phase");
+		Page: $pagename");
 }
 
 switch($seltodo) {
