@@ -124,9 +124,6 @@ if ( count( $chk_other ) > 0 ) {
 
 			assert(copy( $otherpath, $topath ));
 
-			$archivepath = build_path(ProjectArchivePath($projectid), $otherfile);
-			copy( $otherpath, $archivepath);
-
 			@unlink( $otherpath );
 		}
 	}
