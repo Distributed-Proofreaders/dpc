@@ -22,6 +22,8 @@ $caption = $Context->PhaseDescription($phase);
 
 theme( "$phase", 'header' );
 
+show_news_for_page($phase);
+
 $title = "Round: $caption";
 echo "<h1 class='center'>$title</h1>\n";
 

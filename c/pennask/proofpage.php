@@ -261,13 +261,13 @@ $csslink
 
 . "<div id='divleft'>
     <div id='divprevimage'>
-        <img id='imgprev' alt=''>
+        <img id='imgprev' src='about:blank' alt=''>
     </div> <!-- divprevimage -->
     <div id='divimage'>
         <img id='imgpage' src='$imgurl' alt=''>
     </div> <!-- divimage -->
     <div id='divnextimage'>
-    <img id='imgnext' alt=''>
+    <img id='imgnext' src='about:blank' alt=''>
     </div> <!-- divnextimage -->
 </div> <!-- divleft -->
 
