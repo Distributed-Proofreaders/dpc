@@ -14,7 +14,7 @@ include_once($relPath.'site_news.inc');
 $chk_uncleared  = Arg("chk_uncleared", false);
 $chk_pmhold     = Arg("chk_pmhold", false);
 $release        = ArgArray("release");
-$reject         = ArgArray("release");
+$reject         = ArgArray("reject");
 $holdremark     = Arg("holdremark");
 
 if(count($release) > 0) {
