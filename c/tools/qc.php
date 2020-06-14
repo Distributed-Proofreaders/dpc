@@ -15,7 +15,7 @@ $chk_uncleared  = Arg("chk_uncleared", false);
 $chk_pmhold     = Arg("chk_pmhold", false);
 $release        = ArgArray("release");
 $reject         = ArgArray("reject");
-$holdremark     = Arg("holdremark");
+$holdremark     = Arg("txtremark");
 
 if(count($release) > 0) {
     foreach($release as $key => $value) {
