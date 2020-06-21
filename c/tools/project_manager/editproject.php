@@ -84,6 +84,7 @@ class ProjectInfoHolder
     public $projectmgr       = '';
     public $pper             = '';
     public $ppverifier       = '';
+    public $qc_assign        = '';
     public $languagecode     = '';
     public $scannercredit    = '';
     public $comments         = '';
@@ -136,6 +137,7 @@ class ProjectInfoHolder
 	    $this->projectmgr       = $project->ProjectManager();
         $this->pper             = $project->PPer();
         $this->ppverifier       = $project->PPVer();
+        $this->qc_assign        = $project->QCAssign();
         $this->languagecode     = $project->LanguageCode();
         $this->scannercredit    = $project->ScannerCredit();
         $this->comments         = $project->Comments();
@@ -206,6 +208,14 @@ class ProjectInfoHolder
             if(! $Context->UserExists($this->ppverifier)) {
                 $errors[] = "PPVer must be an existing user - check case
                 and spelling of username.<br>"; 
+            }
+        }
+
+        $this->qc_assign = Arg('qc_assign');
+        if ($this->qc_assign != '') {
+            if(! $Context->UserExists($this->qc_assign)) {
+                $errors[] = "QC Assignment must be an existing user - check
+                case and spelling of username.<br>";
             }
         }
 
@@ -288,6 +298,7 @@ class ProjectInfoHolder
                     scannercredit  = ?,
                     postproofer    = ?,
                     ppverifier     = ?,
+                    qc_assign      = ?,
                     postednum      = ?,
                     image_preparer = ?,
                     text_preparer  = ?,
@@ -299,6 +310,7 @@ class ProjectInfoHolder
                     &$this->clearance, &$this->comments, &$this->image_source,
                     &$this->image_link,
                     &$this->scannercredit, &$this->pper, &$this->ppverifier,
+                    &$this->qc_assign,
                     &$postednum_str, &$this->image_preparer, &$this->text_preparer,
                     &$this->extra_credits];
 
@@ -341,6 +353,8 @@ class ProjectInfoHolder
         $this->row( _("Difficulty Level"),            'difficulty_list',     $this->difficulty);
         $this->row( _("Post Processor"),      'DP_user_field',       $this->pper,    'pper' );
         $this->row( _("PP Verifier"),  'DP_user_field', $this->ppverifier, 'ppverifier');
+        if ($User->MayQC())
+            $this->row( _("QC Assignment"),  'DP_user_field', $this->qc_assign, 'qc_assign');
         $this->row( _("Images Source"),       'image_source_list',   $this->image_source     );
         $this->row( _("URL for Source Images"),       'text_field',          $this->image_link, 'image_link');
         $this->row( _("Image Preparer"),              'DP_user_field',       $this->image_preparer,  'image_preparer', _("DP user who scanned or harvested the images."));

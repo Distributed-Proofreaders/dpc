@@ -15,17 +15,33 @@ $chk_uncleared  = Arg("chk_uncleared", false);
 $chk_pmhold     = Arg("chk_pmhold", false);
 $release        = ArgArray("release");
 $reject         = ArgArray("reject");
+$qc             = ArgArray("qc");
 $holdremark     = Arg("txtremark");
 
-if(count($release) > 0) {
-    foreach($release as $key => $value) {
-        doRelease($key);
+$errors = [];
+
+if (count($qc) > 0) {
+    foreach ($qc as $key => $value) {
+        $e = doQCAssign($key, $value);
+        if ($e != '')
+            $errors[] = $e;
     }
 }
 
-if(count($reject) > 0) {
-    foreach($reject as $key => $value) {
-        doReject($key, $holdremark);
+// If they failed assignment, don't do any release button they might have
+// clicked on at the same time.
+if (empty($errors)) {
+
+    if(count($release) > 0) {
+        foreach($release as $key => $value) {
+            doRelease($key);
+        }
+    }
+
+    if(count($reject) > 0) {
+        foreach($reject as $key => $value) {
+            doReject($key, $holdremark);
+        }
     }
 }
 
@@ -95,6 +111,12 @@ Include projects:
 </form>
 </div>\n";
 
+if (!empty($errors)) {
+    $msg = implode("<br>\n", $errors);
+    echo "\n<h1 class='center'>ERRORS OCCURRED</h1>
+        <p class='center bold red'>$msg</p>\n";
+}
+
 echo_qc_waiting_projects($chk_uncleared, $chk_pmhold);
 
 echo "</div>";
@@ -122,8 +144,10 @@ function echo_qc_waiting_projects($excl_clearance, $excl_pm) {
                 p.genre,
                 p.language,
                 p.n_pages,
+                p.qc_assign,
                 p.username AS pm,
                 LOWER(p.username) AS pmsort,
+                LOWER(p.qc_assign) AS qcsort,
                 phqc.id phqc_id,
                 phpm.id phpm_id,
                 DATE(FROM_UNIXTIME(pe.event_time)) AS qcdate,
@@ -150,6 +174,7 @@ function echo_qc_waiting_projects($excl_clearance, $excl_pm) {
     $tbl->AddColumn("<Genre", "genre", null);
     $tbl->AddColumn("<Language", "language");
     $tbl->AddColumn("^Proj Mgr", "pm", "epm", "sortkey=pmsort");
+    $tbl->AddColumn("^QC Assignment", "qc_assign", "eqc", "sortkey=qcsort");
     $tbl->AddColumn("^Mod Date", "qcdate");
     $tbl->AddColumn("<Title", "nameofwork", "etitle");
     $tbl->AddColumn("<Clearance", "clearance", "eclearance");
@@ -166,7 +191,12 @@ function echo_qc_waiting_projects($excl_clearance, $excl_pm) {
     echo "<p class='center'>Number of projects listed: $n</p>";
 
     echo "<form id='frmprop' method='POST' name='frmprop'>\n";
-    echo "<div class='rfloat'>Hold remark: <input type='text' name='txtremark' id='txtremark' size='40'></div>\n";
+
+    // A dummy, hidden submit.  This will allow enter when in a QC Assignment
+    // text to submit the user.
+    echo "<input type='submit' style='height:0px;width:0px; border:none; padding:0px;' hidefocus='true'>\n";
+
+    echo "<div class='rfloat'>Add remark when resetting PM hold: <input type='text' name='txtremark' id='txtremark' size='40'></div>\n";
     $tbl->EchoTableNumbered();
     echo "</form>\n";
 }
@@ -184,6 +214,27 @@ function doReject($projectid, $holdremark) {
     $p = new DpProject($projectid);
     $phase = $p->Phase();
     $p->SetPMHold($phase, "Reset by QC " . $holdremark);
+}
+
+function doQCAssign($projectid, $u) {
+    global $User;
+    if (!$User->MayQC())
+        return "No permissions to set QC Assignment!";
+    if ($u != '') {
+        global $Context;
+        if (! $Context->UserExists($u)) {
+            return "$u: User does not exist";
+        }
+    }
+
+    // Note the way the form is setup, all entries will be submitted!
+    // Meaning all projects will be loaded.
+    // Horribly inefficient, but as long as QC is on the ball, there aren't
+    // a lot of rows in the table!
+    $p = new DpProject($projectid);
+    if ($p->QCAssign() != $u)
+        $p->SetQCAssign($u);
+    return '';
 }
 
 function etitle($title, $row) {
@@ -208,6 +259,15 @@ function epm($pm) {
     return $pm == ""
         ? "<span class='red'>--</span>\n"
         : link_to_pm($pm);
+}
+
+function eqc($qc, $row) {
+    global $User;
+    if (!$User->MayQC())
+        return epm($qc);
+    $name = htmlspecialchars($qc);
+    $projectid = $row['projectid'];
+    return "<input name='qc[$projectid]' type='text' title='Set QC Assignment' value='$name' maxlength='25'>\n";
 }
 
 function epmhold($id) {

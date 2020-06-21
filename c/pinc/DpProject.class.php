@@ -84,6 +84,7 @@ class DpProject
                 genre,
                 postproofer,
                 ppverifier,
+                qc_assign,
                 postcomments,
                 smoothcomments,
                 image_source,
@@ -1221,6 +1222,20 @@ class DpProject
 
     public function PPVer() {
         return $this->_row['ppverifier'];
+    }
+
+    public function QCAssign() {
+        return $this->_row['qc_assign'];
+    }
+
+    public function SetQCAssign($username) {
+        global $dpdb;
+        $projectid = $this->ProjectId();
+        $dpdb->SqlExecutePS("
+            UPDATE projects
+            SET qc_assign = ?
+            WHERE projectid = ?", [&$username, &$projectid]);
+        $this->_row['qc_assign'] = $username;
     }
 
     public function UploadPath() {

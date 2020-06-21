@@ -589,6 +589,7 @@ function sidebar_meta($project) {
 
     <tr> <td>Post processor</td> <td>{$project->PPer()}</td> </tr>
     <tr> <td>PP verifier</td> <td>{$project->PPVer()}</td> </tr>
+    <tr> <td>QC assignment</td> <td>{$project->QCAssign()}</td> </tr>
     <tr> <td>Extra credits</td> <td>{$project->ExtraCredits()}</td> </tr>
     <tr> <td>Posted number</td> <td>{$project->PostedNumber()}</td> </tr>
 
