@@ -16,13 +16,14 @@ $chk_pmhold     = Arg("chk_pmhold", false);
 $release        = ArgArray("release");
 $reject         = ArgArray("reject");
 $qc             = ArgArray("qc");
+$qcupdate       = ArgArray("qcupdate");
 $holdremark     = Arg("txtremark");
 
 $errors = [];
 
-if (count($qc) > 0) {
-    foreach ($qc as $key => $value) {
-        $e = doQCAssign($key, $value);
+if (count($qcupdate) > 0) {
+    foreach ($qcupdate as $projectid => $value) {
+        $e = doQCAssign($projectid, $qc[$projectid]);
         if ($e != '')
             $errors[] = $e;
     }
@@ -71,6 +72,14 @@ echo "<div class='center w90'>";
 
 ?>
 
+<script type='text/javascript'>
+window.addEventListener('keydown', function(e) {
+    if (e.keyIdentifier == 'U+000A' || e.keyIdentifier == 'Enter' || e.keyCode == 13) {
+        e.preventDefault();
+        return false;
+    }
+}, true);
+</script>
 
 <h1 class='center'>Projects Waiting for QC Hold Release</h1>
 <h2 class='center'>After PM Hold Is Released</h2>
@@ -194,7 +203,7 @@ function echo_qc_waiting_projects($excl_clearance, $excl_pm) {
 
     // A dummy, hidden submit.  This will allow enter when in a QC Assignment
     // text to submit the user.
-    echo "<input type='submit' style='height:0px;width:0px; border:none; padding:0px;' hidefocus='true'>\n";
+    //echo "<input type='submit' style='height:0px;width:0px; border:none; padding:0px;' hidefocus='true'>\n";
 
     echo "<div class='rfloat'>Add remark when resetting PM hold: <input type='text' name='txtremark' id='txtremark' size='40'></div>\n";
     $tbl->EchoTableNumbered();
@@ -220,7 +229,7 @@ function doQCAssign($projectid, $u) {
     global $User;
     if (!$User->MayQC())
         return "No permissions to set QC Assignment!";
-    if ($u != '') {
+    if (!empty($u)) {
         global $Context;
         if (! $Context->UserExists($u)) {
             return "$u: User does not exist";
@@ -267,7 +276,8 @@ function eqc($qc, $row) {
         return epm($qc);
     $name = htmlspecialchars($qc);
     $projectid = $row['projectid'];
-    return "<input name='qc[$projectid]' type='text' title='Set QC Assignment' value='$name' maxlength='25'>\n";
+    return "<input name='qc[$projectid]' type='text' title='Set QC Assignment' value='$name' maxlength='25'>
+    <input name='qcupdate[$projectid]' type='submit' title='Update QC' value='Update'>\n";
 }
 
 function epmhold($id) {
