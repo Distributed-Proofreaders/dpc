@@ -587,20 +587,23 @@ function show_completed_projects() {
     $rows = $dpdb->SqlRows("
         SELECT COUNT(1) c, MONTH(d) m, MONTHNAME(d) mname, YEAR(d) y
         FROM (
-            SELECT FROM_UNIXTIME(event_time) d
+            SELECT MAX(FROM_UNIXTIME(event_time)) d
             FROM project_events pe
-            WHERE event_type = 'post'
+            WHERE event_type = 'posted_notify'
             AND event_time >
                 UNIX_TIMESTAMP( DATE( DATE_FORMAT(
                     DATE_ADD( CURRENT_DATE(), INTERVAL -1 YEAR), '%Y-%m-01')))
+            GROUP BY projectid
         ) tbl
         GROUP BY m, y
         ORDER BY y, m");
 
+
     foreach($rows as $row) {
         $displaydate = "{$row['mname']} {$row['y']}";
         echo "
-        <tr><td class='left'>&nbsp;$displaydate&nbsp;&nbsp;</td>
+        <tr><td class='right'>&nbsp;{$row['mname']}</td>
+            <td class='left'>{$row['y']}&nbsp;&nbsp;</td>
             <td class='right'>&nbsp;{$row['c']}&nbsp;</td>
         </tr>\n";
     }
