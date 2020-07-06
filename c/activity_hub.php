@@ -59,6 +59,28 @@ echo "
 </div>
 
 <hr class='w75'>
+
+    <table id='charts-table' style='width:100%'>
+        <tr>
+            <td style='width:33%'>
+                <div class='dpchart'>
+                    <div id='projects-in-round'></div>
+                </div>
+            </td>
+            <td style='width:33%'>
+                <div class='dpchart'>
+                    <div id='pages-in-round'></div>
+                </div>
+            </td>
+            <td style='width:33%'>
+                <div class='dpchart'>
+                    <div id='pages-last-month'></div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+<hr class='w75'>
 <ul>\n";
 
 if ( $User->IsProjectManager() ) {
@@ -78,7 +100,34 @@ echo "
 
 echo "<li>Page-based Round Processing<br>\n";
 
-echo _("
+$nproj = [];
+$nproj[] = [ "round", "projects" ];
+$navail_page_round = [];
+$navail_page_round[] = [ "round", "pages available" ];
+$stats[] = [];
+$pages_last_month = [];
+$pages_last_month[] = [ "round", "pages completed last month" ];
+
+// Accumulate the data into $stats
+foreach ( $Context->Rounds() as $round ) {
+    $roundid = $round->RoundId();
+    $row = summarize_projects($roundid);
+
+    $phase_icon_path = "$dyn_dir/stage_icons/$roundid.jpg";
+    $phase_icon_url  = "$dyn_url/stage_icons/$roundid.jpg";
+    if ( file_exists($phase_icon_path) ) {
+        $row['round_img'] = "<img src='$phase_icon_url' alt='($roundid)' align='middle'>";
+    } else {
+        $row['round_img'] = "($roundid)";
+    }
+    $row['rname'] = RoundIdName($roundid);
+    $row['rdesc'] = RoundIdDescription($roundid);
+    $row['rlink'] = link_to_round($roundid, $row['rname']);
+    $stats[$roundid] = $row;
+}
+
+// Emit the round statistics table
+echo "
     <table class='bordered hub_table'>
     <tr class='navbar'><td>Round</td>
                        <td>On Hold</td>
@@ -86,32 +135,32 @@ echo _("
                        <td>Total<br>Projects</td>
                        <td>Today's<br>Pages<br>Processed</td>
                        <td>Today's<br>Active<br>Users</td>
-    </tr>");
-/** @var Round $round */
-foreach ( $Context->Rounds() as $round ) {
-    $roundid = $round->RoundId();
-    $phase_icon_path = "$dyn_dir/stage_icons/$roundid.jpg";
-    $phase_icon_url  = "$dyn_url/stage_icons/$roundid.jpg";
-    if ( file_exists($phase_icon_path) ) {
-        $round_img = "<img src='$phase_icon_url' alt='($roundid)' align='middle'>";
-    } else {
-        $round_img = "($roundid)";
-    }
-    $rname = RoundIdName($roundid);
-    $rdesc = RoundIdDescription($roundid);
-    $rlink = link_to_round($roundid, $rname);
+    </tr>";
 
+foreach ($Context->Rounds() as $round) {
+    $phase = $round->RoundId();
+    $row = $stats[$phase];
     echo "
         <tr>
-        <td>$round_img $rlink <br> $rdesc</td>\n";
-
-    summarize_projects($roundid);
-    echo "</tr>\n";
+            <td>{$row['round_img']} {$row['rlink']} <br> {$row['rdesc']}</td>
+            <td>{$row['nwaiting']}</td>
+            <td>{$row['navail']}</td>
+            <td>{$row['ntotal']}</td>
+            <td>{$row['today']}</td>
+            <td>{$row['users']}</td>
+        </tr>
+    ";
 }
+echo "
+    </table>
+    </li>
+";
+// End of round statistics table
 
-echo "</table>\n";
-echo "</li><li>Book Creation<br>\n";
-echo "<table class='bordered hub_table'>";
+echo "
+    <li>Book Creation<br>
+    <table class='bordered hub_table'>
+";
 
 $phase = "PP";
 $rname = NameForPhase($phase);
@@ -131,12 +180,14 @@ $row = $dpdb->SqlOneRow("
      FROM projects where phase = 'PP'");
 $navail = $row["navail"];
 $ntotal = $row["ntotal"];
+$nproj[] = [ "PP", (int)$ntotal ];
 $nchecked_out = $ntotal - $navail;
 $nsmooth = $row["nsmooth"];
 $msg = "";
 if ($my_checked_out) {
     $msg = "You currently have $my_checked_out projects checked out for Post Processing.";
 }
+
 echo "
     <tr>
         <td></td>
@@ -158,6 +209,8 @@ $rlink = link_to_smooth_reading($rname);
 $nsmooth = $dpdb->SqlOneValue("
      SELECT SUM(smoothread_deadline > UNIX_TIMESTAMP() ) nsmooth
      FROM projects where phase = 'PP'");
+$nproj[] = [ "SR", (int)$nsmooth ];
+
 echo "
     <tr>
         <td rowspan='2'>($phase) $rlink <br> $rdesc</td>
@@ -188,6 +241,7 @@ if (empty($navail))
     $navail = 0;
 if (empty($ntotal))
     $ntotal = 0;
+$nproj[] = [ "PPV", (int)$ntotal ];
 $nchecked_out = $ntotal - $navail;
 $n_checked_out = $dpdb->SqlOneValuePS("
         SELECT COUNT(1) FROM projects
@@ -197,6 +251,7 @@ $msg = "";
 if ($n_checked_out) {
     $msg = "You currently have $n_checked_out projects checked out for PP Verification.";
 }
+
 echo "
     <tr>
         <td rowspan='2'>($phase) $rlink <br> $rdesc <br> $msg</td>
@@ -210,16 +265,24 @@ echo "
 ";
 
 echo "</table>\n";
+// End of post-round table
 
 echo "
     </li>
 </ul>\n";
 
+makeColumnChart(json_encode($nproj), "Projects Available in Round", "projects-in-round");
+makeColumnChart(json_encode($navail_page_round), "Pages Available in Round", "pages-in-round");
+makeColumnChart(json_encode($pages_last_month), "Pages Completed Last Month", "pages-last-month");
+
 
 theme("", "footer");
 
-function summarize_projects( $phase) {
+function summarize_projects($phase) {
     global $dpdb;
+    global $nproj;
+    global $navail_page_round;
+    global $pages_last_month;
 
     $row = $dpdb->SqlOneRow("
         SELECT SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM project_holds
@@ -234,8 +297,88 @@ function summarize_projects( $phase) {
     $nwaiting = $ntotal - $navail;
     $today = PhaseCountToday($phase);
     $users = PhaseUsersActiveToday($phase);
+    $navail_page = get_avail_page($phase);
+    $last_month = pagesLastMonth($phase);
 
-    echo "<td>$nwaiting</td><td>$navail</td><td>$ntotal</td><td>$today</td><td>$users</td>";
+    $nproj[] = [ $phase, (int)$navail ];
+    $navail_page_round[] = [ $phase, (int)$navail_page ];
+    $pages_last_month[] = [ $phase, (int)$last_month ];
+
+    return [
+        "nwaiting" => $nwaiting,
+        "navail" => $navail,
+        "ntotal" => $ntotal,
+        "today" => $today,
+        "users" => $users
+    ];
 }
+
+function get_avail_page($phase) {
+    global $dpdb;
+
+    // Note we tried this across all phases, and it is considerably slower
+    // just because of the way we have the indexes setup.
+    $sql = "
+        SELECT sum(1)
+            FROM page_versions pv
+            LEFT JOIN project_holds ph
+                ON ph.projectid = pv.projectid AND ph.phase = pv.phase
+            WHERE ph.projectid IS NULL
+                AND state = 'A'
+                and pv.phase='$phase'
+    ";
+    return $dpdb->SqlOneValue($sql);
+}
+
+function pagesLastMonth($phase) {
+    global $dpdb;
+
+    $today = strtotime("last month");
+    $year = date("Y", $today);
+    $month = date("m", $today);
+    $sql = "
+        SELECT sum(page_count) pc
+            FROM user_round_pages
+            WHERE phase='$phase'
+                AND YEAR(dateval) = '$year'
+                AND MONTH(dateval) = '$month'
+    ";
+    return $dpdb->SqlOneValue($sql);
+}
+
+function makeColumnChart($data, $caption, $div) {
+
+    echo "
+<script type='text/javascript' src='https://www.google.com/jsapi'></script>
+<script type='text/javascript'>
+  google.load('visualization', '1', {packages:['corechart']});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+    // var data = new google.visualization.DataTable();
+    var data = new google.visualization.arrayToDataTable(
+        {$data}
+    );
+    var options = {
+        title: '$caption',
+        vAxis: {baseline: 0},
+        legend: {position: 'none'},
+    };
+
+    var div = document.getElementById('$div');
+    var chart = new google.visualization.ColumnChart(div);
+    function resizeChart(event) {
+      if (this.resizeTO)
+          clearTimeout(this.resizeTO);
+      this.resizeTO = setTimeout(function() {
+          drawChart();
+      }, 1000)
+    }
+    chart.draw(data, options);
+    window.addEventListener('resize', resizeChart, false);
+  }
+
+</script>\n";
+}
+
 
 // vim: sw=4 ts=4 expandtab
