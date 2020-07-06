@@ -110,33 +110,28 @@ function Pages30Days($roundid) {
     global $dpdb;
     if($roundid == "ALL") {
         $sql = "
-        SELECT  DATE_FORMAT(d.dateval, '%b %e') dateval,
+        SELECT  DATE_FORMAT(dateval, '%b %e') dv,
                 SUM(IFNULL(page_count, 0)) pages
-        FROM days d
-        LEFT JOIN user_round_pages urp
-        ON d.dateval = urp.dateval
-        WHERE d.dateval >=  DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-            AND d.dateval < CURRENT_DATE()
-        GROUP BY d.dateval
-        ORDER BY d.dateval";
-    }
-    else {
-    $sql = "
-        SELECT  DATE_FORMAT(d.dateval, '%b %e') dateval,
+        FROM user_round_pages urp
+        WHERE dateval >=  DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+            AND dateval < CURRENT_DATE()
+        GROUP BY dateval
+        ORDER BY dateval";
+    } else {
+        $sql = "
+        SELECT  DATE_FORMAT(dateval, '%b %e') dv,
                 SUM(IFNULL(page_count, 0)) pages
-        FROM days d
-        LEFT JOIN user_round_pages urp
-        ON d.dateval = urp.dateval
-        WHERE urp.phase = '$roundid'
-            AND d.dateval >=  DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-            AND d.dateval < CURRENT_DATE()
-        GROUP BY d.dateval
-        ORDER BY d.dateval";
+        FROM user_round_pages urp
+        WHERE phase = '$roundid'
+            AND dateval >=  DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+            AND dateval < CURRENT_DATE()
+        GROUP BY dateval
+        ORDER BY dateval";
     }
     $rows = $dpdb->SqlRows($sql);
     $ary = array(array("date", "pages"));
     foreach($rows as $row) {
-        $ary[] = array($row["dateval"], (int) $row["pages"]);
+        $ary[] = array($row["dv"], (int) $row["pages"]);
     }
 
     return json_encode($ary);
