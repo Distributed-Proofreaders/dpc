@@ -3,17 +3,15 @@ $relPath='./../pinc/';
 include($relPath.'dpinit.php');
 
 
-$sql = "SELECT d.dateval,
+$sql = "SELECT dateval,
                COUNT(DISTINCT urp.username) user_count,
                SUM(page_count) page_count,
                ROUND(SUM(page_count) / COUNT(DISTINCT urp.username))  pgs_per_user
-        FROM days d
-        LEFT JOIN user_round_pages urp
-            ON d.dateval = urp.dateval
-        WHERE d.dateval >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 MONTH)
-            AND d.dateval < CURRENT_DATE()
-        GROUP BY d.dateval
-        ORDER BY d.dateval";
+        FROM user_round_pages urp
+        WHERE dateval >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 MONTH)
+            AND dateval < CURRENT_DATE()
+        GROUP BY dateval
+        ORDER BY dateval";
 
 
 $rows = $dpdb->SqlRows($sql);

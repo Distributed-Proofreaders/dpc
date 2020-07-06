@@ -135,6 +135,11 @@ echo "
         "col02" => "<a href='activity.php'>" . _("Daily Activity") . "</a>"
     );
 
+    $rows[] = array(
+        "col01" => "<a href='user_logon_stats.php'>" . _("User Logon Stats") . "</a>",
+        "col02" => ""
+    );
+
     $tbl->AddColumn("<", "col01");
     $tbl->AddColumn("<", "col02");
     $tbl->SetRows($rows);
