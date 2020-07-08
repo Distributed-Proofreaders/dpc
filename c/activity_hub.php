@@ -27,6 +27,43 @@ if(IsArg('cmdprojectid') && $link_projectid != "") {
     exit;
 }
 
+// Variables we're going to accumulate various data in, to be formatted later
+$nproj = [];
+$nproj[] = [ "round", "projects" ];
+$navail_page_round = [];
+$navail_page_round[] = [ "round", "pages available" ];
+$stats[] = [];
+$pages_last_month = [];
+$pages_last_month[] = [ "round", "pages completed last month" ];
+
+// Number of projects in Prep
+// Number of projects waiting for QC
+// Number of projects without pages
+$prepInfo = projectsInPrep();
+
+$newProjInfo = newProjects();
+$transitionInfo = transitionCount();
+$ppInfo = ppInfo();
+$ppvInfo = ppvInfo();
+
+// Accumulate the round data into $stats
+foreach ( $Context->Rounds() as $round ) {
+    $roundid = $round->RoundId();
+    $row = summarize_projects($roundid);
+
+    $phase_icon_path = "$dyn_dir/stage_icons/$roundid.jpg";
+    $phase_icon_url  = "$dyn_url/stage_icons/$roundid.jpg";
+    if ( file_exists($phase_icon_path) ) {
+        $row['round_img'] = "<img src='$phase_icon_url' alt='($roundid)' align='middle'>";
+    } else {
+        $row['round_img'] = "($roundid)";
+    }
+    $row['rname'] = RoundIdName($roundid);
+    $row['rdesc'] = RoundIdDescription($roundid);
+    $row['rlink'] = link_to_round($roundid, $row['rname']);
+    $stats[$roundid] = $row;
+}
+
 $ahtitle = _("Activity Hub");
 
 theme($ahtitle, "header");
@@ -83,12 +120,12 @@ echo "
 <hr class='w75'>
 <ul>\n";
 
+// Start of List formatting
+
 if ( $User->IsProjectManager() ) {
     echo "
     <li>" . link_to_project_manager("Manage My Projects") . "</li>\n";
 }
-
-// ----------------------------------
 
 $cp_link = link_to_url("/forumdpc/viewforum.php?f=10", "Providing Content");
 
@@ -98,37 +135,47 @@ echo "
     . _("Want to help out the site by providing material for us to proofread? ")
     . "Check out the $cp_link forum and leave a message that you want to help.</li>\n";
 
-// Variables we're going to accumulate various data in, to be formatted later
-$nproj = [];
-$nproj[] = [ "round", "projects" ];
-$navail_page_round = [];
-$navail_page_round[] = [ "round", "pages available" ];
-$stats[] = [];
-$pages_last_month = [];
-$pages_last_month[] = [ "round", "pages completed last month" ];
+// Nested list: Various interesting information.
+echo "
+    <li style='margin-top:1em; margin-bottom:1em'> What’s Going On?<br> In the Last Week...
+        <ul>
+";
+if ($newProjInfo['n'] > 0)
+    echo "<li> Content Providers have created {$newProjInfo['n']} new projects.</li>";
 
-// Number of projects in Prep
-// Number of projects waiting for QC
-// Number of projects without pages
-$prepInfo = projectsInPrep();
+if ($transitionInfo['qc'] > 0)
+    echo "<li> QC has released {$transitionInfo['qc']} projects into the P1 queue.</li>";
 
-// Accumulate the round data into $stats
-foreach ( $Context->Rounds() as $round ) {
-    $roundid = $round->RoundId();
-    $row = summarize_projects($roundid);
+if ($transitionInfo['queue'] > 0)
+    echo "<li> {$transitionInfo['queue']} projects have been released into P1 to start Proofing.</li>";
 
-    $phase_icon_path = "$dyn_dir/stage_icons/$roundid.jpg";
-    $phase_icon_url  = "$dyn_url/stage_icons/$roundid.jpg";
-    if ( file_exists($phase_icon_path) ) {
-        $row['round_img'] = "<img src='$phase_icon_url' alt='($roundid)' align='middle'>";
-    } else {
-        $row['round_img'] = "($roundid)";
-    }
-    $row['rname'] = RoundIdName($roundid);
-    $row['rdesc'] = RoundIdDescription($roundid);
-    $row['rlink'] = link_to_round($roundid, $row['rname']);
-    $stats[$roundid] = $row;
-}
+if ($transitionInfo['p1p2'] > 0)
+    echo "<li>{$transitionInfo['p1p2']} projects have finished P1 and entered P2.</li>";
+
+if ($transitionInfo['p2p3'] > 0)
+    echo "<li>{$transitionInfo['p2p3']} projects have finished P2 and entered P3.</li>";
+
+if ($transitionInfo['p3f1'] > 0)
+    echo "<li>{$transitionInfo['p3f1']} projects have finished P3 and started Formatting.</li>";
+
+if ($transitionInfo['f1f2'] > 0)
+    echo "<li>{$transitionInfo['f1f2']} projects have finished F1 and entered F2.</li>";
+
+if ($transitionInfo['f2pp'] > 0)
+    echo "<li>{$transitionInfo['f2pp']} projects have finished Formatting and started Post-Processing, to be turned into real books.</li>";
+
+if ($transitionInfo['ppppv'] > 0)
+    echo "<li>{$transitionInfo['ppppv']} projects have been turned into books, and start the final verification sanity check.</li>";
+
+if ($transitionInfo['ppvposted'] > 0)
+    echo "<li>{$transitionInfo['ppvposted']} projects finished their long, weary journey, and have finally been posted!</li>";
+
+$stats_url = link_to_url('/c/stats/stats_central.php', 'Statistics Central');
+echo "
+        </ul>
+        More statistics at {$stats_url}
+    </li>
+";
 
 // Emit the prep table
 $prep_url = link_to_url("/c/tools/prep.php", _("Project Preparation"));
@@ -144,7 +191,7 @@ echo "
     </tr>
     <tr>
         <td>(PREP) $prep_url <br>
-            Projects are created, copyright clearance obtained, scans uploaded
+            Projects are created, copyright clearance obtained, scans uploaded.
         </td>
         <td>{$prepInfo['n']}</td>
         <td>{$prepInfo['pm']}</td>
@@ -196,37 +243,23 @@ $rname = NameForPhase($phase);
 $rdesc = DescriptionForPhase($phase);
 $rlink = link_to_pp($rname);
 
-$u = $User->Username();
-$args = [ &$u ];
-$my_checked_out = $dpdb->SqlOneValuePS("
-        SELECT COUNT(1) FROM projects
-        WHERE postproofer=?
-            AND phase='PP'", $args);
-$row = $dpdb->SqlOneRow("
-     SELECT SUM(IFNULL(postproofer, '') = '') navail,
-            COUNT(1) ntotal,
-            SUM(smoothread_deadline > UNIX_TIMESTAMP() ) nsmooth
-     FROM projects where phase = 'PP'");
-$navail = $row["navail"];
-$ntotal = $row["ntotal"];
-$nproj[] = [ "PP", (int)$ntotal ];
-$nchecked_out = $ntotal - $navail;
-$nsmooth = $row["nsmooth"];
 $msg = "";
-if ($my_checked_out) {
-    $msg = "You currently have $my_checked_out projects checked out for Post Processing.";
+if ($ppInfo['my_checked_out']) {
+    $msg = "You currently have {$ppInfo['my_checked_out']} projects checked out for Post Processing.";
 }
 
 echo "
     <tr>
         <td></td>
-        <td class='navbar'>Available<br>for $phase</td>
+        <td class='navbar'>Available<br>for PP</td>
         <td class='navbar'>Checked<br>Out</td>
         <td class='navbar'>Total<br>Projects</td>
     </tr>
     <tr>
         <td>($phase) $rlink <br> $rdesc <br> $msg</td>
-        <td>$navail</td><td>$nchecked_out</td><td>$ntotal</td>
+        <td>{$ppInfo['navail']}</td>
+        <td>{$ppInfo['nchecked_out']}</td>
+        <td>{$ppInfo['ntotal']}</td>
     </tr>
 ";
 
@@ -235,10 +268,6 @@ $phase = "SR";
 $rname = _("Smooth Reading");
 $rdesc = _("Nearly completed projects are often made available for reading and checkproofing before posting.");
 $rlink = link_to_smooth_reading($rname);
-$nsmooth = $dpdb->SqlOneValue("
-     SELECT SUM(smoothread_deadline > UNIX_TIMESTAMP() ) nsmooth
-     FROM projects where phase = 'PP'");
-$nproj[] = [ "SR", (int)$nsmooth ];
 
 echo "
     <tr>
@@ -248,7 +277,8 @@ echo "
         <td class='navbar'></td>
     </tr>
     <tr>
-        <td></td><td>$nsmooth</td><td></td>
+        <td></td>
+        <td>{$ppInfo['nsmooth']}</td><td></td>
     </tr>
 ";
 
@@ -259,46 +289,34 @@ $phase = "PPV";
 $rname = NameForPhase($phase);
 $rdesc = DescriptionForPhase($phase);
 $rlink = link_to_ppv($rname);
-$row = $dpdb->SqlOneRow("
-     SELECT SUM(CASE WHEN IFNULL(ppverifier, '') = '' THEN 1 ELSE 0 END) navail,
-            COUNT(1) ntotal
-     FROM projects where phase = 'PPV'");
-$navail = $row["navail"];
-$ntotal = $row["ntotal"];
-// If there are none in PPV, then we get an empty row.
-if (empty($navail))
-    $navail = 0;
-if (empty($ntotal))
-    $ntotal = 0;
-$nproj[] = [ "PPV", (int)$ntotal ];
-$nchecked_out = $ntotal - $navail;
-$n_checked_out = $dpdb->SqlOneValuePS("
-        SELECT COUNT(1) FROM projects
-        WHERE ppverifier=?
-            AND phase='PPV'", $args);
 $msg = "";
-if ($n_checked_out) {
-    $msg = "You currently have $n_checked_out projects checked out for PP Verification.";
+if ($ppvInfo['my_checked_out']) {
+    $msg = "You currently have {$ppvInfo['my_checked_out']} projects checked out for PP Verification.";
 }
 
 echo "
     <tr>
         <td rowspan='2'>($phase) $rlink <br> $rdesc <br> $msg</td>
-        <td class='navbar'>Available<br>for $phase</td>
+        <td class='navbar'>Available<br>for PPV</td>
         <td class='navbar'>Checked<br>Out</td>
         <td class='navbar'>Total<br>Projects</td>
     </tr>
     <tr>
-        <td>$navail</td><td>$nchecked_out</td><td>$ntotal</td>
+        <td>{$ppvInfo['navail']}</td>
+        <td>{$ppvInfo['nchecked_out']}</td>
+        <td>{$ppvInfo['ntotal']}</td>
     </tr>
 ";
 
-echo "</table>\n";
+echo "
+    </table>
+</li>
+";
 // End of post-round table
 
 echo "
-    </li>
-</ul>\n";
+</ul>
+";
 
 makeColumnChart(json_encode($nproj), "Projects Available in Round", "projects-in-round");
 makeColumnChart(json_encode($navail_page_round), "Pages Available in Round", "pages-in-round");
@@ -339,6 +357,72 @@ function summarize_projects($phase) {
         "ntotal" => $ntotal,
         "today" => $today,
         "users" => $users
+    ];
+}
+
+function ppInfo() {
+    global $dpdb;
+    global $User;
+    global $nproj;
+
+    $u = $User->Username();
+    $args = [ &$u ];
+    $my_checked_out = $dpdb->SqlOneValuePS("
+            SELECT COUNT(1) FROM projects
+            WHERE postproofer=?
+                AND phase='PP'", $args);
+    $row = $dpdb->SqlOneRow("
+         SELECT SUM(IFNULL(postproofer, '') = '') navail,
+                COUNT(1) ntotal,
+                SUM(smoothread_deadline > UNIX_TIMESTAMP() ) nsmooth
+         FROM projects where phase = 'PP'");
+    $navail = $row["navail"];
+    $ntotal = $row["ntotal"];
+    $nchecked_out = $ntotal - $navail;
+    $nsmooth = $row["nsmooth"];
+
+    $nproj[] = [ "PP", (int)$ntotal ];
+    $nproj[] = [ "SR", (int)$nsmooth ];
+
+    return [
+        "navail" => $navail,
+        "ntotal" => $ntotal,
+        "nchecked_out" => $nchecked_out,
+        "nsmooth" => $nsmooth,
+        "my_checked_out" => $my_checked_out,
+    ];
+}
+
+function ppvInfo() {
+    global $dpdb;
+    global $User;
+    global $nproj;
+
+    $row = $dpdb->SqlOneRow("
+         SELECT SUM(CASE WHEN IFNULL(ppverifier, '') = '' THEN 1 ELSE 0 END) navail,
+                COUNT(1) ntotal
+         FROM projects where phase = 'PPV'");
+    $navail = $row["navail"];
+    $ntotal = $row["ntotal"];
+    // If there are none in PPV, then we get an empty row.
+    if (empty($navail))
+        $navail = 0;
+    if (empty($ntotal))
+        $ntotal = 0;
+    $nproj[] = [ "PPV", (int)$ntotal ];
+    $nchecked_out = $ntotal - $navail;
+    $u = $User->Username();
+    $args = [ &$u ];
+    $my_checked_out = $dpdb->SqlOneValuePS("
+            SELECT COUNT(1) FROM projects
+            WHERE ppverifier=?
+                AND phase='PPV'", $args);
+
+    return [
+        "navail" => $navail,
+        "ntotal" => $ntotal,
+        "nchecked_out" => $nchecked_out,
+        "my_checked_out" => $my_checked_out,
     ];
 }
 
@@ -417,6 +501,81 @@ function projectsInPrep() {
         "qc"=>$row['nQCWait'],
         "noclear"=>$row['NoClear'],
         "haspages"=>$row['HasPages'],
+    ];
+}
+
+function newProjects() {
+    global $dpdb;
+
+    $sql = "
+        SELECT count(*) n FROM projects WHERE
+            createtime > UNIX_TIMESTAMP(DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY))
+    ";
+    $row = $dpdb->SqlOneRow($sql);
+    return [
+        "n" => $row['n'],
+    ];
+}
+
+function transitionCount() {
+    global $dpdb;
+
+    // Transition to P1 (probably also release qc hold)
+    // Don't need projects! unless we eventually want title?
+    $sql = "
+        SELECT
+            SUM(CASE WHEN to_phase = 'P1' THEN 1 ELSE 0 END) qcHoldRelease,
+            SUM(
+                CASE WHEN
+                        pe.phase = 'P1'
+                    AND event_type = 'release_hold'
+                    AND details1 = 'release queue Hold'
+                THEN 1 ELSE 0 END) releaseQueue,
+            SUM(
+                CASE WHEN
+                    pe.phase = 'P1' and to_phase = 'P2'
+                THEN 1 ELSE 0 END) p1p2,
+            SUM(
+                CASE WHEN
+                    pe.phase = 'P2' and to_phase = 'P3'
+                THEN 1 ELSE 0 END) p2p3,
+            SUM(
+                CASE WHEN
+                    pe.phase = 'P3' and to_phase = 'F1'
+                THEN 1 ELSE 0 END) p3f1,
+            SUM(
+                CASE WHEN
+                    pe.phase = 'F1' and to_phase = 'F2'
+                THEN 1 ELSE 0 END) f1f2,
+            SUM(
+                CASE WHEN
+                    pe.phase = 'F2' and to_phase = 'PP'
+                THEN 1 ELSE 0 END) f2pp,
+            SUM(
+                CASE WHEN
+                    pe.phase = 'PP' and to_phase = 'PPV'
+                THEN 1 ELSE 0 END) ppppv,
+            SUM(
+                CASE WHEN
+                    pe.phase = 'PPV' and to_phase = 'POSTED'
+                THEN 1 ELSE 0 END) ppvposted
+            FROM projects p
+            JOIN project_events pe ON pe.projectid = p.projectid
+            WHERE
+                event_time > UNIX_TIMESTAMP(DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY))
+    ";
+    $row = $dpdb->SqlOneRow($sql);
+
+    return [
+        "qc" => $row['qcHoldRelease'],
+        "queue" => $row['releaseQueue'],
+        "p1p2" => $row['p1p2'],
+        "p2p3" => $row['p2p3'],
+        "p3f1" => $row['p3f1'],
+        "f1f2" => $row['f1f2'],
+        "f2pp" => $row['f2pp'],
+        "ppppv" => $row['ppppv'],
+        "ppvposted" => $row['ppvposted'],
     ];
 }
 
