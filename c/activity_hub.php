@@ -98,8 +98,7 @@ echo "
     . _("Want to help out the site by providing material for us to proofread? ")
     . "Check out the $cp_link forum and leave a message that you want to help.</li>\n";
 
-echo "<li>Page-based Round Processing<br>\n";
-
+// Variables we're going to accumulate various data in, to be formatted later
 $nproj = [];
 $nproj[] = [ "round", "projects" ];
 $navail_page_round = [];
@@ -108,7 +107,12 @@ $stats[] = [];
 $pages_last_month = [];
 $pages_last_month[] = [ "round", "pages completed last month" ];
 
-// Accumulate the data into $stats
+// Number of projects in Prep
+// Number of projects waiting for QC
+// Number of projects without pages
+$prepInfo = projectsInPrep();
+
+// Accumulate the round data into $stats
 foreach ( $Context->Rounds() as $round ) {
     $roundid = $round->RoundId();
     $row = summarize_projects($roundid);
@@ -126,7 +130,32 @@ foreach ( $Context->Rounds() as $round ) {
     $stats[$roundid] = $row;
 }
 
+// Emit the prep table
+$prep_url = link_to_url("/c/tools/prep.php", _("Project Preparation"));
+echo "<li>Pre-rounds project preparation<br>\n";
+echo "
+    <table class='bordered hub_table'>
+    <tr class='navbar'><td></td>
+                       <td>Total Projects</td>
+                       <td>Awaiting<br>PM</td>
+                       <td>Awaiting<br>QC</td>
+                       <td>Awaiting<br>Copyright<br>Clearance</td>
+                       <td>Awaiting<br>Upload of<br>Page Scans</td>
+    </tr>
+    <tr>
+        <td>(PREP) $prep_url <br>
+            Projects are created, copyright clearance obtained, scans uploaded
+        </td>
+        <td>{$prepInfo['n']}</td>
+        <td>{$prepInfo['pm']}</td>
+        <td>{$prepInfo['qc']}</td>
+        <td>{$prepInfo['noclear']}</td>
+        <td>{$prepInfo['haspages']}</td>
+    </tr>
+</table>";
+
 // Emit the round statistics table
+echo "<li>Page-based Round Processing<br>\n";
 echo "
     <table class='bordered hub_table'>
     <tr class='navbar'><td>Round</td>
@@ -344,6 +373,51 @@ function pagesLastMonth($phase) {
                 AND MONTH(dateval) = '$month'
     ";
     return $dpdb->SqlOneValue($sql);
+}
+
+function projectsInPrep() {
+    global $dpdb;
+
+    $sql = "
+        SELECT
+            COUNT(*) nInPrep,
+            SUM(CASE WHEN phpm.id IS NULL THEN 0 ELSE 1 END) nPMHolds,
+            SUM(CASE WHEN clearance IS NULL THEN 1 ELSE 0 END) NoClear,
+            SUM(
+                CASE WHEN
+                        phqc.id IS NOT NULL
+                    AND phpm.id IS NULL
+                    AND NOT clearance IS NULL
+                THEN 1 ELSE 0 END) nQCWait,
+            SUM(
+                CASE WHEN
+                    NOT EXISTS (
+                        SELECT 1 FROM pages WHERE projectid = p.projectid
+                    )
+                THEN 1 ELSE 0 END) HasPages
+
+            FROM projects p
+
+            LEFT JOIN project_holds phqc 
+                ON p.projectid = phqc.projectid
+                AND phqc.phase = 'PREP'
+                AND phqc.hold_code = 'qc'
+
+            LEFT JOIN project_holds phpm 
+            ON p.projectid = phpm.projectid
+                AND phpm.phase = 'PREP'
+                AND phpm.hold_code = 'pm'
+
+            WHERE p.phase = 'PREP'
+    ";
+    $row = $dpdb->SqlOneRow($sql);
+    return [
+        "n"=>$row['nInPrep'],
+        "pm"=>$row['nPMHolds'],
+        "qc"=>$row['nQCWait'],
+        "noclear"=>$row['NoClear'],
+        "haspages"=>$row['HasPages'],
+    ];
 }
 
 function makeColumnChart($data, $caption, $div) {
