@@ -170,10 +170,10 @@ if ($transitionInfo['ppppv'] > 0)
 if ($transitionInfo['ppvposted'] > 0)
     echo "<li>{$transitionInfo['ppvposted']} projects finished their long, weary journey, and have finally been posted!</li>";
 
-$stats_url = link_to_url('/c/stats/stats_central.php', 'Statistics Central');
+$stats_central = link_to_url("{$stats_url}/stats_central.php", 'Statistics Central');
 echo "
         </ul>
-        More statistics at {$stats_url}
+        More statistics at {$stats_central}
     </li>
 ";
 
