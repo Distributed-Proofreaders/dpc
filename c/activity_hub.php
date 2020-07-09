@@ -15,6 +15,8 @@ $relPath = "./pinc/";
 include_once($relPath.'dpinit.php');
 include_once($relPath.'site_news.inc');
 include_once($relPath.'RoundsInfo.php');
+include_once($relPath.'RoundsInfo.php');
+include_once($relPath.'round.inc');
 
 $User->IsLoggedIn()
 	or RedirectToLogin();
@@ -176,6 +178,22 @@ echo "
         More statistics at {$stats_central}
     </li>
 ";
+
+// Later rounds are always more clogged than earlier.
+// Only give one table here, for the latest round the user can work in.
+foreach ([ "P3", "P2", "P1" ] as $phase) {
+    if ($User->MayWorkInRound($phase)) {
+        $rows = getProjects($phase, "ORDER BY days_avail DESC, nameofwork LIMIT 5");
+        if (count($rows) > 0) {
+            echo "<li>Here are the projects which have been in $phase the longest.<br>
+                Consider working on one of these please!<br>
+    ";
+            echoProjects($rows, "right sortable bordered dptable");
+        }
+        echo "</li>\n";
+        break;
+    }
+}
 
 // Emit the prep table
 $prep_url = link_to_url("/c/tools/prep.php", _("Project Preparation"));
