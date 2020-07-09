@@ -12,7 +12,6 @@ function getProjects($phase, $orderby = "ORDER BY days_avail, nameofwork") {
 	    p.difficulty, p.username,
 	    LOWER(p.username) pmsort,
 	    SUM(1) n_pages,
-	    SUM(pv.state = 'A') n_available_pages,
 	    CASE WHEN p.nameofwork LIKE '[BEGIN]%'
 		THEN 0
 		ELSE IFNULL(
@@ -28,14 +27,10 @@ function getProjects($phase, $orderby = "ORDER BY days_avail, nameofwork") {
 		    )),
 		    DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date))
 		)
-	    END AS days_avail,
+	    END AS days_avail
 --      DATEDIFF(current_date(), FROM_UNIXTIME(MAX(pe.event_time))) AS since_hold,
 --      DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date)) AS days_avail,
-	    DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time))) AS last_save_days
 	FROM projects p
-
-	LEFT JOIN page_versions pv
-	    ON p.projectid = pv.projectid
 
 	WHERE p.phase = ?
 
@@ -45,6 +40,32 @@ function getProjects($phase, $orderby = "ORDER BY days_avail, nameofwork") {
             WHERE   projectid = p.projectid
             AND     phase = p.phase
 	    )
+	GROUP BY p.projectid
+    $orderby
+	";
+
+    // We split the calculation of the columns which use the page_versions table
+    // out of the above SQL statement.  This allows when sorting with a limit
+    // (as is done in the embedded table in the Activity Hub) to not have to
+    // compute these values for the projects which end up not being used (due to the
+    // LIMIT 5 that takes only the five oldest projects).
+    // So we populate them only for the individual pages, and really it isn't
+    // much slower anyway. (Actually, faster since we added the phase match when
+    // we did this (which presumably could have been done with the huge statement.))
+    // Anyhow, this is much cleaner and can be understood!
+
+    //echo html_comment($sql);
+    //$t1 = microtime(true);
+    $args = [&$phase];
+    $rows = $dpdb->SqlRowsPS($sql, $args);
+
+    $sql = "
+        SELECT
+        COUNT(*) n_pages,
+	    SUM(pv.state = 'A') n_available_pages,
+	    DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pv.version_time))) AS last_save_days
+        FROM page_versions pv
+        WHERE projectid = ? AND phase = ?
 
 	    -- Exclude any page which already exists in a later round
 	    AND NOT EXISTS (
@@ -53,42 +74,21 @@ function getProjects($phase, $orderby = "ORDER BY days_avail, nameofwork") {
                 AND pagename = pv.pagename
                 AND version > pv.version
 	    )
+        GROUP BY projectid
+    ";
 
-	GROUP BY p.projectid
-    $orderby
-	";
-    /*
-	SELECT  p.projectid,
-		p.nameofwork,
-		p.authorsname,
-		p.language,
-		p.genre,
-		p.difficulty,
-		p.username,
-		LOWER(p.username) pmsort,
-		SUM(1) n_pages,
-		SUM(plv.state = 'A') n_available_pages,
-		DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date)) AS days_avail,
-		DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(plv.version_time))) AS last_save_days
-	FROM projects p
-
-	LEFT JOIN page_last_versions plv
-	    ON p.projectid = plv.projectid
-
-	LEFT JOIN project_holds ph
-	    ON p.projectid = ph.projectid
-    AND p.phase = ph.phase
-
-	WHERE p.phase = ?
-	    AND ph.id IS NULL
-
-	GROUP BY p.projectid
-	ORDER BY days_avail";
-    */
-
-    $args = [&$phase];
-    //echo html_comment($sql);
-    $rows = $dpdb->SqlRowsPS($sql, $args);
+    // It would be nice to use a prepared statement and just change the parameter,
+    // but I tried it, and it doesn't make any difference at all.
+    foreach ($rows as &$row) {
+        $args = [ &$row['projectid'], &$phase ];
+        $r = $dpdb->SqlOneRowPS($sql, $args);
+        $row['n_pages'] = $r['n_pages'];
+        $row['n_available_pages'] = $r['n_available_pages'];
+        $row['last_save_days'] = $r['last_save_days'];
+    }
+    //$t2 = microtime(true);
+    //$x = (string) ($t2 - $t1);
+    //echo "<h1>$x</h1><br>\n";
     return $rows;
 }
 
