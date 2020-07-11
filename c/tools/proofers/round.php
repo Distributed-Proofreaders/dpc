@@ -29,7 +29,7 @@ show_news_for_page($phase);
 $title = "Round: $caption";
 echo "<h1 class='center'>$title</h1>\n";
 
-$rows = getProjects($phase);
+$rows = getProjects($phase, "ORDER BY days_avail DESC, nameofwork");
 
 $n = count($rows);
 echo "<h3 class='center'>$n projects available in this round.</h3>\n";
