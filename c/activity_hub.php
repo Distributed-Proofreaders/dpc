@@ -45,6 +45,7 @@ $prepInfo = projectsInPrep();
 
 $newProjInfo = newProjects();
 $transitionInfo = transitionCount();
+//$memberStats = memberStats();
 $ppInfo = ppInfo();
 $ppvInfo = ppvInfo();
 
@@ -181,19 +182,58 @@ echo "
 
 // Later rounds are always more clogged than earlier.
 // Only give one table here, for the latest round the user can work in.
+echo "<li style='margin-top:1em; margin-bottom:1em'>\n";
 foreach ([ "P3", "P2", "P1" ] as $phase) {
     if ($User->MayWorkInRound($phase)) {
         $rows = getProjects($phase, "ORDER BY days_avail DESC, nameofwork LIMIT 5");
         if (count($rows) > 0) {
-            echo "<li>Here are the projects which have been in $phase the longest.<br>
+            echo "
+                Here are the projects which have been in $phase the longest.<br>
                 Consider working on one of these please!<br>
-    ";
+            ";
             echoProjects($rows, "right sortable bordered dptable");
         }
-        echo "</li>\n";
         break;
     }
 }
+$p1p2 = $transitionInfo['p1p2'];
+$p2p3 = $transitionInfo['p2p3'];
+$p3f1 = $transitionInfo['p3f1'];
+if ($p1p2 > $p3f1) {
+    $p3OK = $User->MayWorkInRound("P3");
+    $p2OK = $User->MayWorkInRound("P2");
+    $nAny = $User->PageCount();
+    $nP1 = $User->RoundPageCount("P1");
+    $nP2 = $User->RoundPageCount("P2");
+    $nP3 = $User->RoundPageCount("P3");
+    $nF1 = $User->RoundPageCount("F1");
+    if ($p2OK && $nP2 == 0)
+        echo "✔ You have completed {$nP1} pages in P1.<br>
+            This has automatically granted you permission to work in P2.<br>";
+    if ($p3OK && $nP3 == 0)
+        echo "✔ You have completed {$nP1} pages in P1,
+            {$nP2} in P2, and {$nF1} in F1.<br>
+            You have permission to work in P3.<br>";
+    if (!$p2OK)
+        echo "You are not yet eligible to work in P2.  You have completed
+            {$nAny} pages in any round.  Once you have done 300 pages in
+            any round, you'll automatically be able to work in P2.<br>";
+    if (!$p3OK)
+        echo "You are not yet eligible to work in P3.  You have completed
+            {$nP1} pages in P1, {$nP2} in P2, and {$nF1} in F1
+            for a total of {$nAny}.  Once you have done 400 pages in
+            any round, with at least 50 in P2, and 50 in F1;
+            you'll be able to request permission to work in P3.<br>";
+    $n = $p1p2 - $p3f1;
+    echo "
+        <span style='color:red'>
+            🡆Over the last week, $n more projects completed P1, than completed P3!<br>
+            🡆If this continues, the P3 queue will just keep growing longer!<br>
+            🡆Please try to work in the highest proofing round you can!<br>
+        </span>
+    ";
+}
+echo "</li>\n";
 
 // Emit the prep table
 $prep_url = link_to_url("/c/tools/prep.php", _("Project Preparation"));
@@ -534,6 +574,25 @@ function newProjects() {
         "n" => $row['n'],
     ];
 }
+
+/* Not used, use the values from $User->PageCount() & $User->RoundPageCount().
+function memberStats() {
+    global $dpdb;
+    global $User;
+
+    $sql = "
+        SELECT phase, page_count FROM total_user_round_pages
+        WHERE username = ?
+    ";
+    $u = $User->Username();
+    $args = [ &$u ];
+    $rows = $dpdb->SqlRowsPS($sql, $args);
+    foreach ([ "F2", "F1", "P3", "P2", "P1" ] as $phase)
+        $phaseCount[$phase] = 0;
+    foreach ($rows as $r)
+        $phaseCount[$r['phase']] = $r['page_count'];
+    return $phaseCount;
+}*/
 
 function transitionCount() {
     global $dpdb;
