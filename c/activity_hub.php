@@ -139,8 +139,9 @@ echo "
     . "Check out the $cp_link forum and leave a message that you want to help.</li>\n";
 
 // Nested list: Various interesting information.
+$d = date("l, F j", $transitionInfo['time']);
 echo "
-    <li style='margin-top:1em; margin-bottom:1em'> What’s Going On?<br> In the Last Week...
+    <li style='margin-top:1em; margin-bottom:1em'> What’s Going On?<br> In the Last Week, since $d...
         <ul>
 ";
 if ($newProjInfo['n'] > 0)
@@ -166,6 +167,9 @@ if ($transitionInfo['f1f2'] > 0)
 
 if ($transitionInfo['f2pp'] > 0)
     echo "<li>{$transitionInfo['f2pp']} projects have finished Formatting and started Post-Processing, to be turned into real books.</li>";
+
+if ($transitionInfo['sr'] > 0)
+    echo "<li>{$transitionInfo['sr']} projects were formatted, and made available for Smooth Reading.</li>";
 
 if ($transitionInfo['ppppv'] > 0)
     echo "<li>{$transitionInfo['ppppv']} projects have been turned into books, and start the final verification sanity check.</li>";
@@ -225,10 +229,10 @@ if ($p1p2 > $p3f1) {
             any round, with at least 50 in P2, and 50 in F1;
             you'll be able to request permission to work in P3.<br>";
     $n = $p1p2 - $p3f1;
+    //🡆Over the last week, $n more projects completed P1, than completed P3!<br>
+    //🡆If this continues, the P3 queue will just keep growing longer!<br>
     echo "
         <span style='color:red'>
-            🡆Over the last week, $n more projects completed P1, than completed P3!<br>
-            🡆If this continues, the P3 queue will just keep growing longer!<br>
             🡆Please try to work in the highest proofing round you can!<br>
         </span>
     ";
@@ -635,7 +639,13 @@ function transitionCount() {
             SUM(
                 CASE WHEN
                     pe.phase = 'PPV' and to_phase = 'POSTED'
-                THEN 1 ELSE 0 END) ppvposted
+                THEN 1 ELSE 0 END) ppvposted,
+            SUM(
+                CASE WHEN
+                        pe.phase = 'PP'
+                    AND event_type = 'smooth_notify'
+                THEN 1 ELSE 0 END) sr,
+            UNIX_TIMESTAMP(DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY)) t
             FROM projects p
             JOIN project_events pe ON pe.projectid = p.projectid
             WHERE
@@ -653,6 +663,8 @@ function transitionCount() {
         "f2pp" => $row['f2pp'],
         "ppppv" => $row['ppppv'],
         "ppvposted" => $row['ppvposted'],
+        "sr" => $row['sr'],
+        "time" => $row['t'],
     ];
 }
 
