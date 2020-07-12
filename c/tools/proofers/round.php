@@ -37,6 +37,20 @@ echo "<h3 class='center'>$n projects available in this round.</h3>\n";
 if($n < 1) {
 	echo "<br><h4>No projects found.</h4>";
 } else {
+    // Move the Begin projects out into their own table.
+    $begin = [];
+    $i = 0;
+    foreach ($rows as $row) {
+        if (strpos($row['nameofwork'], '[BEGIN]') !== false) {
+            $begin[] = $row;
+            unset($rows[$i]);
+        }
+        $i += 1;
+    }
+    $rows = array_values($rows);
+    if (!empty($begin))
+        echoProjects($begin);
+
     echoProjects($rows);
 }
 theme('', 'footer');
