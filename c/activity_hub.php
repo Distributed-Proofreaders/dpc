@@ -46,8 +46,6 @@ $prepInfo = projectsInPrep();
 $newProjInfo = newProjects();
 $transitionInfo = transitionCount();
 //$memberStats = memberStats();
-$ppInfo = ppInfo();
-$ppvInfo = ppvInfo();
 
 // Accumulate the round data into $stats
 foreach ( $Context->Rounds() as $round ) {
@@ -66,6 +64,9 @@ foreach ( $Context->Rounds() as $round ) {
     $row['rlink'] = link_to_round($roundid, $row['rname']);
     $stats[$roundid] = $row;
 }
+
+$ppInfo = ppInfo();
+$ppvInfo = ppvInfo();
 
 $ahtitle = _("Activity Hub");
 
@@ -141,9 +142,19 @@ echo "
 // Nested list: Various interesting information.
 $d = date("l, F j", $transitionInfo['time']);
 echo "
-    <li style='margin-top:1em; margin-bottom:1em'> What’s Going On?<br> In the Last Week, since $d...
-        <ul>
+    <li style='margin-top:1em; margin-bottom:1em'> What’s Going On?<br>
+        In the Last Week, since $d...
+    <table id='whats-going-on' style='width:100%'>
+        <tr>
+            <td style='width:50%;'>
+                <div class='dpchart'>
+                    <div id='transition-chart' style='height:3in;'></div>
+                </div>
+            </td>
+            <td style='width:50%'>
 ";
+stackedChart($newProjInfo, $transitionInfo);
+echo "<ul>";
 if ($newProjInfo['n'] > 0)
     echo "<li> Content Providers have created {$newProjInfo['n']} new projects.</li>";
 
@@ -169,7 +180,7 @@ if ($transitionInfo['f2pp'] > 0)
     echo "<li>{$transitionInfo['f2pp']} projects have finished Formatting and started Post-Processing, to be turned into real books.</li>";
 
 if ($transitionInfo['sr'] > 0)
-    echo "<li>{$transitionInfo['sr']} projects were formatted, and made available for Smooth Reading.</li>";
+    echo "<li>{$transitionInfo['sr']} projects were made into books, and made available for Smooth Reading.</li>";
 
 if ($transitionInfo['ppppv'] > 0)
     echo "<li>{$transitionInfo['ppppv']} projects have been turned into books, and start the final verification sanity check.</li>";
@@ -180,6 +191,9 @@ if ($transitionInfo['ppvposted'] > 0)
 $stats_central = link_to_url("{$stats_url}/stats_central.php", 'Statistics Central');
 echo "
         </ul>
+        </td>
+        </tr>
+        </table>
         More statistics at {$stats_central}
     </li>
 ";
@@ -273,6 +287,7 @@ echo "
                        <td>Total<br>Projects</td>
                        <td>Today's<br>Pages<br>Processed</td>
                        <td>Today's<br>Active<br>Users</td>
+                       <td>Oldest<br>Days in<br>Round</td>
     </tr>";
 
 foreach ($Context->Rounds() as $round) {
@@ -286,6 +301,7 @@ foreach ($Context->Rounds() as $round) {
             <td>{$row['ntotal']}</td>
             <td>{$row['today']}</td>
             <td>{$row['users']}</td>
+            <td>{$row['max_days']}</td>
         </tr>
     ";
 }
@@ -399,10 +415,30 @@ function summarize_projects($phase) {
                                              AND phase = '$phase')
                         THEN 1 ELSE 0
                    END) navail,
-               COUNT(1) ntotal
+                COUNT(1) ntotal,
+                MAX(CASE WHEN NOT EXISTS (SELECT 1 FROM project_holds
+                                         WHERE projectid = p.projectid
+                                             AND phase = '$phase')
+                    THEN
+                    IFNULL(
+                    DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(
+                    (
+                        -- Look for the largest release hold event for
+                        -- this phase
+                        SELECT MAX(event_time) FROM project_events
+                        WHERE projectid = p.projectid
+                        AND phase = p.phase
+                        AND event_type='release_hold'
+                    )
+                    )),
+                    DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(p.phase_change_date))
+                )
+                    ELSE 0 END
+                ) max_days
         FROM projects p WHERE p.phase = '$phase'");
     $navail = $row["navail"];
     $ntotal   = $row["ntotal"];
+    $max_days   = $row["max_days"];
     $nwaiting = $ntotal - $navail;
     $today = PhaseCountToday($phase);
     $users = PhaseUsersActiveToday($phase);
@@ -418,7 +454,8 @@ function summarize_projects($phase) {
         "navail" => $navail,
         "ntotal" => $ntotal,
         "today" => $today,
-        "users" => $users
+        "users" => $users,
+        "max_days" => $max_days,
     ];
 }
 
@@ -668,7 +705,7 @@ function transitionCount() {
     ];
 }
 
-function makeColumnChart($data, $caption, $div) {
+function makeColumnChart($data, $caption, $div, $opt = "") {
 
     echo "
 <script type='text/javascript' src='https://www.google.com/jsapi'></script>
@@ -684,6 +721,7 @@ function makeColumnChart($data, $caption, $div) {
         title: '$caption',
         vAxis: {baseline: 0},
         legend: {position: 'none'},
+        $opt
     };
 
     var div = document.getElementById('$div');
@@ -700,6 +738,71 @@ function makeColumnChart($data, $caption, $div) {
   }
 
 </script>\n";
+}
+
+function stackedChart($newProjInfo, $transitionInfo) {
+    $data = [];
+    $data[] = [ "projects", "Entering", "Exiting" ];
+    $data[] = [ "PREP", -$newProjInfo['n'], +$transitionInfo['qc'] ];
+    $data[] = [ "P1 Queue", -$transitionInfo['qc'], +$transitionInfo['queue'] ];
+    $data[] = [ "P1", -$transitionInfo['queue'], +$transitionInfo['p1p2'] ];
+    $data[] = [ "P2", -$transitionInfo['p1p2'], +$transitionInfo['p2p3'] ];
+    $data[] = [ "P3", -$transitionInfo['p2p3'], +$transitionInfo['p3f1'] ];
+    $data[] = [ "F1", -$transitionInfo['p3f1'], +$transitionInfo['f1f2'] ];
+    $data[] = [ "F2", -$transitionInfo['f1f2'], +$transitionInfo['f2pp'] ];
+    $data[] = [ "SR", -$transitionInfo['sr'], 0 ];
+    $data[] = [ "PP", -$transitionInfo['f2pp'], +$transitionInfo['ppppv'] ];
+    $data[] = [ "PPV", -$transitionInfo['ppppv'], +$transitionInfo['ppvposted'] ];
+    $data[] = [ "POSTED", -$transitionInfo['ppvposted'], 0 ];
+
+    // Make all the values on the negative axis render as positive values
+    $min = 0;
+    $max = 0;
+    foreach ($data as $row) {
+        $v = $row[2];
+        if ($v > $max)
+            $max = $v;
+        $v = $row[1];
+        if ($v < $min)
+            $min = $v;
+    }
+    $min -= 5;
+    $min = (int)($min / 5) * 5;
+    $max += 5;
+    $max = (int)($max / 5) * 5;
+    if (abs($min) > $max)
+        $max = abs($min);
+    else
+        $min = -$max;
+    $ticks = "ticks: [";
+    for ($x = $min; $x <= $max; $x += 5) {
+        $abs = strval(abs($x));
+        $ticks .= "{v:$x, f:'$abs'},";
+    }
+    $ticks .= "]";
+
+    makeColumnChart(json_encode($data),
+        "Projects Transitioning",
+        "transition-chart",
+        "
+            isStacked:true,
+            orientation:'vertical',
+            titlePosition: 'none',
+            chartArea: {
+                width: '85%',
+                height: '70%',
+                right: 0,
+            },
+            hAxis: {
+                title: '↪Entering Phase🠦      #Projects      🠦Leaving Phase↩',
+                $ticks,
+            },
+            vAxis: {
+                title: 'Phase',
+            },
+            colors: [ 'green', 'gold' ],
+        "
+    );
 }
 
 
