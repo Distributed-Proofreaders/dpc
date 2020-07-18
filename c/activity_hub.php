@@ -31,9 +31,13 @@ if(IsArg('cmdprojectid') && $link_projectid != "") {
 
 // Variables we're going to accumulate various data in, to be formatted later
 $nproj = [];
-$nproj[] = [ "round", "projects" ];
+$nproj[] = [
+    "round", "Active", "Queued or On Hold",
+    array("role"=>"style"),
+    array("role"=>"annotation")
+];
 $navail_page_round = [];
-$navail_page_round[] = [ "round", "pages available" ];
+$navail_page_round[] = [ "round", "pages available", "completed last month" ];
 $stats[] = [];
 $pages_last_month = [];
 $pages_last_month[] = [ "round", "pages completed last month" ];
@@ -67,6 +71,8 @@ foreach ( $Context->Rounds() as $round ) {
 
 $ppInfo = ppInfo();
 $ppvInfo = ppvInfo();
+$dailyInfo = dailyInfo();
+$monthlyInfo = monthlyInfo();
 
 $ahtitle = _("Activity Hub");
 
@@ -113,9 +119,16 @@ echo "
                     <div id='pages-in-round'></div>
                 </div>
             </td>
+        </tr>
+        <tr>
             <td style='width:33%'>
                 <div class='dpchart'>
-                    <div id='pages-last-month'></div>
+                    <div id='chart3'></div>
+                </div>
+            </td>
+            <td style='width:33%'>
+                <div class='dpchart'>
+                    <div id='chart4'></div>
                 </div>
             </td>
         </tr>
@@ -181,6 +194,9 @@ if ($transitionInfo['f2pp'] > 0)
 
 if ($transitionInfo['sr'] > 0)
     echo "<li>{$transitionInfo['sr']} projects were made into books, and made available for Smooth Reading.</li>";
+
+if ($transitionInfo['srexit'] > 0)
+    echo "<li>{$transitionInfo['srexit']} projects passed their Smooth Reading deadline.</li>";
 
 if ($transitionInfo['ppppv'] > 0)
     echo "<li>{$transitionInfo['ppppv']} projects have been turned into books, and start the final verification sanity check.</li>";
@@ -396,10 +412,35 @@ echo "
 </ul>
 ";
 
-makeColumnChart(json_encode($nproj), "Projects Available in Round", "projects-in-round");
-makeColumnChart(json_encode($navail_page_round), "Pages Available in Round", "pages-in-round");
-makeColumnChart(json_encode($pages_last_month), "Pages Completed Last Month", "pages-last-month");
+projectRoundChart($nproj, "projects-in-round");
 
+makeColumnChart(json_encode($navail_page_round),
+    "Pages",
+    "pages-in-round",
+    "
+        legend: { position: 'top', },
+    ");
+
+dailyPageChart($dailyInfo, "chart3");
+
+activeUsersChart($dailyInfo, $monthlyInfo, "chart4");
+
+/*
+$today[] = [ "phase", "count" ];
+$day = end($byday);
+$today[] = [ "P1", (int)$day['P1'] ];
+$today[] = [ "P2", (int)$day['P2'] ];
+$today[] = [ "P3", (int)$day['P3'] ];
+$today[] = [ "F1", (int)$day['F1'] ];
+$today[] = [ "F2", (int)$day['F2'] ];
+makeColumnChart(json_encode($today),
+    "Today’s Page Completion",
+    "chart4",
+    "
+        legend: { position: 'top', },
+        bars: 'horizontal',
+    ");
+ */
 
 theme("", "footer");
 
@@ -445,8 +486,15 @@ function summarize_projects($phase) {
     $navail_page = get_avail_page($phase);
     $last_month = pagesLastMonth($phase);
 
-    $nproj[] = [ $phase, (int)$navail ];
-    $navail_page_round[] = [ $phase, (int)$navail_page ];
+    if ($phase == "P1") {
+        $style = "opacity: 0.3; stroke-opacity: .7; stroke-width: 3; stroke-color: darkred";
+        $ann = "" . $nwaiting;
+    } else {
+        $style = "";
+        $ann = null;
+    }
+    $nproj[] = [ $phase, (int)$navail, $nwaiting, $style, $ann ];
+    $navail_page_round[] = [ $phase, (int)$navail_page, (int)$last_month ];
     $pages_last_month[] = [ $phase, (int)$last_month ];
 
     return [
@@ -472,16 +520,16 @@ function ppInfo() {
                 AND phase='PP'", $args);
     $row = $dpdb->SqlOneRow("
          SELECT SUM(IFNULL(postproofer, '') = '') navail,
-                COUNT(1) ntotal,
-                SUM(smoothread_deadline > UNIX_TIMESTAMP() ) nsmooth
+            COUNT(1) ntotal,
+            SUM(DATE(FROM_UNIXTIME(smoothread_deadline)) >= CURRENT_DATE() ) nsmooth
          FROM projects where phase = 'PP'");
     $navail = $row["navail"];
     $ntotal = $row["ntotal"];
     $nchecked_out = $ntotal - $navail;
     $nsmooth = $row["nsmooth"];
 
-    $nproj[] = [ "PP", (int)$ntotal ];
-    $nproj[] = [ "SR", (int)$nsmooth ];
+    $nproj[] = [ "PP", (int)$ntotal, 0, "", null ];
+    $nproj[] = [ "SR", (int)$nsmooth, 0, "", null ];
 
     return [
         "navail" => $navail,
@@ -508,7 +556,7 @@ function ppvInfo() {
         $navail = 0;
     if (empty($ntotal))
         $ntotal = 0;
-    $nproj[] = [ "PPV", (int)$ntotal ];
+    $nproj[] = [ "PPV", (int)$ntotal, 0, "", null ];
     $nchecked_out = $ntotal - $navail;
     $u = $User->Username();
     $args = [ &$u ];
@@ -690,6 +738,16 @@ function transitionCount() {
     ";
     $row = $dpdb->SqlOneRow($sql);
 
+    $nexitsr = $dpdb->SqlOneValue("
+        SELECT COUNT(1) FROM projects
+        WHERE
+                smoothread_deadline IS NOT NULL
+            AND smoothread_deadline != 0
+            AND DATE(FROM_UNIXTIME(smoothread_deadline)) < CURRENT_DATE()
+            AND DATE(FROM_UNIXTIME(smoothread_deadline)) > DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY)
+;
+    ");
+
     return [
         "qc" => $row['qcHoldRelease'],
         "queue" => $row['releaseQueue'],
@@ -701,8 +759,82 @@ function transitionCount() {
         "ppppv" => $row['ppppv'],
         "ppvposted" => $row['ppvposted'],
         "sr" => $row['sr'],
+        "srexit" => $nexitsr,
         "time" => $row['t'],
     ];
+}
+
+function dailyInfo() {
+    global $dpdb;
+
+    $sql = "
+        SELECT phase, COUNT(1) n, COUNT(DISTINCT username) nuser,
+            FROM_UNIXTIME(version_time, '%b %e') day
+        FROM page_versions pv
+        WHERE state = 'C'
+            AND phase != 'PREP'
+            AND version_time > UNIX_TIMESTAMP(DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY))
+        GROUP BY phase, FROM_UNIXTIME(version_time, '%Y'), FROM_UNIXTIME(version_time, '%j')
+        ORDER BY
+            FROM_UNIXTIME(version_time, '%Y'), FROM_UNIXTIME(version_time, '%j'),
+            CASE phase
+                WHEN 'P1' THEN 1
+                WHEN 'P2' THEN 2
+                WHEN 'P3' THEN 3
+                WHEN 'F1' THEN 4
+                WHEN 'F2' THEN 5
+            END
+    ;";
+    $rows = $dpdb->SqlRows($sql);
+    return $rows;
+}
+
+function monthlyInfo() {
+    global $dpdb;
+
+    $sql = "
+        SELECT phase, COUNT(1) n, COUNT(DISTINCT username) nuser
+        FROM page_versions pv
+        WHERE state = 'C'
+            AND phase != 'PREP'
+            AND version_time > UNIX_TIMESTAMP(DATE_ADD(CURRENT_DATE(), INTERVAL -1 MONTH))
+        GROUP BY phase
+    ;";
+    $rows = $dpdb->SqlRows($sql);
+    return $rows;
+}
+
+function makeColumnChartNew($data, $caption, $div, $opt = "") {
+
+    echo "
+<script type='text/javascript' src='https://www.google.com/jsapi'></script>
+<script type='text/javascript'>
+  google.load('visualization', '1', {packages:['bar']});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+    // var data = new google.visualization.DataTable();
+    var data = new google.visualization.arrayToDataTable(
+        {$data}
+    );
+    var options = {
+        title: '$caption',
+        $opt
+    };
+
+    var div = document.getElementById('$div');
+    var chart = new google.charts.Bar(div);
+    function resizeChart(event) {
+      if (this.resizeTO)
+          clearTimeout(this.resizeTO);
+      this.resizeTO = setTimeout(function() {
+          drawChart();
+      }, 1000)
+    }
+    chart.draw(data, google.charts.Bar.convertOptions(options));
+    window.addEventListener('resize', resizeChart, false);
+  }
+
+</script>\n";
 }
 
 function makeColumnChart($data, $caption, $div, $opt = "") {
@@ -750,7 +882,7 @@ function stackedChart($newProjInfo, $transitionInfo) {
     $data[] = [ "P3", -$transitionInfo['p2p3'], +$transitionInfo['p3f1'] ];
     $data[] = [ "F1", -$transitionInfo['p3f1'], +$transitionInfo['f1f2'] ];
     $data[] = [ "F2", -$transitionInfo['f1f2'], +$transitionInfo['f2pp'] ];
-    $data[] = [ "SR", -$transitionInfo['sr'], 0 ];
+    $data[] = [ "SR", -$transitionInfo['sr'], +$transitionInfo['srexit'] ];
     $data[] = [ "PP", -$transitionInfo['f2pp'], +$transitionInfo['ppppv'] ];
     $data[] = [ "PPV", -$transitionInfo['ppppv'], +$transitionInfo['ppvposted'] ];
     $data[] = [ "POSTED", -$transitionInfo['ppvposted'], 0 ];
@@ -805,5 +937,69 @@ function stackedChart($newProjInfo, $transitionInfo) {
     );
 }
 
+function activeUsersChart($dailyInfo, $monthlyInfo, $div) {
+    $users[] = [ "date", "P1", "P2", "P3", "F1", "F2" ];
+    $monthly = [ "P1"=>0, "P2"=>0, "P3"=>0, "F1"=>0, "F2"=>0 ];
+    foreach ($dailyInfo as $day)
+        $bydayUsers[$day['day']][$day['phase']] = (int)$day['nuser'];
+    foreach ($monthlyInfo as $onePhase)
+        $m[$onePhase['phase']] = (int)$onePhase['nuser'];
+    $users[] = [
+        "month", $m['P1'], $m['P2'], $m['P3'], $m['F1'], $m['F2']
+    ];
+    foreach (array_slice($bydayUsers, -8) as $day => $v)
+        $users[] = [ $day, $v['P1'], $v['P2'], $v['P3'], $v['F1'], $v['F2'] ];
+    makeColumnChart(json_encode($users),
+        "Active Users",
+        $div,
+        "
+            legend: { position: 'top', },
+            "
+    );
+}
+
+function dailyPageChart($dailyInfo, $div) {
+    $daily[] = [ "date", "P1", "P2", "P3", "F1", "F2" ];
+    foreach ($dailyInfo as $day)
+        $byday[$day['day']][$day['phase']] = (int)$day['n'];
+    foreach (array_slice($byday, -8) as $day => $v)
+        $daily[] = [ $day, $v['P1'], $v['P2'], $v['P3'], $v['F1'], $v['F2'] ];
+    makeColumnChart(json_encode($daily),
+        "Daily Page Completion",
+        $div,
+        "
+            legend: { position: 'top', },
+        "
+    );
+}
+
+function projectRoundChart($nproj, $div) {
+    // Compute the view window based on 25 above the largest count in the rounds,
+    // ignoring the P1 Queue, since it is so large.
+    $maxn = 0;
+    foreach ($nproj as $row) {
+        if ($row[1] > $maxn)
+            $maxn = $row[1];
+    }
+    $maxn += 25;
+    $maxn = (int)($maxn / 25) * 25;
+
+    makeColumnChart(json_encode($nproj),
+        "Projects Available in Round",
+        $div,
+            //isStacked:true,
+        "
+            legend: { position: 'top', },
+            vAxis: {
+                viewWindow: {
+                    max: $maxn,
+                }
+            },
+            annotations: {
+                style: 'line',
+            },
+        "
+    );
+}
 
 // vim: sw=4 ts=4 expandtab
