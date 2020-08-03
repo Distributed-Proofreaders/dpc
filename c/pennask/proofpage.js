@@ -1,5 +1,5 @@
 /*
-    version 0.194
+    version 0.195
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -868,6 +868,10 @@ function eAltKeyPress(kCode) {
     case "S":
         eSetSmallCaps();
         break;
+    case "n":
+    case "N":
+        eSetUnderline();
+        break;
     case "1":
         eLineHeight("lh10");
         break;
@@ -1360,6 +1364,11 @@ function eSetGesperrt() {
 
 function eSetSmallCaps() {
     setFont("sc");
+    return false;
+}
+
+function eSetUnderline() {
+    setFont("u");
     return false;
 }
 
