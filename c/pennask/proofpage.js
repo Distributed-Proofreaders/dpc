@@ -1,5 +1,5 @@
 /*
-    version 0.195
+    version 0.196
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -804,7 +804,7 @@ function eKeyDown(e) {
 
     // handle keyboard shortcuts
     if(e.altKey) {
-        if(!e.ctrlKey && !e.metaKey) {
+        if(!e.ctrlKey && !e.metaKey /*&& !e.shiftKey*/) {
             if (eAltKeyPress(kCode))
                 e.preventDefault();
         }
@@ -834,6 +834,10 @@ function eKeyDown(e) {
 function eAltKeyPress(kCode) {
     var k = String.fromCharCode(kCode);
     switch (k) {
+    case "c":
+    case "C":
+        $("opt_submit_continue").click();
+        break;
     case "q":
     case "Q":
     case "#":
@@ -3749,7 +3753,7 @@ function setnamevalue(name, value) {
     document.cookie = name + '='
             + value + ';'
             + ' expires=' + date.toUTCString()
-            + '; path=/';
+            + '; path=/; samesite=strict';
 }
 
 function getnamevalue(name) {

@@ -26,22 +26,22 @@ $badreason          = Arg("badreason", "");
 //if($editor != "") {
 //	$User->SetInterface($editor);
 //}
-if(IsArg("opt_submit_continue_x")) {
+if(IsArg("opt_submit_continue_x") !== false) {
 	$seltodo = "opt_submit_continue";
 }
-else if(IsArg("opt_return_quit_x")) {
+else if(IsArg("opt_return_quit_x") !== false) {
 	$seltodo = "opt_return_quit";
 }
-else if(IsArg("opt_submit_quit_x")) {
+else if(IsArg("opt_submit_quit_x") !== false) {
 	$seltodo = "opt_submit_quit";
 }
-else if(IsArg("opt_draft_continue_x")) {
+else if(IsArg("opt_draft_continue_x") !== false) {
     $seltodo = "opt_draft_continue";
 }
-else if(IsArg("opt_draft_quit_x")) {
+else if(IsArg("opt_draft_quit_x") !== false) {
 	$seltodo = "opt_draft_quit";
 }
-else if(IsArg("opt_mark_bad_x")) {
+else if(IsArg("opt_mark_bad_x") !== false) {
 	$seltodo = "opt_mark_bad";
 }
 
