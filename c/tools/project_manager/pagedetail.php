@@ -137,12 +137,12 @@ function echo_page_table( $project, $select_by_user )
 		$row['P3_diff'] = ($P2_text != $P3_text);
 		$row['F1_diff'] = ($P3_text != $F1_text);
 		$row['F2_diff'] = ($F1_text != $F2_text);
-        $row['P0_len'] = mb_strlen($P0_text);
-        $row['P1_len'] = mb_strlen($P1_text);
-        $row['P2_len'] = mb_strlen($P2_text);
-        $row['P3_len'] = mb_strlen($P3_text);
-        $row['F1_len'] = mb_strlen($F1_text);
-        $row['F2_len'] = mb_strlen($F2_text);
+        $row['P0_len'] = (string) mb_strlen($P0_text);
+        $row['P1_len'] = (string) mb_strlen($P1_text);
+        $row['P2_len'] = (string) mb_strlen($P2_text);
+        $row['P3_len'] = (string) mb_strlen($P3_text);
+        $row['F1_len'] = (string) mb_strlen($F1_text);
+        $row['F2_len'] = (string) mb_strlen($F2_text);
 	}
     $tbl->SetRows($rows);
 
