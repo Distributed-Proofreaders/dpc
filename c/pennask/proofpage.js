@@ -1,5 +1,5 @@
 /*
-    version 0.196
+    version 0.197
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1200,6 +1200,8 @@ function eSetTitleCase() {
     var newstr = '', word = '';
 
     var sel = SelectedText();
+    if (sel == "")
+        sel = SelectWord();
     if(!sel || !sel.length) {
         return false;
     }
@@ -1323,6 +1325,8 @@ function eSetDeQuotes() {
 
 function eSetUpperCase() {
     var sel = SelectedText();
+    if (sel == "")
+        sel = SelectWord();
     if(sel.length) {
         ReplaceText(sel.toUpperCase());
     }
@@ -1331,6 +1335,8 @@ function eSetUpperCase() {
 
 function eSetLowerCase() {
     var sel = SelectedText();
+    if (sel == "")
+        sel = SelectWord();
     if(sel.length) {
         ReplaceText(sel.toLowerCase());
     }
