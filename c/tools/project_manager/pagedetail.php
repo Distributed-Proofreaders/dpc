@@ -368,12 +368,12 @@ function table_sql($projectid, $select_by_user ) {
 	        pv4.state F1_state,
 	        pv5.state F2_state,
 
-			pv0.version P0_version,
-	        pv1.version P1_version,
-	        pv2.version P2_version,
-	        pv3.version P3_version,
-	        pv4.version F1_version,
-	        pv5.version F2_version,
+			max(pv0.version) P0_version,
+	        max(pv1.version) P1_version,
+	        max(pv2.version) P2_version,
+	        max(pv3.version) P3_version,
+	        max(pv4.version) F1_version,
+	        max(pv5.version) F2_version,
 
 	        pv0.crc32 = pv1.crc32 P1_diff,
 	        pv1.crc32 = pv2.crc32 P2_diff,
