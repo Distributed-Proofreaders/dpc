@@ -1301,6 +1301,12 @@ class DpProject
 			    JOIN pages pp
 			    ON pv.projectid = pp.projectid
 			        AND pv.pagename = pp.pagename
+                JOIN (
+                    /* Make sure we get only the largest version of the page */
+                    SELECT MAX(version) version, pagename from page_versions
+                    WHERE projectid = ?
+                    GROUP BY pagename
+                ) pv1 ON pv.version = pv1.version AND pv.pagename = pv1.pagename
 			    LEFT JOIN (
                     SELECT  projectid,
                             pagename,
@@ -1320,7 +1326,7 @@ class DpProject
         // Note that we've added an extra projectid=? to the inner left join,
         // so it doesn't full scan the huge page_versions table. 15 seconds
         // before, zero after!
-        $args = [&$projectid, &$projectid, &$phase];
+        $args = [&$projectid, &$projectid, &$projectid, &$phase];
 		$pgs = $dpdb->SqlRowsPS($sql, $args);
 
 		$text = "";
