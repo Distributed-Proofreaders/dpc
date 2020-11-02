@@ -108,12 +108,24 @@ if($mode == "1") {
 	}
 
 	if ( ! $problem ) {
-		$version0 = $page->Version( ( $version->VersionNumber() - 1 ) );
+        $lastPhase = RoundIdBefore($phase);
+        if (! $lastPhase) {
+            $problem = "No preceeding phase";
+            $isdiff  = false;
+        }
+    }
+
+    if ( ! $problem ) {
+        // Note we want the last version of the previous phase.
+        // We do not want just the last version, it might not be complete!
+		//$version0 = $page->Version( ( $version->VersionNumber() - 1 ) );
+        $version0 = $page->PhaseVersion($lastPhase);
 		if ( $version0->State() != "C" ) {
 			$problem = "Preceding version not completed yet (???)";
 			$isdiff  = false;
 		}
 	}
+	$label = "($phase) $proofer";
 
 	if ( ! $problem ) {
 		$text0  = $version0->VersionText();
