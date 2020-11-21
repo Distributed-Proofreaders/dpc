@@ -73,34 +73,38 @@ function $(ref) {
 }
 
 function save_zoom(pct) {
-    var c = document.cookie;
-    if(! c) {
-        c = 'image_zoom=' + pct.toString();
+    var date = new Date();
+    date.setDate(date.getDate() + 365 * 5);
+    document.cookie = 'image_zoom=' + pct.toString() + ';' +
+        ' expires=' + date.toUTCString() + '; samesite=strict';
+}
+
+function getCookie(cname) {
+    var name = cname + '=';
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ')
+            c = c.substring(1);
+        if (c.indexOf(name) == 0)
+            return c.substring(name.length, c.length);
     }
-    var m = c.match(/(.*)(image_zoom=\d*);(.*)/);
-    if(m.length != 4) {
-        return;
-    }
-    document.cookie = m[1] + 'image_zoom=' + pct.toString() + ';' + m[3];
+    return '';
 }
 
 function init_zoom() {
     var pct = parseInt($('image_zoom').value);
 
-    if(isNaN(pct)) {
-        var c = document.cookie;
-        var m = c.match(/image_zoom=(.*?);/);
-        if(m && m.length >= 2) {
-            pct = parseInt(m[1]);
-        }
-    }
-    if(isNaN(pct)) {
+    if(isNaN(pct))
+        pct = parseInt(getCookie('image_zoom'));
+    if(isNaN(pct))
         pct = 100;
-	}
     pct = Math.max(pct, Math.min(pct, 200), 5);
 
     $('image_zoom').value = pct.toString();
     $('pageimage').style.width = pct.toString() + '%';
+    save_zoom(pct);
 }
 
 function eZoom() {
@@ -112,6 +116,13 @@ function ebody() {
     jumpto = $('jumpto');
 	eJumpTo();
     init_zoom();
+
+    $('image_zoom').addEventListener('keyup', function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            $('submit_resize').click();
+        }
+    });
 }
 
 //function imgpath(pgname) {
@@ -170,7 +181,7 @@ function eNextClick() {
   <div style='float: left'>
     Width:
     <input type='text' maxlength='3' name='image_zoom' id='image_zoom' size='3' value=''> %
-    <input type='button' value='Resize' name='submit_resize' onclick='eZoom()'>
+    <input type='button' value='Resize' id='submit_resize' name='submit_resize' onclick='eZoom()'>
   </div>
   <div style='float: right'>
     Page:
