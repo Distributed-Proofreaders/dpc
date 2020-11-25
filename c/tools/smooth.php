@@ -36,6 +36,7 @@ $sql = "
         LEFT JOIN languages l1 ON p.language = l1.code
         LEFT JOIN languages l2 ON p.seclanguage = l2.code
         WHERE DATE(FROM_UNIXTIME(smoothread_deadline)) >= CURRENT_DATE()
+        AND p.phase = 'PP'
         ORDER BY p.smoothread_deadline";
 
 $rows = $dpdb->SqlRows($sql);
