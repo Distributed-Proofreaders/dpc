@@ -67,24 +67,28 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	$tbl->AddColumn("^".$projidCaption,         "projectid");
 
 	$awhere = array("p.phase != 'DELETED'");
+    $args = array();
 
 	if($qtitle) {
-		$qqtitle    = $dpdb->EscapeString($qtitle);
-		$qsql = "(p.nameofwork LIKE '%$qqtitle%')";
+        $qqtitle = "%$qtitle%";
+        $args[] = &$qqtitle;
+		$qsql = "(p.nameofwork LIKE ?)";
 		$awhere []  = $qsql;
 	}
 
 	if($qauthor) {
-		$qqauthor   = $dpdb->EscapeString($qauthor);
-		$qsql = "(p.authorsname LIKE '%$qqauthor%')";
+		$qqauthor = "%$qauthor%";
+        $args[] = &$qqauthor;
+		$qsql = "(p.authorsname LIKE ?)";
 		$awhere []  = $qsql;
 	}
 
 
 	if(count($qphase)> 0 && $qphase != array("")) {
 		$a = array();
-		foreach($qphase as $q) {
-			$a[] ="p.phase = '{$q}'";
+		foreach($qphase as &$q) {
+			$a[] ="p.phase = ?";
+            $args[] = &$q;
 		}
 
 		if(count($a) > 1) {
@@ -97,8 +101,9 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 
 	if(is_array($qpm) && count($qpm) > 0 && $qpm != array("")) {
 		$a = array();
-		foreach($qpm as $q) {
-			$a[] ="p.username = '{$q}'";
+		foreach($qpm as &$q) {
+			$a[] ="p.username = ?";
+            $args[] = &$q;
 		}
 
 		if(count($a) > 1) {
@@ -110,8 +115,9 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	}
 	if(is_array($qpp) && count($qpp) > 0) {
 		$a = array();
-		foreach($qpp as $q) {
-			$a[] ="p.postproofer = '{$q}'";
+		foreach($qpp as &$q) {
+			$a[] ="p.postproofer = ?";
+            $args[] = &$q;
 		}
 
 		if(count($a) > 1) {
@@ -123,8 +129,9 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	}
 	if(is_array($qppv) && count($qppv) > 0) {
 		$a = array();
-		foreach($qppv as $q) {
-			$a[] ="p.ppverifier = '{$q}'";
+		foreach($qppv as &$q) {
+			$a[] ="p.ppverifier = ?";
+            $args[] = &$q;
 		}
 
 		if(count($a) > 1) {
@@ -137,8 +144,9 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 
 	if($qgenre) {
 		$a = array();
-		foreach($qgenre as $q) {
-			$a[] ="genre = '{$q}'";
+		foreach($qgenre as &$q) {
+			$a[] = "genre = ?";
+            $args[] = &$q;
 		}
 
 		if(count($a) > 1) {
@@ -151,9 +159,15 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 
 	if($qlang) {
 		$a = array();
-		foreach($qlang as $q) {
-			$a[] ="language LIKE '%{$q}%'"
-			    . " OR seclanguage LIKE '%{$q}%'";
+        $qq = array();
+		foreach($qlang as &$q)
+            $qq[] = "%$q%";
+
+        foreach ($qq as &$q) {
+            $args[] = &$q;
+            $args[] = &$q;
+			$a[] ="language LIKE ?"
+			    . " OR seclanguage LIKE ?";
 		}
 
 		if(count($a) > 1) {
@@ -176,7 +190,8 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	$where = implode("\nAND ", $awhere);
 	$sql = project_search_view_sql($where, $orderby);
 
-	$rows = $dpdb->SqlRows($sql);
+    //echo "ARGS: " . print_r($args, true);
+	$rows = $dpdb->SqlRowsPS($sql, $args);
 	if($cmdPgUp) {
 		$pagenum = max($pagenum - 1, 1);
 	}
