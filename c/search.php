@@ -54,16 +54,19 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 
 
     $awhere = array();
+    $args = array();
 
 	if($qtitle) {
-		$qqtitle    = $dpdb->EscapeString($qtitle);
-		$qsql = "(p.nameofwork LIKE '%$qqtitle%')";
+		$qqtitle    = "%$qtitle%";
+        $args[] = &$qqtitle;
+		$qsql = "(p.nameofwork LIKE ?)";
 		$awhere []  = $qsql;
 	}
 
 	if($qauthor) {
-		$qqauthor   = $dpdb->EscapeString($qauthor);
-		$qsql = "(p.authorsname LIKE '%$qqauthor%')";
+		$qqauthor = "%$qauthor%";
+        $args[] = &$qqauthor;
+		$qsql = "(p.authorsname LIKE ?)";
 		$awhere []  = $qsql;
 	}
 
@@ -72,25 +75,27 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
         $qroundid = RoundIdsInOrder();
     }
 
-    $awhere[] = "p.phase IN ('" . implode("', '", $qroundid) . "')";
-//		$a = array();
-//		foreach($qroundid as $q) {
-//			$a[] ="p.phase LIKE '{$q}%'";
-//		}
-//
-//		if(count($a) > 1) {
-//			$awhere [] = "(".implode(" OR ", $a).")";
-//		}
-//		else if(count($a) == 1) {
-//			$awhere [] = $a[0];
-//		}
-//	}
+	if(count($qroundid)> 0 && $qroundid != array("")) {
+		$a = array();
+		foreach($qroundid as &$q) {
+			$a[] ="p.phase = ?";
+            $args[] = &$q;
+		}
+
+		if(count($a) > 1) {
+			$awhere [] = "(".implode(" OR ", $a).")";
+		}
+		else if(count($a) == 1) {
+			$awhere [] = $a[0];
+		}
+	}
 
 	if(is_array($qpm) && count($qpm) > 0) {
 		$a = array();
-		foreach($qpm as $q) {
+		foreach($qpm as &$q) {
 			if($q != "") {
-				$a[] ="p.username LIKE '{$q}'";
+				$a[] ="p.username = ?";
+                $args[] = &$q;
 			}
 		}
 
@@ -104,8 +109,9 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 
 	if($qgenre) {
 		$a = array();
-		foreach($qgenre as $q) {
-			$a[] ="genre LIKE '%{$q}%'";
+		foreach($qgenre as &$q) {
+			$a[] ="genre = ?";
+            $args[] = &$q;
 		}
 
 		if(count($a) > 1) {
@@ -118,8 +124,14 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 
 	if($qlang) {
 		$a = array();
-		foreach($qlang as $q) {
-			$a[] ="language LIKE '%{$q}%' OR seclanguage LIKE '%[$q]%'";
+        $qq = array();
+		foreach($qlang as &$q)
+            $qq[] = "%$q%";
+
+		foreach($qq as &$q) {
+            $args[] = &$q;
+            $args[] = &$q;
+			$a[] ="language LIKE ? OR seclanguage LIKE ?";
 		}
 
 		if(count($a) > 1) {
@@ -149,7 +161,8 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 
 	$sql = project_search_view_sql($where, $having, $orderby);
 
-	$rows = $dpdb->SqlRows($sql);
+    //echo "ARGS: " . print_r($args, true) . "<br>\n";
+	$rows = $dpdb->SqlRowsPS($sql, $args);
 	if($cmdPgUp) {
 		$pagenum = max($pagenum - 1, 1);
 	}
