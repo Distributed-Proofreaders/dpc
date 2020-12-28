@@ -86,10 +86,39 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 
 	if(count($qphase)> 0 && $qphase != array("")) {
 		$a = array();
+        $includeQueue = false;
+        $includeP1 = false;
 		foreach($qphase as &$q) {
-			$a[] ="p.phase = ?";
+
+            // Include the P1 queue or not?
+            if ($q == "P1/Queue") {
+                $includeQueue = true;
+                continue;
+            }
+            if ($q == "P1") {
+                $includeP1 = true;
+                continue;
+            }
+            $a[] ="p.phase = ?";
             $args[] = &$q;
 		}
+
+        // The artificial P1/Queue phase is tricky, and means we need to
+        // consider P1 and P1/Queue together, since P1 only and P1/Queue only
+        // need to test the hold count
+        if ($includeQueue) {
+            if ($includeP1) {
+                // P1 and P1/Queue
+                $a[] = "p.phase = 'P1'";
+            } else {
+                // P1/Queue but *not* P1 only
+                $a[] = "(p.phase = 'P1' AND (SELECT count(*) FROM project_holds ph WHERE ph.projectid = p.projectid AND ph.phase = 'P1' AND ph.hold_code = 'queue') > 0)";
+            }
+        } else {
+            if ($includeP1)
+                // P1 but *not* P1/Queue
+                $a[] = "(p.phase = 'P1' AND (SELECT count(*) FROM project_holds ph WHERE ph.projectid = p.projectid AND ph.phase = 'P1' AND ph.hold_code = 'queue') < 1)";
+        }
 
 		if(count($a) > 1) {
 			$awhere [] = "(".implode(" OR ", $a).")";
@@ -191,7 +220,12 @@ if($dosearch || $cmdPgUp || $cmdPgDn) {
 	$sql = project_search_view_sql($where, $orderby);
 
     //echo "ARGS: " . print_r($args, true);
-	$rows = $dpdb->SqlRowsPS($sql, $args);
+    if (count($args) > 0)
+        $rows = $dpdb->SqlRowsPS($sql, $args);
+    else
+        // An empty set of conditions causes an empty arglist,
+        // which for some reason causes an error.
+        $rows = $dpdb->SqlRows($sql);
 	if($cmdPgUp) {
 		$pagenum = max($pagenum - 1, 1);
 	}
@@ -389,6 +423,7 @@ echo "
 					   multiple='multiple' size='12'>\n";
 
 $optphases = PhasesInOrder();
+array_splice($optphases, 2, 0, array("P1/Queue"));
 echo array_to_options($optphases, true, $qphase);
 
 echo "
@@ -652,7 +687,7 @@ function project_search_view_sql($where, $orderby = "nameofwork") {
                 p.n_pages AS pages_total,
                 p.username AS project_manager,
                 ph.sequence,
-                (SELECT 1 FROM project_holds ph WHERE ph.projectid = p.projectid AND ph.phase = 'P1' AND ph.hold_code = 'queue') queued,
+                (SELECT count(*) FROM project_holds ph WHERE ph.projectid = p.projectid AND ph.phase = 'P1' AND ph.hold_code = 'queue') queued,
                 p.postednum
             FROM projects p
             LEFT JOIN languages l1 ON p.language = l1.code
