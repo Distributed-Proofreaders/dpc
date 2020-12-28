@@ -424,7 +424,7 @@ echo "
 
 $optphases = PhasesInOrder();
 array_splice($optphases, 2, 0, array("P1/Queue"));
-echo array_to_options($optphases, true, $qphase);
+echo array_to_options($optphases, false, $qphase);
 
 echo "
 				</select>
@@ -641,11 +641,18 @@ function ephase($phase, $row) {
     return $name;
 }
 
-function array_to_options($optarray, $is_blank = true,
-	$selected = null) {
-	$ret = $is_blank
-		? "<option value=''> </option>\n"
-		: "";
+function array_to_options($optarray, $is_blank = true, $selected = null)
+{
+    if (!$is_blank)
+        $ret = "";
+    else {
+        // Unset in the database is actually non-null but empty,
+        // we use a blank string for this case.
+        if (is_array($selected) && in_array("", $selected))
+            $ret = "<option value='' selected='selected'> </option>\n";
+        else
+            $ret = "<option value=''> </option>\n";
+    }
 	// foreach($optarray as $opt => $val) {
 	foreach($optarray as $val) {
 		// assert($opt);
