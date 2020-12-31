@@ -937,18 +937,30 @@ function stackedChart($newProjInfo, $transitionInfo) {
     );
 }
 
+// Sigh, should be an easier way
+function fillEmpties(&$v) {
+    foreach (array("P1", "P2", "P3", "F1", "F2") as $p) {
+        if (empty($v[$p]))
+            $v[$p] = 0;
+    }
+}
+
 function activeUsersChart($dailyInfo, $monthlyInfo, $div) {
+    
     $users[] = [ "date", "P1", "P2", "P3", "F1", "F2" ];
     $monthly = [ "P1"=>0, "P2"=>0, "P3"=>0, "F1"=>0, "F2"=>0 ];
     foreach ($dailyInfo as $day)
         $bydayUsers[$day['day']][$day['phase']] = (int)$day['nuser'];
     foreach ($monthlyInfo as $onePhase)
         $m[$onePhase['phase']] = (int)$onePhase['nuser'];
+    fillEmpties($m);
     $users[] = [
-        "month", $m['P1'], $m['P2'], $m['P3'], $m['F1'], $m['F2']
+        "since same day last month", $m['P1'], $m['P2'], $m['P3'], $m['F1'], $m['F2']
     ];
-    foreach (array_slice($bydayUsers, -8) as $day => $v)
+    foreach (array_slice($bydayUsers, -8) as $day => $v) {
+        fillEmpties($v);
         $users[] = [ $day, $v['P1'], $v['P2'], $v['P3'], $v['F1'], $v['F2'] ];
+    }
     makeColumnChart(json_encode($users),
         "Active Users",
         $div,
@@ -962,8 +974,10 @@ function dailyPageChart($dailyInfo, $div) {
     $daily[] = [ "date", "P1", "P2", "P3", "F1", "F2" ];
     foreach ($dailyInfo as $day)
         $byday[$day['day']][$day['phase']] = (int)$day['n'];
-    foreach (array_slice($byday, -8) as $day => $v)
+    foreach (array_slice($byday, -8) as $day => $v) {
+        fillEmpties($v);
         $daily[] = [ $day, $v['P1'], $v['P2'], $v['P3'], $v['F1'], $v['F2'] ];
+    }
     makeColumnChart(json_encode($daily),
         "Daily Page Completion",
         $div,
