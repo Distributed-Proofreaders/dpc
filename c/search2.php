@@ -423,7 +423,7 @@ echo "
 					   multiple='multiple' size='12'>\n";
 
 $optphases = PhasesInOrder();
-array_splice($optphases, 2, 0, array("P1/Queue"));
+array_splice($optphases, 1, 0, array("P1/Queue"));
 echo array_to_options($optphases, false, $qphase);
 
 echo "
