@@ -28,6 +28,7 @@ $font_faces = array('courier'          => 'Courier New',
                     'arial'            => 'Arial', 
                     'monospaced'       => 'monospace',
                     'dpcustommono2'    => 'DPCustomMono2', 
+                    'dpsansmono'       => 'DP Sans Mono',
                     'lucidaconsole'    => 'Lucida Console',
                     'dejavu'           => 'DejaVu Sans Mono',
                     'monaco'           => 'Monaco');
