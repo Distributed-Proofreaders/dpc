@@ -269,7 +269,10 @@ class ProjectInfoHolder
             $this->nameofwork, $this->authorsname,
             $this->projectmgr, $User->Username(), $this->project_type);
 
+        // Clear fields that shouldn't be cloned
         $this->postednum = "";
+        $this->qc_assign = "";
+
         $this->save_to_db();
         $dpdb->commit();
         return $this->projectid;
