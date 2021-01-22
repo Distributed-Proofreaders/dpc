@@ -1,5 +1,5 @@
 /*
-    version 0.197
+    version 0.198
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -2500,6 +2500,7 @@ class TextAnalysis {
                 //console.log(startTag + ": >>>" + text + "<<<");
                 if (text == "")
                     this.err(line, "Empty font tag: &lt;" + token + ">&lt;" + token + "/> embedded in line.");
+                this.fontValidation(startTag, text);
             } else {
                 if (token == "tb") {
                     this.err(line, "Non-isolated &lt;tb> tag: must be both preceeded and followed by a blank line.");
@@ -2514,6 +2515,28 @@ class TextAnalysis {
         }
         if (fonts.length > 0)
             this.err(line, "Open tag &lt;" + fonts.pop() + "> not closed" + errAppend);
+    }
+
+    fontValidation(tag, text)
+    {
+        switch (tag) {
+        case "sc":
+            // TODO: Does not handle <sc>XXX<i>YYY</i></sc>
+            // Small-caps must not be all upper case.
+            for (var i in text) {
+                var c = text[i];
+                if (c.toUpperCase() == c.toLowerCase())
+                    // Not a letter
+                    continue;
+                if (c == c.toUpperCase())
+                    continue;
+                // Hit a lower-case letter, we're done
+                return;
+            }
+            // All upper-case
+            this.err(text, "Small-caps is all upper-case around " + text);
+            return;
+        }
     }
 
     err(line, msg)
