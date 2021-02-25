@@ -41,7 +41,7 @@ if ($page_number != 0) {
     if ($page_number == 1)
         $datestr = "Yesterday";
     else
-        $datestr = $day->format("Y-m-d");
+        $datestr = $day->format("F j, Y");
     $next = '';
     $prevtext = "Prev Day";
 } else {
