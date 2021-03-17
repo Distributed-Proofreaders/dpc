@@ -1,5 +1,5 @@
 /*
-    version 0.198
+    version 0.199
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1519,7 +1519,7 @@ function selectionInNowrap() {
 function eSetNoWrap() {
     var sel = SelectedText();
     if(sel.length == 0) {
-        return;
+        return false;
     }
     // newlines, anything ending in not-white-space, whitespace to end
     // to newlines, / * newline, middle text, newline * /, trailing whitespace
@@ -1704,7 +1704,7 @@ function Replace(start, end, repl) {
 function eSetBlockQuote() {
     var sel = SelectedText();
     if(sel.length == 0 ) {
-        return;
+        return false;
     }
     var rpl = sel.replace(/^(\n*)([\s\S]*\S)(\s*)$/g, "$1/#\n$2\n#/$3");
     //ReplaceText('/#\n' + sel + '\n#/');
