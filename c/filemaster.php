@@ -272,8 +272,8 @@ $tblpages->AddColumn( "^Page<br/>name", "name");
 $tblpages->AddColumn( ">In project", null, "eInDB" );
 $tblpages->AddColumn( ">Load Image", "external_image", "epathlink" );
 $tblpages->AddColumn( ">Load Text", "external_text", "epathlink" );
-$tblpages->AddColumn( "^Encoding", "external_text", "encoding" );
-$tblpages->AddColumn( chkall(), null, "etextcheck" );
+$tblpages->AddColumn( "^Encoding", "encoding");
+$tblpages->AddColumn( chkall(), "xx", "etextcheck" );
 $tblpages->AddColumn("<projectid", "projectid", null, "hidden");
 $tblpages->AddColumn("<imgpath", "external_image", null, "hidden");
 $tblpages->AddColumn("<imgpath", "external_text", null, "hidden");
@@ -291,6 +291,15 @@ foreach($protopages as $protopg) {
 	else {
 		$otherrows[] = $protopg;
 	}
+}
+
+// Test each file's encoding.
+foreach ($pagerows as &$row) {
+    //dump($row);
+    if (isset($row['external_text'])) 
+        $row['encoding'] = encoding($row['external_text']);
+    else
+        $row['encoding'] = "";
 }
 
 $tblpages->SetRows( $pagerows );
@@ -325,6 +334,37 @@ $uploadcaption  = _("Browse files to upload");
 
 	echo "<script type='text/javascript'>
 		init();
+/*
+ * This needs special checking because you can delete any page, so
+ * need to be able to check off any page. But you can't load any page,
+ * and we don't know until they decide which button to hit. Which
+ * probably means it is a bad UI.
+ */
+function submitLoadCheck(e) {
+    var tbl = $('page_table');
+    var nrows = tbl.rows.length;
+    // rows 0&1 are titles
+    for (var i = 2; i < nrows; i++) {
+        var row = tbl.rows[i];
+        var chk = row.getElementsByTagName('input');
+        if (chk.length > 0 && chk[0].checked) {
+            var encoding = row.cells[4].innerHTML;
+            var pagename = row.cells[0].innerHTML;
+            var loadImage = row.cells[3].innerHTML;
+            if (loadImage == '') {
+                alert('The page ' + pagename + ' has no text file to load!');
+                e.preventDefault();
+                break;
+            }
+            if (encoding != 'utf-8') {
+                alert('The page ' + pagename + ' is not utf-8 and may not be loaded!');
+                e.preventDefault();
+                break;
+            }
+        }
+    }
+    return false;
+}
 		</script>\n";
 //	if( $projectid && $project) {
 		echo "<p>" . link_to_project( $projectid, "Return to project" ) . "</p>";
@@ -379,7 +419,7 @@ $uploadcaption  = _("Browse files to upload");
           <div id='divbuttons' class='w100'>
             <input type='submit' name='submit_delete' class='rfloat margined' value='$delcaption'
              />
-            <input type='submit' name='submit_load' class='rfloat margined' value='$loadcaption'
+            <input type='submit' name='submit_load' class='rfloat margined' value='$loadcaption' onclick='submitLoadCheck(event);'
             />
           </div> <!-- divbuttons -->\n";
           $tblpages->EchoTable();
@@ -473,11 +513,6 @@ function efile($row) {
     return $row;
 }
 
-function edelete($image) {
-    return "<input type='checkbox' name='chk_delete[$image]' value='Delete' />\n";
-}
-
-
 function readme_data($path) {
 	$rmpath = build_path($path, "readme.txt");
 	if(file_exists($rmpath)) {
@@ -501,30 +536,6 @@ function DirectoryList($path) {
 	return $dirpaths;
 }
 
-/*
-function echo_upload_form() {
-    echo "
-        <form enctype='multipart/form-data' method='post'
-            name='upform' id='upform'>
-        Select a zip file:
-    <input type='file' name='projectzipfile' size='50'
-            onchange='eFileSelect()'>
-    <input type='button' value='Upload file' onclick='eUpClick()'
-        name='upbutton' id='upbutton'>
-    <span id='uploading'> Uploading....</span>
-	</form>\n";
-}
-
-
-function yes_no($boolval) {
-	$ret = $boolval;
-	$ret .= (is_null($boolval) ? " N1 " : " Y1 ");
-	$ret .= ($boolval ? " Y2 " : " N2 ");
-	return $ret;
-}
-*/
-
-
 function encoding($path) {
 	if(! file_exists($path)) {
 		return "";
@@ -533,19 +544,13 @@ function encoding($path) {
 	return is_utf8($text) ? "utf-8" : "other";
 }
 
-function etextcheck($page) {
-	global $protopages;
-	$name = $page['name'];
-	$key  = "pg_" . $name;
-	if ( ! isset( $protopages[ $key ] ) ) {
-		dump( $name );
-		dump( $key );
-		dump( $protopages );
-		die();
-	}
-//	$proto = $protopages[ $key ];
-
-	return "<input type='checkbox' name='chk_text[{$key}]'>\n";
+function etextcheck($page, $row) {
+    $enable = "";
+    $name = $row['name'];
+    $key = "pg_" . $name;
+//    if (isset($row['encoding']) && $row['encoding'] == 'other')
+//        $enable = "disabled";
+	return "<input type='checkbox' name='chk_text[{$key}]' {$enable}>\n";
 //	return ( isset( $proto['external_image'] )
 //	         && isset( $proto['external_text'] ) )
 //		? "<input type='checkbox' name='chk_text[{$key}]'>\n"
