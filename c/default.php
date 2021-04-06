@@ -33,12 +33,10 @@ echo _("<p>Distributed Proofreaders Canada (DPC) was founded in 2007
 by Michael Shepard and David Jones to support the digitization of Public Domain
 books. Our inspiration was <a href='https://www.pgdp.net'>Distributed Proofreaders
 International (DP)</a>, which was originally conceived to prepare texts for
-Project Gutenberg (PG). Just as DP is now the main
-source of PG eBooks, DPC now provides many of the books for the
-<a href='http://www.gutenberg.ca'>Project Gutenberg Canada (PGC)</a>
-that started on July 1, 2007.
-All our books are also posted to our own site,
-<a href='https://fadedpage.com/'>Faded Page</a>.
+<a href='https://gutenberg.org'>Project Gutenberg (PG)</a>. Just as DP is now the main
+source of PG eBooks, DPC now provides many of the books for
+<a href='https://fadedpage.com'>FadedPage</a> (FP)
+that started on March 22, 2012.
 All our proofreaders, managers, developers and so on are
 volunteers. The main principles of our mission are to: (1) preserve Canadiana,
 one page at a time, (2) take advantage of the favourable copyright laws in
@@ -53,8 +51,8 @@ Canada to make books published after 1923, written by authors who died at least
 echo "<h3 class='red'>". _("Site Concept") ."</h3>\n";
 
 echo _("<p>This site provides a web-based method of easing the proofreading work
-associated with the digitization of Public Domain books into Project Gutenberg
-Canada eBooks. By breaking the work into individual pages many proofreaders
+associated with the digitization of Public Domain books into FadedPage
+eBooks. By breaking the work into individual pages many proofreaders
 can be working on the same book at the same time. This significantly speeds up
 the proofreading/eBook creation process.</p>");
 
@@ -70,9 +68,9 @@ site. The book then progresses through two formatting rounds using the same web
 interface.</p>");
 
 echo _("<p>Once all pages for a particular book have been processed, a
-post-processor joins the pieces, properly formats them into a Project Gutenberg
-Canada eBook, optionally makes it available to interested parties for 'smooth
-reading', and submits it to the PGC archive.</p>\n");
+post-processor joins the pieces, properly formats them into a FadedPage
+eBook, optionally makes it available to interested parties for 'smooth
+reading', and submits it to the FP archive.</p>\n");
 
 echo "<h3 class='red'>". _("How You Can Help") ."</h3>\n";
 
