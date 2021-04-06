@@ -298,7 +298,7 @@ function echo_top_box($project) {
             break;
 
         default:
-            if (is_file($project->ProjectPath()))
+            if ($project->isArchived())
                 $proof_link = "Not available, project has been archived";
             else
                 $proof_link = "Not available";

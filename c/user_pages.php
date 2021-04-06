@@ -53,15 +53,16 @@ if($phase != "" && $username != "") {
 			ON p.projectid = pv2.projectid
 				AND pv1.pagename = pv2.pagename
 				AND pv2.version = pv1.version + 1
-		WHERE pv1.username = '$username'
-			AND pv1.phase = '$phase'
+		WHERE pv1.username = ?
+			AND pv1.phase = ?
 			AND pv1.state = 'C'
 			AND pv2.state = 'C'
 			AND pv1.crc32 != pv2.crc32
         ORDER BY pv1.version_time DESC
         LIMIT 2000";
 
-	$rows = $dpdb->SqlRows($sql);
+    $args = [ &$username, &$phase ];
+	$rows = $dpdb->SqlRowsPS($sql, $args);
     if(count($rows) > 0) {
         $phase2 = $rows[0]['phase2'];
 

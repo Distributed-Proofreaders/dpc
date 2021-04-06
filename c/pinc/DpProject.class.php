@@ -158,6 +158,10 @@ class DpProject
         return count($this->_row) > 0;
     }
 
+    public function isArchived() {
+        return is_file($this->ProjectPath());
+    }
+
     public function Refresh() {
 	    if($this->Exists()) {
 		    $this->query_for_row( $this->ProjectId() );
