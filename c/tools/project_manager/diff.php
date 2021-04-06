@@ -40,6 +40,8 @@ $btn_proofer_prev       = IsArg("btn_proofer_prev");
 if(! $projectid)
 	die(_("Project id not provided."));
 $project         = new DpProject($projectid);
+if ($project->isArchived())
+    die("Project has been archived. Page texts are not available.");
 if(! $pagename)
 	die(_("Page Name not provided."));
 if(! $phase)
