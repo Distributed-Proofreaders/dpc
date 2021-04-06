@@ -15,7 +15,6 @@ $User->IsLoggedIn()
 $project = new DpProject($projectid);
 $projphase = $project->Phase();
 
-
 // ===========================================================================
 // display
 // ===========================================================================
@@ -37,7 +36,10 @@ echo "
     <h1>$title</h1>
     ";
 
-echo_page_table($project, $select_by_user);
+if ($project->isArchived())
+    echo "<b>Project has been archived. Individual page texts are not available.</b>";
+else
+    echo_page_table($project, $select_by_user);
 echo "
 </div>
 </table> <!-- hanging tag from theme -->\n";
