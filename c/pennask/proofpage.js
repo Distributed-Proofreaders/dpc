@@ -1,5 +1,5 @@
 /*
-    version 0.199
+    version 0.200
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -730,9 +730,16 @@ function ePickerOver(e) {
 }
 
 /*
-    Replace SelectedText with argument
+ *  Replace SelectedText with argument
+ *  If the highlight arg is set, then the replaced text is selected,
+ *  otherwise the cursor is placed at the end of the replaced text, without
+ *  selection.
+ *  The SetSelection function must have been previously called; if it set
+ *  the global _is_tail_space, the space is now added to the end of the
+ *  replacement string.  This allows the changing of the word, without
+ *  worrying about double-click actually highlighting the following space.
  */
-function ReplaceText(str) {
+function ReplaceText(str, highlight = false) {
     if(_is_tail_space) {
         str += ' ';
     }
@@ -755,8 +762,11 @@ function ReplaceText(str) {
         tatext.value = 
             tatext.value.substring(0, tatext.selectionStart) 
             + str + tatext.value.substring(tatext.selectionEnd);
-        tatext.selectionEnd = 
-            tatext.selectionStart = istart + str.length;
+        tatext.selectionEnd = istart + str.length;
+        if (highlight)
+            tatext.selectionStart = istart;
+        else
+            tatext.selectionStart = tatext.selectionEnd;
     }
     }
     consider_wordchecking();
@@ -1082,12 +1092,16 @@ function IsSelectedText() {
 }
 //noinspection FunctionWithMoreThanThreeNegationsJS
 /**
+ * Return the selected text. Note that if the selected text ends in a space,
+ * it is not part of the returned string, but _is_tail_space is set to true.
  * @return {string}
  */
 function SelectedText() {
     var sel;
     var ierange;
     var seltext;
+
+    _is_tail_space = false;
 
     if(!tatext || tatext.value.length == 0) {
         return '';
@@ -1284,7 +1298,7 @@ function eSetTitleCase() {
         newstr += word;
     }
 
-    ReplaceText(newstr);
+    ReplaceText(newstr, true);
     
     return false;
 }
@@ -1328,7 +1342,7 @@ function eSetUpperCase() {
     if (sel == "")
         sel = SelectWord();
     if(sel.length) {
-        ReplaceText(sel.toUpperCase());
+        ReplaceText(sel.toUpperCase(), true);
     }
     return false;
 }
@@ -1338,7 +1352,7 @@ function eSetLowerCase() {
     if (sel == "")
         sel = SelectWord();
     if(sel.length) {
-        ReplaceText(sel.toLowerCase());
+        ReplaceText(sel.toLowerCase(), true);
     }
     return false;
 }
@@ -1394,7 +1408,7 @@ function setFont(tag) {
         sel = fontPerLine(sel, startTag, endTag);
     else
         sel = startTag + sel + endTag;
-    ReplaceText(sel);
+    ReplaceText(sel, true);
     return false;
 }
 
