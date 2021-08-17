@@ -51,7 +51,6 @@ $tbl->AddColumn("<Last on site", "uppv_last_time");
 $tbl->SetRows($rows);
 $tbl->EchoTable();
 
-echo "</table>";
 theme("","footer");
 exit;
 
