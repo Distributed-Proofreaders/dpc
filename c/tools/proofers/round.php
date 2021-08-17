@@ -125,7 +125,7 @@ if (!$User->MayWorkInRound($phase)) {
 $rows = getProjects($phase, "ORDER BY days_avail DESC, nameofwork");
 
 $n = count($rows);
-echo "<h3 class='center'>$n projects available in this round.</h3>\n";
+echo "<h3 class='center'><span class='dptablefilter_total'>$n</span> projects available in this round; <span class='dptablefilter_count'>$n</span> displayed.</h3>\n";
 
 if($n < 1) {
 	echo "<br><h4>No projects found.</h4>";

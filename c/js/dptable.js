@@ -131,11 +131,7 @@ dptablefilter = {
 
     getTable: function(cell)
     {
-        var table = cell;
-        do {
-            table = table.parentNode;
-        } while (table.nodeName.toUpperCase() != 'TABLE');
-        return table;
+        return cell.closest(".sortable");
     },
 
     comboClick: function()
@@ -155,6 +151,7 @@ dptablefilter = {
         var filterCells = rows[1].cells;
         // Row 0 is headers
         // Row 1 is filters
+        var count = 0;
         for (var row = 2; row < rows.length; row++) {
             var rowCells = rows[row].cells;
             var match = true;
@@ -184,16 +181,34 @@ dptablefilter = {
                     break;
                 }
             }
-            if (match)
+            if (match) {
                 rows[row].style.display = "";
-            else
+                count++;
+            } else
                 rows[row].style.display = "none";
         }
+        dptablefilter.updateCount(count, rows.length-2);
+    },
+
+    updateCount: function(count, total)
+    {
+        dptablefilter.setCounts('count', count);
+        dptablefilter.setCounts('total', total);
+    },
+
+    setCounts: function(name, n)
+    {
+        var spans = document.getElementsByClassName('dptablefilter_'+name);
+
+        for (var i = 0; i < spans.length; i++)
+            spans[i].innerText = n + "";
     }
 }
 
 window.addEventListener("load", dptablefilter.init, false);
 
-/* vim: sw=4 ts=4 expandtab */
+/*
+ * vim: sw=4 ts=4 expandtab
+ */
 </script>
 
