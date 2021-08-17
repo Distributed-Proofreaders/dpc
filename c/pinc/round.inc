@@ -92,17 +92,21 @@ function getProjects($phase, $orderby = "ORDER BY days_avail, nameofwork") {
     return $rows;
 }
 
-function echoProjects($rows, $class = NULL) {
+function echoProjects($rows, $class = NULL, $filters = false) {
     if (is_null($class))
         $tbl = new DpTable();
     else
         $tbl = new DpTable("", $class);
+    $f = "";
+    if ($filters)
+        $f = "filter";
+    // (caption, colname, template, class)
 	$tbl->AddColumn("<Title", "nameofwork", "etitle");
 	$tbl->AddColumn("<Author", "authorsname");
-	$tbl->AddColumn("<Language", "language", "elang");
-	$tbl->AddColumn("^Diff", "difficulty");
-	$tbl->AddColumn("<Genre", "genre");
-	$tbl->AddColumn("<Project<br>Mgr", "username", "epm", "sortkey=pmsort");
+	$tbl->AddColumn("<Language", "language", "elang", $f);
+	$tbl->AddColumn("^Diff", "difficulty", null, $f);
+	$tbl->AddColumn("<Genre", "genre", null, $f);
+	$tbl->AddColumn("<Project<br>Mgr", "username", "epm", "sortkey=pmsort ".$f);
 	$tbl->AddColumn("^Available<br>Pages", "n_available_pages", "enumber");
 	$tbl->AddColumn("^Total<br>Pages", "n_pages", "enumber");
 	$tbl->AddColumn(">Days in<br>Round", "days_avail", "enumber");

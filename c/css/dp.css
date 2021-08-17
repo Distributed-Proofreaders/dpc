@@ -35,8 +35,11 @@ div#logobar {
     background-color: #e7efde;
 }
 
-table.dptable tr.colheadings {
+table.dptable tr.colheadings, table.dptable tr.filters {
     background-color: lightgreen;
+}
+table.dptable tr.filters {
+    border-top-style: hidden;
 }
 table.dptable.no_tr_for_th tr.colheadings {
     display: none;

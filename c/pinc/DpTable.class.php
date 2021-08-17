@@ -10,7 +10,7 @@ error_reporting(E_ALL);
 
 /**
          js sorting
-         note that <thead loads js/sort.js.
+         Note that pinc/theme.inc includes js/sorttable.js
  */
 
 /**
@@ -67,6 +67,8 @@ class DpTable
         if($title) {
             $this->_table_title = $title;
         }
+        global $relPath;
+        require_once($relPath . "../js/dptable.js");
     }
 
     /**
@@ -134,6 +136,10 @@ class DpTable
 
     public function SetId($id) {
         $this->_id = $id;
+    }
+
+    public function GetId() {
+        return $this->_id;
     }
 
     public function SetTitle($title) {
@@ -242,10 +248,12 @@ class DpTable
                     $this->AddColumn($col, $col);
             }
         }
+        $name = $this->GetId();
         $str_out = "
             <table "
-            . ($this->_id ? " id='{$this->_id}'" : "")
+            . ($name ? " id='$name'" : "")
             . " class='{$this->StrClass()}'>\n";
+        $str_out .= "<thead>\n";
 
         $colcount = $this->ColumnCount();
 
@@ -273,14 +281,42 @@ class DpTable
                 </th></tr>\n";
         }
 
+        list($body_as_str, $filters) = $this->formatBody();
+
         // first the captions above the column headings
         $str_out .= $this->StrCaptions();
         // then the column headings
-        $str_out .= $this->StrHeadings($isnumbered);
+        $str_out .= $this->StrHeadings($isnumbered, $filters);
+
+        // Note cannot include the filter row in the headers, sort only works with one
+        // row in the header.
+        $str_out .= "</thead>\n";
+
+        // Then the filter row
+        if ($this->IsFiltering())
+            $str_out .= $this->StrFilters($filters);
+
 	    // then the QBE row
 	    $str_out .= $this->StrQBE();
 
-        $odd_even = true ;
+        $str_out .= $body_as_str;
+
+        if( $this->IsPaging() > 1 && $this->_pager_template)
+            $str_out .= $this->_echo_pager() ;
+        $str_out .=  "
+            </table>\n";
+
+        echo $str_out;
+    }
+
+    /**
+     *  As a side-effect of formatting the body, we also return an array of arrays
+     *  of the filterable columns.
+     */
+    private function formatBody() {
+        $str_out = "";
+        $odd_even = true;
+        $filters = array();
         $this->_rownum 
             = ( $this->PageNumber() - 1 ) 
                             * $this->RowsPerPage();
@@ -294,22 +330,54 @@ class DpTable
                 ? "<tr $row_id class='odd'>\n"
                 : "<tr $row_id class='even'>\n";
 
-            if($isnumbered) {
+            if($this->IsNumbered()) {
                 $str_out .= "<td class='right'>{$this->_rownum}</td>\n";
             }
 
             /** @var $col DpTableColumn */
             foreach($this->_columns as $col) {
-                $str_out .= $col->EchoCell($row);
+                list($sort, $v) = $col->getCell($row);
+                if ($col->isFilterable()) {
+                    $n = $col->ColName();
+                    if (!isset($filters[$n]))
+                        $filters[$n] = array();
+                    $filterValues = &$filters[$n];
+                    $filterValues[$this->cleanCellValue($v)] = 1;
+                }
+
+                $str_out .= $col->formatCell($sort, $v);
             }
             $str_out .= "</tr>\n";
         }
-        if( $this->IsPaging() > 1 && $this->_pager_template)
-            $str_out .= $this->_echo_pager() ;
-        $str_out .=  "
-            </table>\n";
-        echo $str_out;
+        return array($str_out, $filters);
     }
+
+    private function cleanCellValue($v) {
+        $v = strip_tags($v);
+        $v = rtrim($v);
+        return $v;
+    }
+
+    private function isFiltering() {
+		foreach($this->_columns as $col)
+            if ($col->isFilterable())
+                return true;
+        return false;
+    }
+
+    private function StrFilters($columnValues) {
+        $s = "<tr class='filters'>\n";
+		foreach($this->_columns as $col) {
+            //$s .= "<th sorttable_customkey='0000'>\n";
+            $s .= "<th>\n";
+            if ($col->isFilterable())
+                $s .= $col->strFilter($columnValues[$col->ColName()]);
+            $s .= "</th>\n";
+        }
+        $s .= "</tr>\n";
+        return $s;
+    }
+
 
     /**
      * _echo_captions.
@@ -360,8 +428,7 @@ class DpTable
     // The row "<tr>" gets class "colheadings"
     // If it's numbered, a cell is added at the left with blank content
     // Then concatenate the StrCaption properties of the columns.
-    private function StrHeadings($isnumbered = false) {
-
+    private function StrHeadings($isnumbered = false, $columnValues) {
         $s = "<tr class='colheadings'>\n";
         if($isnumbered)
             $s .= "<th> &nbsp;</th>\n";
@@ -377,8 +444,6 @@ class DpTable
      * _echo_row($row).
      *
      */
-
-
     private function _echo_pager() {
         if(is_callable($this->_pager_template)) {
             $str = call_user_func($this->_pager_template);
@@ -517,6 +582,7 @@ class DpTableColumn
     private $_colname;
     private $_template;
     private $_class;
+    private $_tableName;
     private $_sortkeyfield = null;
 
     /**
@@ -543,12 +609,14 @@ class DpTableColumn
                 $caption, 
                 $colname = null, 
                 $template = null, 
-                $class = null) {
+                $class = null,
+                $tableName = null) {
         $this->_colname = $colname;
 	    $this->_caption = $caption;
 	    $this->_class = preg_split("/\s/", $class) ;
         $this->_template = $template;
         $this->_set_align( $caption );
+        $this->_tableName = $tableName;
     }
 
     private function _set_align($cap) {
@@ -571,6 +639,25 @@ class DpTableColumn
         $this->_caption = substr( $cap, 1 ) ;
     }
 
+    public function isFilterable() {
+        return in_array("filter", $this->_class);
+    }
+
+    public function strFilter($values) {
+        // Note autocomplete='off' so that firefox doesn't automatically remember
+        // If we want it to remember, we need to run when the window loads and run the filter
+        // Note we don't let clicks propagate, so that selecting a filter doesn't sort!
+        $s = <<<XXX
+<select name='{$this->_colname}' id='{$this->_colname}' autocomplete='off'>
+    <option value='ALL' selected style='font-style:italic;'>-all-</option>
+XXX;
+        ksort($values);
+        foreach ($values as $k => $v)
+            $s .= "  <option value='{$k}'>{$k}</option>\n";
+        $s .= "</select>\n";
+        return $s;
+    }
+
 	private function StrClass() {
 		if(count($this->_class) < 1) {
 			return "";
@@ -583,11 +670,11 @@ class DpTableColumn
 	    if(count($this->_class) > 0) {
 		    $str .=  " class='{$this->StrClass()}'";
 		}
-	    $str .= ">$this->_caption</th>\n";
+        $str .= ">$this->_caption</ht>\n";
         return $str;
     }
 
-    public function EchoCell($row) {
+    public function getCell($row) {
 //	    dump($this);
 //	    dump($row);
         $cname = $this->_colname;
@@ -655,8 +742,13 @@ class DpTableColumn
         }
 
 //        return "<td {$sort} {$this->_class} {$this->_align}>$str</td>\n";
-	    return "<td {$sort} class='" . implode(" ", $this->_class) . "'>$str</td>\n";
+//	    return "<td {$sort} class='" . implode(" ", $this->_class) . "'>$str</td>\n";
+        return array($sort, $str);
 //	    return "<td {$sort} class='{$this->_class}'>{$str}</td>\n";
+    }
+
+    public function formatCell($sort, $str) {
+        return "<td {$sort} class='" . implode(" ", $this->_class) . "'>$str</td>\n";
     }
 
     public function ColName() {
