@@ -160,17 +160,18 @@ $rows = $dpdb->SqlRows("
 
 // .001 sec
 
+/* What is the point of this here? We've already selected n_rows above!
 foreach($rows as $row) {
     $projectid = $row['projectid'];
     $p = new DpProject($projectid);
     $p->RecalcPageCounts();
-}
+} */
 
 $tbl = new DpTable();
-$tbl->AddColumn("^Genre", "genre");
-$tbl->AddColumn("^Language", "langname", "elanguage");
-$tbl->AddColumn("^Difficulty", "difficulty");
-$tbl->AddColumn("^Proj Mgr", "pm", "epm", "sortkey=pmsort");
+$tbl->AddColumn("^Genre", "genre", null, "filter");
+$tbl->AddColumn("^Language", "langname", "elanguage", "filter");
+$tbl->AddColumn("^Difficulty", "difficulty", null, "filter");
+$tbl->AddColumn("^Proj Mgr", "pm", "epm", "sortkey=pmsort filter");
 $tbl->AddColumn("^Mod Date", "moddate");
 $tbl->AddColumn("<Title", "nameofwork", "etitle");
 $tbl->AddColumn("<Author", "authorsname", "eauthor");
@@ -181,6 +182,8 @@ if($queueHold) {
 }
 $tbl->SetRows($rows);
 
+/*
+ * This doesn't return any other projects than those returned above!
 $projectids = $dpdb->SqlValues("
     SELECT DISTINCT p.projectid FROM projects p
     JOIN project_holds ph
@@ -193,6 +196,7 @@ foreach($projectids as $projectid) {
     $proj = new DpProject($projectid);
     $proj->RecalcPageCounts();
 }
+ */
 
 // -----------------------------------------------------------------------------
 
