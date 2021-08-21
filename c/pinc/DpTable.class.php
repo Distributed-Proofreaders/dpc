@@ -67,8 +67,6 @@ class DpTable
         if($title) {
             $this->_table_title = $title;
         }
-        global $relPath;
-        require_once($relPath . "../js/dptable.js");
     }
 
     /**

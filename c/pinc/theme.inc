@@ -159,9 +159,8 @@ function html_header($nameofpage, $extra_args = []) {
 <head>
 <meta charset='utf-8'>
 <link rel='shortcut icon' href='$code_url/favicon.ico'>
-<script type='text/javascript' src='/c/js/sorttable.js'></script>\n";
-
-echo "
+<script type='text/javascript' src='/c/js/sorttable.js'></script>\n
+<script type='text/javascript' src='/c/js/dptable.js'></script>
 <script type='text/javascript' src='/c/js/dp.js'></script>
 <title>DPC: ". (isset($nameofpage)
                     ? "$nameofpage"
@@ -641,7 +640,9 @@ function show_admin_sidebar() {
     <a href='/c/user_pages.php'>Diffs for a Round</a>
     <a href='/c/tools/bad.php'>Bad Pages</a>
     <a href='https://docs.google.com/spreadsheets/d/1Ut-t3zDouO5eSJShQsreG0LTjvFP2dszgXHGa-CUWcY/edit#gid=0'>DoD Spreadsheet</a>
-    <a href='https://docs.google.com/spreadsheets/d/1lU5VeCLMIPhkqqGc-g0iE7Ld5EU5b-sI7DcoKiUwZPo/edit#gid=0'>Clearance Spreadsheet</a>\n";
+    <a href='https://docs.google.com/spreadsheets/d/1lU5VeCLMIPhkqqGc-g0iE7Ld5EU5b-sI7DcoKiUwZPo/edit#gid=0'>Clearance Spreadsheet</a>
+    <a href='/c/clearance.php'>Clearance Reconciliation</a>
+    ";
         if($User->IsSiteManager() || $User->IsProjectFacilitator() || $User->IsProjectManager()) {
             echo "
     <a href='/c/tools/site_admin/user_roles.php'>Manage Roles for a User</a>

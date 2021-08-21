@@ -1,5 +1,3 @@
-<script type="text/javascript">
-
 /**
  * Javascript include file for DpTable.class.php
  * Included via require_once during class construction.
@@ -210,5 +208,3 @@ window.addEventListener("load", dptablefilter.init, false);
 /*
  * vim: sw=4 ts=4 expandtab
  */
-</script>
-
