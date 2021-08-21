@@ -171,7 +171,7 @@ dptablefilter = {
                     continue;
                 }
                 var td = rowCells[col];
-                var v2 = td.textContent || td.innerText;
+                var v2 = td.textContent;
                 v2 = v2.trim();
                 //console.log("Comparing " + v1 + " to " + v2 + ": " + (v1 != v2));
                 if (v1 != v2) {
