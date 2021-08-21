@@ -9,21 +9,35 @@ $User->IsLoggedIn()
     or RedirectToLogin();
 
 $tbl = new DpTable("tblsearch", "dptable sortable w95");
-$tbl->AddColumn("<Type", "type");
+$tbl->AddColumn("<Status", "status", null, "filter");
+$tbl->AddColumn("<Type", "type", null, "filter");
 $tbl->AddColumn("<DPC Clearance Code #", "clearance");
 $tbl->AddColumn("<Posting Number at FP", "postednum");
+$tbl->AddColumn("<ProjectID", "projectid", "eproject");
 $tbl->AddColumn("<CP/PM", "username");
 $tbl->AddColumn("<Published", "published");
 $tbl->AddColumn("<Author", "author");
 $tbl->AddColumn("<Title", "title");
 
+$t1 = microtime(true);
 list($PGCbypid, $pgcrows) = loadPGC();
+$t2 = microtime(true);
 list($FPbypid, $fprows) = loadFP();
+$t3 = microtime(true);
 list($CSbypid, $csrows, $byCC) = loadClearance();
+$t4 = microtime(true);
 
 theme("Clearance Spreadsheet", "header");
 
+echo "<h2 class='center m50em'>Clearance Reconcilation</h2>\n";
+
 $rows = merge($PGCbypid, $FPbypid, $CSbypid, $byCC, $fprows, $pgcrows, $csrows);
+$t5 = microtime(true);
+
+echo  "pg: " . (string)($t2 - $t1) . ", "
+    . "fp:  " . (string)($t3 - $t2) . ", "
+    . "cs:  " . (string)($t4 - $t3) . ", "
+    . "Emit:  " . (string)($t5 - $t4) . "<br>\n";
 
 function byAuthor($row1, $row2)
 {
@@ -48,12 +62,17 @@ function normalizeAuthor($a)
     return trim($a);
 }
 
+function eproject($p)
+{
+    return link_to_project($p, $p, true);
+}
+
 uasort($rows, "byAuthor");
 
 $tbl->SetRowCount(count($rows));
 $tbl->SetRows($rows);
 
-echo "<div class='center' onclick='eSetSort(event)'>\n";
+echo "<div class='center'>\n";
 $tbl->EchoTable();
 echo "</div>";
 
@@ -61,19 +80,6 @@ echo "<br />\n";
 theme("", "footer");
 exit;
 
-
-function is_available($row) {
-	return preg_match("/_avail/", $row['phase'])
-		? "avail"
-		: "";
-}
-
-function elangname($langname, $row) {
-	return $langname
-	       .  isset($row['seclangname'])
-		? "/". $row['seclangname']
-		: "";
-}
 
 function eauthors($authors, $row) {
     $names = "";
@@ -90,28 +96,8 @@ function eauthors($authors, $row) {
     return $names;
 }
 
-function fpBookLink($pid, $row) {
-    return "<a onclick=\"document.getElementById('frame_div').style.display='block'\" class='click_iframe' href='https://fadedpage.com/showbook.php?pid=$pid' target='bookdetails'>$pid</a>";
-}
-
-function ephase($phase, $row) {
-    return $phase . (($phase == 'P1' and $row['queued'] > 0) ? "/Queue" : "");
-}
-
-function title_link($title, $row) {
-	global $code_url;
-	$url = "$code_url/project.php"
-	       ."?id={$row['projectid']}'";
-	return "<a href='{$url}>{$title}</a>";
-}
-
-function page_counts($row) {
-	$pgpg = sprintf("%d/%d", $row['pages_available'], $row['pages_total']);
-	return link_to_page_detail($row['projectid'], $pgpg);
-}
-
-function pmlink($pm) {
-	return link_to_pm($pm, $pm);
+function fpBookLink($pid) {
+    return "<a href='https://fadedpage.com/showbook.php?pid=$pid' target='_blank'>$pid</a>";
 }
 
 function edit_link($row) {
@@ -130,13 +116,12 @@ function loadPGC()
 
     $sql = "
         SELECT nameofwork AS title, authorsname AS author,
-            username, clearance, postednum, phase
+            username, clearance, postednum, phase, projectid
         FROM projects
         WHERE phase != 'DELETED'
     ";
     $rows = $dpdb->SqlRows($sql);
 
-    echo "<pre>";
     $bypid = array();
     foreach ($rows as &$row) {
         $pid = trim($row['postednum']);
@@ -145,7 +130,6 @@ function loadPGC()
             $bypid[$pid] = &$row;
         }
     }
-    echo "</pre>";
     return array(&$bypid, &$rows);
 }
 
@@ -162,7 +146,7 @@ function loadFP()
     $result = curl_exec($curl);
     curl_close($curl);
     $result = json_decode($result, $assoc = TRUE);
-    echo html_comment(print_r($result, TRUE));
+    // echo html_comment(print_r($result, TRUE));
     $rows = $result['rows'];
 
     $bypid = array();
@@ -188,8 +172,11 @@ function loadClearance()
                 $bypid[$pid] = &$row;
         }
         $cc = trim($row['clearance']);
-        if ($cc != '')
+        if ($cc != '') {
+            if (isset($byCC[$cc]))
+                echo "Duplicate Clearance: " . $cc . "<br>\n";
             $byCC[$cc] = &$row;
+        }
     }
     //print_r($rows[0]);
     //print_r($rows[1]);
@@ -207,6 +194,16 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
     //print_r($CS['20130346']);
     //echo "</pre>";
     echo '
+        This table attempts to reconcile the three sources of information:
+        <ul>
+        <li>The clearance spreadsheet,
+        <li>The project on pgdpcanada,
+        <li>The book on fadedpage.
+        </ul>
+        <p>For a normal project, the posting number should be in all three
+        sources.  The clearance code should be both in the clearance
+        spreadsheet and the project.
+        Type & status columns:
         <ul>
         <li>pre-crash: On fadedpage & in clearance spreadsheet, but no
         DPC project.
@@ -222,7 +219,18 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
         always be in PREP.
         <li><i>phase</i> ‡: project with clearance, but no such clearance
         in the clearance spreadsheet.
-        <li><i>posting number</i>&sect;: Posting number is invalid.
+        <li><i>posting number</i>§: Posting number is invalid.
+        <li><i>fp posting number ≠ clearance posting number</i>:
+        Project & Clearance spreadsheet clearance codes agreed;
+        but the posting numbers differed.
+        </ul>
+
+        Does not handle:
+        <ul>
+        <li>Multiple posting numbers in the clearance spreadsheet.
+        <li>Multiple projects cleared with the same clearance code.
+        i.e. multiple rows in the clearance spreadsheet with the same
+        clearance code; only the last will be used.
         </ul>
     ';
     $result = array();
@@ -230,21 +238,23 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
     foreach ($fprows as &$fprow) {
         $pid = $fprow['pid'];
         $row = array();
-        if (array_key_exists($pid, $PGC)) {
+        $row['status'] = '';
+        if (isset($PGC[$pid])) {
             // Normal, posted project. Both rows exist
             $pgcrow = $PGC[$pid];
             $row['type'] = "normal";
-            $row['postednum'] = $pid;
+            $row['postednum'] = fpBookLink($pid);
             $row['title'] = $fprow['title'];
             $row['author'] = eauthors($fprow['authors'], $fprow);
             $row['username'] = $pgcrow['username'];
             $row['clearance'] = $pgcrow['clearance'];
+            $row['projectid'] = $pgcrow['projectid'];
             $row['published'] = $fprow['first_publication'];
             $resultbypid[$pid] = &$row;
             $clearance = $pgcrow['clearance'];
 
             // See if a clearance row exists, if so, should have same pid
-            if (array_key_exists($clearance, $byCC)) {
+            if (isset($byCC[$clearance])) {
                 $csrow = $byCC[$clearance];
                 $pids = splitpids($csrow['id']);
                 $found = false;
@@ -253,11 +263,16 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
                         $found = true;
                         break;
                     }
-                if (!$found)
-                    $row['postednum'] .= " != " . $csrow['id'];
+                if (!$found) {
+                    if (empty($csrow['id']))
+                        $row['postednum'] .= "≠(missing)";
+                    else
+                        $row['postednum'] .= "≠" . fpBookLink($csrow['id']);
+                    $row['status'] .= '≠';
+                }
             }
 
-        } else if (array_key_exists($pid, $CS)) {
+        } else if (isset($CS[$pid])) {
             // Posting number in the clearance spreadsheet.
             // Since the project doesn't exist, probably pre-crash
             $csrow = $CS[$pid];
@@ -265,22 +280,25 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
                 $row['type'] = "pre-crash";
             else
                 $row['type'] = "harvest";
-            $row['postednum'] = $pid;
+            $row['postednum'] = fpBookLink($pid);
             $row['title'] = $csrow['title'];
             $row['author'] = $csrow['author'];
             $row['username'] = $csrow['pm'];
             $row['clearance'] = $csrow['clearance'];
+            $row['projectid'] = '';
             $row['published'] = $csrow['published'];
             $resultbypid[$pid] = &$row;
         } else {
             // Not either a DP project, or in the clearance spreadsheet
             // Only other option is a harvest
-            $row['type'] = "harvest †";
-            $row['postednum'] = $pid;
+            $row['type'] = "harvest";
+            $row['status'] .= "†";
+            $row['postednum'] = fpBookLink($pid);
             $row['title'] = $fprow['title'];
             $row['author'] = eauthors($fprow['authors'], $fprow);
             $row['username'] = "";
             $row['clearance'] = "";
+            $row['projectid'] = '';
             $row['published'] = $fprow['first_publication'];
         }
         $result[] = $row;
@@ -288,7 +306,6 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
 
     // Process unresolved books, should be before POSTED
     // i.e. find all current projects which don't exist on FP
-    echo "<pre>";
     foreach ($pgcrows as &$r) {
         $pid = $r['postednum'];
         if ($pid != "" && $pid != "0")
@@ -296,17 +313,27 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
                 continue;
         $row = array();
         $row['type'] = $r['phase'];
-        $row['postednum'] = $pid;
+        $row['status'] = '';
+
+        if ($pid == '0' || $pid == '')
+            $row['postednum'] = '';
+        else if (!preg_match('/^[0-9][0-9][0-9][0-9][0-9][0-9][0-9A-Z][0-9]$/', $pid)) {
+            $row['postednum'] = $pid;
+            $row['status'] .= "§";
+        } else
+            $row['postednum'] = fpBookLink($pid);
+
         $row['title'] = $r['title'];
         $row['author'] = $r['author'];
         $row['username'] = $r['username'];
+        $row['projectid'] = $r['projectid'];
         $clearance = trim($r['clearance']);
         $row['clearance'] = $clearance;
         $row['published'] = getPublishedYearFromPGC($r);
-        if ($clearance == '')
-            $row['type'] .= '*';
-        else if (!array_key_exists($clearance, $byCC)) {
-            $row['type'] .= '‡';
+        if ($clearance == '') {
+            $row['status'] .= '*';
+        } else if (!array_key_exists($clearance, $byCC)) {
+            $row['status'] .= '‡';
             //print_r($r);
             //echo "XX" . $clearance . "XX\n";
         } else {
@@ -318,16 +345,16 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
         }
         $result[] = $row;
     }
-    echo "</pre>";
 
     // Add bad posting number indicator
+    /*
     foreach ($result as &$row) {
         $pid = $row['postednum'];
         if ($pid == '0' || $pid == '')
             $row['postednum'] = '';
         else if (!preg_match('/^[0-9][0-9][0-9][0-9][0-9][0-9][0-9A-Z][0-9]$/', $pid))
-            $row['postednum'] .= "&sect;";
-    }
+            $row['postednum'] .= "§";
+    }*/
     return $result;
 }
 
