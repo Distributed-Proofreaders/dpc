@@ -14,7 +14,7 @@ $tbl->AddColumn("<Type", "type", null, "filter");
 $tbl->AddColumn("<DPC Clearance Code #", "clearance");
 $tbl->AddColumn("<Posting Number at FP", "postednum");
 $tbl->AddColumn("<ProjectID", "projectid", "eproject");
-$tbl->AddColumn("<CP/PM", "username");
+$tbl->AddColumn("<CP/PM", "username", null, "filter");
 $tbl->AddColumn("<Published", "published");
 $tbl->AddColumn("<Author", "author");
 $tbl->AddColumn("<Title", "title");
