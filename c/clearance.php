@@ -96,6 +96,16 @@ function eauthors($authors, $row) {
     return $names;
 }
 
+function fpBookLinks($pids) {
+    foreach ($pids as $pid) {
+        if (isset($all))
+            $all .= ",&#8203;" . fpBookLink($pid);
+        else
+            $all = fpBookLink($pid);
+    }
+    return $all;
+}
+
 function fpBookLink($pid) {
     return "<a href='https://fadedpage.com/showbook.php?pid=$pid' target='_blank'>$pid</a>";
 }
@@ -165,17 +175,25 @@ function loadClearance()
     $bypid = array();
     $byCC = array();
     foreach ($rows as &$row) {
+        $cc = trim($row['clearance']);
+        if ($cc != '') {
+            if (isset($byCC[$cc])) {
+                //echo "Duplicate Clearance: " . $cc . "<br>\n";
+                // Merge the pids!
+                if (!empty($byCC[$cc]['id']))
+                    if (!empty($row['id']))
+                        $row['id'] .= "," . $byCC[$cc]['id'];
+                    else
+                        $row['id'] = $byCC[$cc]['id'];
+            }
+            $byCC[$cc] = &$row;
+        }
+
         $pid = $row['id'];
         if ($pid != '') {
             $pids = splitpids($pid);
             foreach ($pids as $pid)
                 $bypid[$pid] = &$row;
-        }
-        $cc = trim($row['clearance']);
-        if ($cc != '') {
-            if (isset($byCC[$cc]))
-                echo "Duplicate Clearance: " . $cc . "<br>\n";
-            $byCC[$cc] = &$row;
         }
     }
     //print_r($rows[0]);
@@ -267,7 +285,7 @@ function merge(&$PGC, &$FP, &$CS, &$byCC, &$fprows, &$pgcrows, &$csrows)
                     if (empty($csrow['id']))
                         $row['postednum'] .= "≠(missing)";
                     else
-                        $row['postednum'] .= "≠" . fpBookLink($csrow['id']);
+                        $row['postednum'] .= "≠" . fpBookLinks($pids);
                     $row['status'] .= '≠';
                 }
             }
