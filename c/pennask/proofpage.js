@@ -1,5 +1,5 @@
 /*
-    version 0.202
+    version 0.204
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -2074,6 +2074,14 @@ function formattedTextAnalysis(str)
     return analysis.text;
 }
 
+const isAlpha = ch => {
+    return ch.match(/^[a-z]+$/i) !== null;
+}
+
+const isWhite = ch => {
+    return ch.match(/^\s$/) !== null;
+}
+
 class TextAnalysis {
     constructor(str) {
         this.text = str;
@@ -2545,6 +2553,10 @@ class TextAnalysis {
                 if (text == "")
                     this.err(line, "Empty font tag: &lt;" + token + ">&lt;" + token + "/> embedded in line.");
                 this.fontValidation(startTag, text);
+
+                if (end+1 < line.length && isAlpha(line.charAt(end+1)))
+                    this.warn(line, "Warning: Closing tag &lt;/" + token + ">: Word '" +
+                        this.isolateWord(line, st) + "': Letter directly follows font change, this is a frequent error.");
             } else {
                 if (token == "tb") {
                     this.err(line, "Non-isolated &lt;tb> tag: must be both preceeded and followed by a blank line.");
@@ -2553,12 +2565,39 @@ class TextAnalysis {
                 if (fonts.length > 0)
                     if (fonts.includes(token))
                         this.err(line, "Open tag &lt;" + token + ">: this tag already open: " + fonts);
+
+                // Look for font change in the middle of a word. Frequently
+                // an error.
+                if (off > 0 && isAlpha(line.charAt(st-1)))
+                    this.warn(line, "Warning: Open tag &lt;" + token + ">: Word '" +
+                        this.isolateWord(line, st) + "': Letter directly precedes font change, this is a frequent error.");
+
                 fonts.push(token);
                 offsets.push(off);
             }
         }
         if (fonts.length > 0)
             this.err(line, "Open tag &lt;" + fonts.pop() + "> not closed" + errAppend);
+    }
+
+    /**
+     * Work backwards from offset st in the line, and forwards to end-of-word.
+     */
+    isolateWord(line, st)
+    {
+        var first = st;
+        while (first >= 0) {
+            if (isWhite(line.charAt(first)))
+                break;
+            first--;
+        }
+        var end = st+1;
+        while (end < line.length) {
+            if (isWhite(line.charAt(end)))
+                break;
+            end++;
+        }
+        return line.substring(first, end);
     }
 
     fontValidation(tag, text)
@@ -2587,6 +2626,12 @@ class TextAnalysis {
     {
         this.msgs.push(msg);
         return "<span class='errline' title='" + msg + "'>" + line + "</span>";
+    }
+
+    warn(line, msg)
+    {
+        this.msgs.push(msg);
+        return "<span style='background-color: lightyellow;' title='" + msg + "'>" + line + "</span>";
     }
 }
 
