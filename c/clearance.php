@@ -15,7 +15,7 @@ $tbl->AddColumn("<DPC Clearance Code #", "clearance");
 $tbl->AddColumn("<Posting Number at FP", "postednum");
 $tbl->AddColumn("<ProjectID", "projectid", "eproject");
 $tbl->AddColumn("<CP/PM", "username", null, "filter");
-$tbl->AddColumn("<Published", "published");
+$tbl->AddColumn("<Published", "published", "epublished");
 $tbl->AddColumn("<Author", "author");
 $tbl->AddColumn("<Title", "title");
 
@@ -29,7 +29,7 @@ $t4 = microtime(true);
 
 theme("Clearance Spreadsheet", "header");
 
-echo "<h2 class='center m50em'>Clearance Reconcilation</h2>\n";
+echo "<h2 class='center m50em'>Clearance Reconciliation</h2>\n";
 
 $rows = merge($PGCbypid, $FPbypid, $CSbypid, $byCC, $fprows, $pgcrows, $csrows);
 $t5 = microtime(true);
@@ -64,7 +64,22 @@ function normalizeAuthor($a)
 
 function eproject($p)
 {
-    return link_to_project($p, $p, true);
+    $r = link_to_project($p, $p, true);
+    if (startsWith($p, "projectID"))
+        // Try to shrink the column width!
+        return "<span style='font-size:smaller;'>$r</span>";
+    return $r;
+}
+
+function epublished($y)
+{
+    $i = strpos($y, "-");
+    if ($i != FALSE)
+        return substr($y, 0, $i+1) . "&#8203;" . substr($y, $i+1);
+    $i = strpos($y, "(");
+    if ($i != FALSE)
+        return substr($y, 0, $i) . "&#8203;" . substr($y, $i);
+    return $y;
 }
 
 uasort($rows, "byAuthor");
