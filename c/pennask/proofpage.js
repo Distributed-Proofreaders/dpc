@@ -1,5 +1,5 @@
 /*
-    version 0.200
+    version 0.202
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -2169,6 +2169,10 @@ class TextAnalysis {
                 return "open-illustration";
             if (l.startsWith("[Footnote"))
                 return "open-footnote";
+            if (l.startsWith("[Sidenote"))
+                return "open-sidenote";
+            if (l.startsWith("*[Sidenote"))
+                return "open-sidenote-continuation";
             if (l.startsWith("*[Footnote"))
                 return "open-footnote-continuation";
             if (l.endsWith("]*"))
@@ -2190,6 +2194,7 @@ class TextAnalysis {
         for (var i = 0; i < lines.length; i++) {
             var l = lines[i];
             var last = (i > 0 ? lines[i-1] : "");
+            var isFirst = (i == 0);
             var thisLineType = this.getLineType(l);
             var nextLineType = (i+1 == lines.length ? "end-of-page" : this.getLineType(lines[i+1]));
 
@@ -2206,7 +2211,9 @@ class TextAnalysis {
                 case "open-block-quote":
                 case "open-illustration":
                 case "open-footnote":
+                case "open-sidenote":
                 case "open-footnote-continuation":
+                case "open-sidenote-continuation":
                     break;
                 default:
                     lines[i] = this.err(l, "/* (no-wrap) must be preceeded by a blank line, start of page, or start of block-quote");
@@ -2239,7 +2246,7 @@ class TextAnalysis {
                 case "close-footnote-with-continuation":
                     break;
                 default:
-                    lines[i] = this.err(l, "*/ (end no-wrap) must be followed by a blank line, end of page, or end of block-quote, or end of footnote or illustration");
+                    lines[i] = this.err(l, "*/ (end no-wrap) must be followed by a blank line, end of page, or end of block-quote, or end of footnote, sidenote or illustration");
                     break;
                 }
                 break;
@@ -2254,7 +2261,7 @@ class TextAnalysis {
                 case "close-footnote-with-continuation":
                     break;
                 default:
-                    lines[i] = this.err(l, "#/ (end no-wrap) must be followed by a blank line or end of page, or end of footnote or illustration");
+                    lines[i] = this.err(l, "#/ (end no-wrap) must be followed by a blank line or end of page, or end of footnote, sidenote or illustration");
                     break;
                 }
                 break;
@@ -2265,6 +2272,8 @@ class TextAnalysis {
             case "open-illustration":
                 if (!l.endsWith("]"))
                     blocks.push("I");
+                else
+                    lines[i] = this.noText(nextLineType, lines[i]);
                 break;
 
             case "open-footnote":
@@ -2272,15 +2281,30 @@ class TextAnalysis {
                 this.footnote(l);
                 if (!l.endsWith("]"))
                     blocks.push("F");
+                else
+                    lines[i] = this.noText(nextLineType, lines[i]);
+                break;
+
+            case "open-sidenote-continuation":
+                if (!isFirst)
+                    lines[i] = this.err(l, "Sidenote with * only legal at page start");
+                // fall through
+
+            case "open-sidenote":
+                if (!l.endsWith("]"))
+                    blocks.push("S");
+                else
+                    lines[i] = this.noText(nextLineType, lines[i]);
                 break;
 
             case "close-illustration-or-footnote":
                 if (blocks.length == 0)
-                    lines[i] = this.err(l, "] No open footnote or illustration");
+                    lines[i] = this.err(l, "] No open footnote, sidenote or illustration");
                 else {
                     var open = blocks.pop();
-                    if (open != "I" && open != "F")
+                    if (open != "I" && open != "F" && open != "S")
                         lines[i] = this.err(l, "] close with open /# or /*");
+                    lines[i] = this.noText(nextLineType, lines[i]);
                 }
                 break;
 
@@ -2321,10 +2345,25 @@ class TextAnalysis {
                 this.msgs.push("Open Illustration at end of page");
             else if (open == "F")
                 this.msgs.push("Open Footnote at end of page");
+            else if (open == "S")
+                this.msgs.push("Open Sidenote at end of page");
             else
                 this.msgs.push("Open /" + blocks.pop() + " at end of page");
         }
         this.text = lines.join("\n");
+    }
+
+    noText(nextLineType, l)
+    {
+        switch (nextLineType) {
+        case "end-of-page":
+        case "blank-line":
+            break;
+        default:
+            l = this.err(l, "[Illustration], [Footnote], or [Sidenote] closing ] must be followed by the end of page or a blank line.");
+            break;
+        }
+        return l;
     }
 
     /*
@@ -2428,15 +2467,6 @@ class TextAnalysis {
                 else
                     this.err(str, "Multiple references to footnote " + c);
             }
-        }
-    }
-
-    sidenote(str)
-    {
-        if (!str.startsWith("[Sidenote: ")
-        ||  !str.endsWith("]")) {
-            this.err(str, "Malformed Sidenote markup");
-            return;
         }
     }
 
