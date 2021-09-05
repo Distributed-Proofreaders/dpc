@@ -24,6 +24,7 @@ $qppv           = Arg("qppv");
 $qfadedpage     = Arg("qfadedpage");
 $qclearance     = Arg("qclearance");
 $qgutca         = Arg("qgutca");
+$qdod           = Arg("qdod");
 $qlang          = ArgArray("qlang");
 $qgenre         = ArgArray("qgenre");
 $qphase         = ArgArray("qphase");
@@ -258,6 +259,7 @@ echo "
             $('qauthor').value = '';
             $('qfadedpage').checked = false;
             $('qgutca').checked = false;
+            $('qdod').checked = false;
             $('qclearance').checked = false;
         }
     </script>
@@ -290,6 +292,11 @@ if ($qgutca == "on")
     $gutca = "checked";
 else
     $gutca = "";
+
+if ($qdod == "on")
+    $dod = "checked";
+else
+    $dod = "";
 
 if ($qfadedpage == "on")
     $fp = "checked";
@@ -338,6 +345,13 @@ echo "
                 <div class='lfloat w75'>
                 <input id='qgutca' name='qgutca' type='checkbox' $gutca>
                 Search title and author on gutenberg.ca.
+                </div>
+			</div>
+			<div>
+				<div class='w20 left lfloat'></div>
+                <div class='lfloat w75'>
+                <input id='qdod' name='qdod' type='checkbox' $dod>
+                Search author only in the Date of Death (DoD) Spreadsheet.
                 </div>
 			</div>
 			<!--
@@ -530,6 +544,7 @@ if ($qfadedpage == "on" && ($qtitle != "" || $qauthor != "")) {
             ";
     }
 }
+
 if ($qclearance == "on" && ($qtitle != "" || $qauthor != "")) {
 
     $rows = loadClearanceSpreadsheet($qtitle, $qauthor);
@@ -587,6 +602,32 @@ if ($qgutca == "on" && ($qtitle != "" || $qauthor != "")) {
     }
 }
 
+if ($qdod == "on" && $qauthor != "") {
+    $rows = loadDoDSpreadsheet($qauthor);
+
+    $tbl = new DpTable("tbldod", "dptable sortable w95");
+    $tbl->AddColumn("<Name", 'author');
+    $tbl->AddColumn("<Type", 'type');
+    $tbl->AddColumn("Birth", 'birth');
+    $tbl->AddColumn("Death", 'death');
+    $tbl->AddColumn("<source", 'source', 'esource');
+    $tbl->SetRowCount(count($rows));
+
+    $ndead = count($rows);
+    if ($ndead == 0)
+        echo "<p class='bold'>No authors found in the DoD matching the author";
+    else {
+        echo _("<p class='hpadded'>$ndead authors in the DoD matched the search criteria.");
+        echo "</p>";
+
+        $tbl->SetRowCount($ndead);
+        $tbl->SetRows($rows);
+
+        echo "<div class='center' onclick='eSetSort(event)'>\n";
+        $tbl->EchoTable();
+        echo "</div>";
+    }
+}
 
 echo "
 <br />\n";
@@ -595,6 +636,11 @@ exit;
 
 function egutdesc($dir, $row) {
     return "<span style='font-size:smaller;'>$dir</span>";
+}
+
+function esource($s) {
+    $url = link_to_new_url($s, $s);
+    return "<span style='font-size:smaller;'>$url</span>";
 }
 
 function egutdir($dir, $row) {
