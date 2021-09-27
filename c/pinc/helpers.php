@@ -1309,14 +1309,19 @@ function SetPageVersionText($projectid, $pagecode, $version_number, $text) {
 	return file_put_contents(PageVersionPath($projectid, $pagecode, $version_number), trim_blank_lines($text));
 }
 */
+//         "/[”‟““]/u",        // curly double-quotes to not
+//         "/[‘‘’‛]/u"];        // curly single-quotes to not
 
+// Called during a page save to cleanup a few things.
 function norm($str) {
-	$ptn = ["/\R/u",           // normalize newline
-				 "/\t+/",           // any tabs to one space
-				 "/[”‟““]/u",        // curly double-quotes to not
-				 "/[‘‘’‛]/u"];        // curly single-quotes to not
-	$rpl = ["\n", " ", '"', "'"];
-	return trim_blank_lines(preg_replace($ptn, $rpl, $str));
+    $ptn = [
+        "/\R/u",           // normalize newline
+        "/\t+/",           // any tabs to one space
+        "/[\h]+$/mu",      // trailing spaces on each line removed
+        "/\R$/u",          // Remove trailing newline at end of page
+    ];
+	$rpl = ["\n", " ", "", ""];
+	return preg_replace($ptn, $rpl, $str);
 }
 
 /**
@@ -1483,11 +1488,6 @@ function ArgPage($default = "") {
 
 function ArgLangCode($default = "") {
     return Arg("langcode", $default);
-}
-
-// trim whitepsace at end of string (including blank lines)
-function trim_blank_lines($str) {
-	return preg_replace("/[\pZ\pC]+$/u", "", $str);
 }
 
 /**
