@@ -1,5 +1,5 @@
 /*
-    version 0.204
+    version 0.205
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -1845,7 +1845,12 @@ function scroll_to_selection() {
     p1 = p1.slice(0, ipos) + "<span id='mark_'></span>" + p1.slice(ipos);
     spanpreview.innerHTML = p1;
     // the following works even if prepreview display is "none"
-    $('mark_').scrollIntoView();
+    var mark = doc.getElementById('mark_');
+    if (mark)
+        // Searching for "f>" inside "</f>" causes us to create
+        // "</<span id='mark_'></span>f>" and hence "mark_" doesn't exist.
+        // Just ignore it, the scroll might be wrong.
+        mark.scrollIntoView();
 
     // set prepreview back without the span
     spanpreview.innerHTML = p2;
