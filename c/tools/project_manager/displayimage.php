@@ -123,6 +123,21 @@ function ebody() {
             $('submit_resize').click();
         }
     });
+    document.body.addEventListener('keyup', function(event) {
+        if (event.target == $('image_zoom'))
+            return;
+        switch (event.keyCode) {
+        case 37:    // Left arrow
+            ePrevClick();
+            break;
+        case 39:    // Right arrow
+            eNextClick();
+            break;
+        default:
+            return;
+        }
+        event.preventDefault();
+    });
 }
 
 //function imgpath(pgname) {
