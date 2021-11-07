@@ -151,7 +151,10 @@ div.proofbutton input {
 
 table.tblpicker td,
 table.tblpicker th {
-    padding: 0;
+    padding-left: 0;
+    padding-right: .2em;
+    padding-top: 0;
+    padding-bottom: 0;
     line-height: 1em;
 }
 

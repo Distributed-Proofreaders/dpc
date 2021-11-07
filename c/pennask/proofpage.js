@@ -1,5 +1,5 @@
 /*
-    version 0.205
+    version 0.206
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -524,7 +524,7 @@ function divtext_match_tatext() {
 function char_selector_row(str) {
     var i;
     var s = '<tr>\n';
-    var a = str.split(/ /g);
+    var a = str.split(/[ ]/g);
     var alen = a.length;
     for (i = 0; i < alen; i++) {
         s += ('<td class="selector">' + a[i] + '</td>\n');
@@ -546,7 +546,7 @@ function char_row(str) {
 
 function char_selectors() {
     var s = "<table class='tblpicker'>\n";
-    s += char_selector_row("A E I O UY CD LN R-Z αβγ ἄ ἒ ἠ ΐ ό ύ ώ ῤ+ ћ Ѫ + ❦");
+    s += char_selector_row("A E I O UY C-J LN R-Z αβγ ἄ ἒ ἠ ΐ ό ύ ώ ῤ+ ћ Ѫ + ❦");
     s += "\n</table>\n";
     return s;
 }
@@ -568,8 +568,8 @@ function char_pickers(cgroup) {
         break;
 
     case 'I':
-        s += char_row('ÌÍÎÏĨĪĬǏĮĜĤĴ');
-        s += char_row('ìíîïĩīĭǐįĝĥĵ');
+        s += char_row('ÌÍÎÏĨĪĬǏĮ');
+        s += char_row('ìíîïĩīĭǐį');
         break;
 
     case 'O':
@@ -587,7 +587,7 @@ function char_pickers(cgroup) {
         s += char_row('′″‴¦§¨ªº¯° ‹›‚‘’ ±¹²³´¶·¸¼½¾×÷ȣƺ‿−');
         break;
 
-    case 'CD':
+    case 'C-J':
         s += char_row('ÇĆĈĊČƆƇÐĎĐƉƊĜĤĴ');
         s += char_row('çćĉċčɔƈðďđɖɗĝĥĵ');
         break;
