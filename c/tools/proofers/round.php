@@ -134,7 +134,8 @@ if($n < 1) {
     $begin = [];
     $i = 0;
     foreach ($rows as $row) {
-        if (strpos($row['nameofwork'], '[BEGIN]') !== false) {
+        if (strpos($row['nameofwork'], '[BEGIN]') !== false
+        ||  $row['username'] === 'BEGIN') {
             $begin[] = $row;
             unset($rows[$i]);
         }
