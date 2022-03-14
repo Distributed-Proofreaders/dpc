@@ -30,11 +30,11 @@ if($project->UserMayManage() && $submit_replace && count($_FILES) > 0 ) {
     }
 }
 
-$rows = $dpdb->SqlRows("
+$rows = $dpdb->SqlRowsPS("
         SELECT pagename pgname
         FROM pages
-        WHERE projectid = '$projectid'
-        ORDER BY pagename");
+        WHERE projectid = ?
+        ORDER BY pagename", [&$projectid]);
 
 if(! $pagename) {
     $pagename = $rows[0]['pgname'];
@@ -100,7 +100,7 @@ function init_zoom() {
         pct = parseInt(getCookie('image_zoom'));
     if(isNaN(pct))
         pct = 100;
-    pct = Math.max(pct, Math.min(pct, 200), 5);
+    pct = Math.max(Math.min(pct, 300), 5);
 
     $('image_zoom').value = pct.toString();
     $('pageimage').style.width = pct.toString() + '%';
@@ -110,6 +110,14 @@ function init_zoom() {
 function eZoom() {
     init_zoom();
     return false;
+}
+
+function eZoomIncr(percent) {
+    var pct = parseInt($('image_zoom').value);
+
+    pct += percent;
+    $('image_zoom').value = pct.toString();
+    init_zoom();
 }
 
 function ebody() {
@@ -132,6 +140,14 @@ function ebody() {
             break;
         case 39:    // Right arrow
             eNextClick();
+            break;
+        case 173:   // -
+        case 61:    // +
+            if (event.keyCode == 173)
+                percent = -10;
+            else
+                percent = 10;
+            eZoomIncr(percent);
             break;
         default:
             return;
