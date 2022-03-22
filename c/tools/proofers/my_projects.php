@@ -91,6 +91,11 @@ else {
 
 echo link_to_my_diffs("P1", "My diffs", true);
 
+if ($User->MayWorkInRound('PP'))
+    echo "
+        <br><a href='/c/tools/pper.php'>See all your PP projects.</a>
+    ";
+
 if($User->IsSiteManager() || $User->IsProjectFacilitator()) {
 	echo "
 	<form name='frmuser' id='frmuser'>
@@ -197,7 +202,7 @@ function echo_open_proofing_projects($username, $heading) {
     // large number of rows in the page_versions table ends up with a useless
     // plan. 10 seconds of cpu; only 2.3 seconds with the hint.
     $sql = "
-        SELECT  STRAIGHT_JOIN pv.projectid,
+        SELECT  pv.projectid,
                 GROUP_CONCAT(DISTINCT pv.phase
                     ORDER BY ph.sequence
                     SEPARATOR ', ') round_id,
@@ -209,13 +214,22 @@ function echo_open_proofing_projects($username, $heading) {
                 p.phase,
                 p.state,
                 MIN(h.id) is_hold
-        FROM page_versions pv
+        /*FROM page_versions pv*/
+        FROM (
+            SELECT projectid, phase, MAX(version_time) version_time
+                FROM page_versions
+                WHERE username=?
+                    AND phase IN ('P1', 'P2', 'P3', 'F1', 'F2')
+                GROUP BY projectid, phase
+                ORDER BY version_time DESC
+        ) pv
         JOIN projects p ON pv.projectid = p.projectid
         JOIN phases ph ON pv.phase = ph.phase
         JOIN phases pph ON p.phase = pph.phase
         LEFT JOIN project_holds h ON p.projectid = h.projectid AND p.phase = h.phase
-        WHERE pv.username=?
+        WHERE /*pv.username=?
             AND pv.phase IN ('P1', 'P2', 'P3', 'F1', 'F2')
+            AND*/ p.phase IN ('P1', 'P2', 'P3', 'F1', 'F2', 'PP')
         GROUP BY pv.projectid
         ORDER BY strtime DESC
         ";
@@ -234,6 +248,7 @@ function echo_open_proofing_projects($username, $heading) {
 
 function echo_my_pp_projects($username) {
     global $dpdb;
+    global $User;
 
     $rows = $dpdb->SqlRowsPS("
         SELECT
