@@ -59,6 +59,9 @@ if(isset($_FILES) && isset($_FILES["dpupload"])) {
 
     $project->MaybeUnzipSmoothZipFile();
 
+    # Don't need the uploaded zip anymore, just a waste of space.
+    unlink($tofilepath);
+
     $log_comment = "Uploaded zip file for smooth reading ({$project->SmoothZipFilePath()})";
     $project->AddPostComment($log_comment);
 
