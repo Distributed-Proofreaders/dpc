@@ -159,6 +159,7 @@ function echo_qc_waiting_projects($excl_clearance, $excl_pm) {
                 LOWER(p.qc_assign) AS qcsort,
                 phqc.id phqc_id,
                 phpm.id phpm_id,
+                p.clearance,
                 DATE(FROM_UNIXTIME(pe.event_time)) AS qcdate,
                 DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(MAX(pe.event_time)))
                     AS days_in_qc
@@ -253,7 +254,7 @@ function etitle($title, $row) {
 }
 
 function eclearance($code) {
-    return $code ? "Yes" : "";
+    return $code ? "Yes" : "No";
 }
 
 function ehold($holdid) {
