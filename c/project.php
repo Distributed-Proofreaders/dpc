@@ -556,9 +556,9 @@ function project_info_table($project) {
     <div id='div_proj_sidebar' class='project_table'>\n";
         echo
         sidebar_links($project)
+        . sidebar_events($project)
         . sidebar_pages($project)
         . sidebar_meta($project)
-        . sidebar_events($project)
         . sidebar_notify($project)
             . "\n";
     echo "
@@ -693,10 +693,10 @@ function sidebar_events($project) {
     <div class='sidebar'>
     <h4>Project Events</h4>
     <table class='table_sidebar'>
-    <tr> <td>Comments changed</td> <td>{$project->LastEditTimeStr()}</td> </tr>
+    <tr> <td>Comments changed</td> <td style='background-color:yellow;'>{$project->LastEditTimeStr()}</td> </tr>
+    <tr> <td>Last forum post</td> <td style='background-color:yellow;'>{$project->LastForumPostDate()}</td> </tr>
     <tr> <td>Round changed</td> <td>{$project->PhaseDate()}</td> </tr>
     <tr> <td>Page last saved</td> <td>{$project->CurrentVersionTime()}</td> </tr>
-    <tr> <td>Last forum post</td> <td>{$project->LastForumPostDate()}</td> </tr>
     </table>
     </div>\n";
 }
