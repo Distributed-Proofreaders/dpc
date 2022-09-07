@@ -44,6 +44,8 @@ $exportphase            = Arg("exportphase");
 $exact                  = Arg("exact", "0");
 $exportinclude          = Arg("exportinclude");
 
+$complete_begin         = IsArg("complete_begin");
+
 if($smooth_notify) {
     $project->ToggleSmoothNotify();
 }
@@ -310,8 +312,108 @@ function echo_top_box($project) {
         <span class='em200'>$phase</span> $proof_link
     </div>\n";
     echo "</div>\n";
+}
 
+function title_link($title, $id) {
+	global $code_url;
+	$url = "$code_url/project.php?id=$id";
+	return "<a href='{$url}'>{$title}</a>";
+}
 
+function getBeginProjectPartNo($title) {
+    $re = "~\[BEGIN\].*\[([0-9]+)/[0-9]+\]~";
+    if (preg_match($re, $title, $matches) !== 1)
+        # Ignore it if the wrong syntax?
+        return false;
+    $partno = $matches[1];
+    return $partno;
+}
+
+/*
+ * Retrieve all the various parts of a begin project.
+ * Returns an associative array, part# (as string) => project id,
+ * with the keys ordered by ascending part #.
+ * The first entry in the associative array is the first part, whether
+ * it is 0 or 1 or 99.
+ */
+function getBeginProjectParts($project) {
+    global $dpdb;
+
+    $title = $project->Title();
+    if (substr($title, 0, 7) !== "[BEGIN]")
+        return false;
+    $sql = "SELECT nameofwork, projectid FROM projects
+        WHERE nameofwork LIKE '[BEGIN]%' AND clearance = ?
+        AND phase != 'DELETED'
+        ORDER BY nameofwork";
+
+    $clearance = $project->Clearance();
+    $args = array(&$clearance);
+    $rows = $dpdb->SqlRowsPS($sql, $args);
+    if(count($rows) == 0)
+        return false;
+    $parts = array();
+    foreach ($rows as $row) {
+        $name = $row["nameofwork"];
+        $id = $row["projectid"];
+        $partno = getBeginProjectPartNo($name);
+        $parts[$partno] = $id;
+    }
+    ksort($parts);
+    return $parts;
+}
+
+function getPartsProjects($parts) {
+    $pIDs = array();
+    foreach ($parts as $partno => $pid) {
+        $pIDs[$partno] = new DpProject($pid);
+    }
+    return $pIDs;
+}
+
+function beginProjectMayBeCompleted($project, $pIDs) {
+    $msg = "";
+
+    $postnum = $project->PostedNumber();
+    if (!isSet($postnum))
+        $msg .= "Current project must have a posting number.<br>\n";
+
+    $work = false;
+    foreach ($pIDs as $partno => $p) {
+        $phase = $p->Phase();
+        if ($phase !== "PP" && $phase !== "PPV" && $phase !== "POSTED")
+            $msg .= "Part $partno is not yet finished, in state $phase.<br>\n";
+        if ($phase !== "POSTED")
+            $work = true;
+    }
+    if ($work === false)
+        $msg .= "All parts are already POSTED.<br>\n";
+    return $msg;
+}
+
+/*
+ * Complete a begin project. Walk all projects in the book, and move
+ * them all to POSTED with the same posting number.
+ */
+function completeBeginProject($project, $pIDs) {
+    global $dpdb;
+
+    $dpdb->beginTransaction();
+    $postnum = $project->PostedNumber();
+    $msg = "";
+    foreach ($pIDs as $partno => $p) {
+        if ($p->Phase() !== "POSTED") {
+            $msg .= "Part $partno: Move phase from {$p->Phase()} to POSTED.<br>\n";
+            $p->SetPhase("POSTED");
+        }
+        if ($p->PostedNumber() != $postnum) {
+            $msg .= "Part $partno: Set posted number from {$p->PostedNumber()} to $postnum.<br>\n";
+            $p->SetPostedNumber($postnum);
+        }
+    }
+    $dpdb->commit();
+    $msg .= "All changed commited, BEGIN project is completed.<br>\n";
+    return $msg;
 }
 
 function echo_level($lvl, $checked) {
@@ -557,6 +659,7 @@ function project_info_table($project) {
         echo
         sidebar_links($project)
         . sidebar_events($project)
+        . sidebar_begin($project)
         . sidebar_pages($project)
         . sidebar_meta($project)
         . sidebar_notify($project)
@@ -700,6 +803,76 @@ function sidebar_events($project) {
     </table>
     </div>\n";
 }
+function sidebar_begin($project) {
+    global $complete_begin, $projectid;
+
+    // This sidebar entry doesn't show for normal users
+    if (!$project->UserMayManage())
+        return "";
+    // And it doesn't show if it isn't a begin project
+    $parts = getBeginProjectParts($project);
+    if ($parts === false)
+        return "";
+
+    $projects = getPartsProjects($parts);
+
+    // Note the parts associative array is sorted by partno, get
+    // the first entry, that is the one which we use to decide if
+    // the project has actually been posted.
+    foreach ($parts as $partno => $pid) {
+        $firstPart = $partno;
+        break;
+    }
+
+    // Before we put out the parts table, perform the completion action
+    // so we will display the correct phases.
+    $completemsg = "";
+    $cancompletemsg = "";
+    $isFirstPart = (getBeginProjectPartNo($project->Title()) == $firstPart);
+    if ($project->Phase() === "POSTED" && $isFirstPart) {
+        $cancompletemsg = beginProjectMayBeCompleted($project, $projects);
+        if ($cancompletemsg === "" && $complete_begin) {
+            $completemsg = completeBeginProject($project, $projects);
+            // Make sure we have the latest info
+            foreach ($projects as $partno => $p)
+                $p->Refresh();
+        }
+    }
+
+    echo "
+    <div class='sidebar'>
+    <h4>BEGIN Status</h4>
+    <table class='table_sidebar'>\n";
+    foreach ($parts as $partno => $pid) {
+        $p = $projects[$partno];
+        $link = title_link($partno, $pid);
+        echo "<tr><td>$link</td><td>{$p->Phase()}</td></tr>\n";
+    }
+    echo "</table>\n";
+
+    // Four possibilities here:
+    // 1) We just ran the complete, display the status
+    // 2) We aren't able to run complete, e.g. part is in P2
+    // 3) Put out the complete button if first part & in POSTED
+    // 4) None of the above, no button, no msg.
+    if ($completemsg != "")
+        echo "<p class='center'>$completemsg</p>\n";
+    else if ($cancompletemsg != "")
+        echo "<p class='center'>$cancompletemsg</p>\n";
+    else if ($isFirstPart && $project->Phase() === "POSTED") {
+        // Put out Mark Completed button
+        $prompt = _("Complete");
+        echo "
+        <form name='frmbegin' method='post'>
+        <input type='hidden' name='projectid' value='$projectid'>
+        <p class='center'><input type='submit' id='complete_begin' name='complete_begin' value='$prompt'></p>
+        </form>
+        ";
+    }
+
+    echo "</div>\n";
+}
+
 
 /** @param DpProject $project */
 function sidebar_notify($project) {
