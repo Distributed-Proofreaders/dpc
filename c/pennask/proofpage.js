@@ -1,5 +1,5 @@
 /*
-    version 0.206
+    version 0.207
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -898,6 +898,14 @@ function eAltKeyPress(kCode) {
     case "j":
     case "J":
         eDeHyphen();
+        break;
+    case "p":
+    case "P":
+        ePreviewFormat();
+        break;
+    case "f":
+    case "F":
+        eSetFootnote();
         break;
     default:
         return false;

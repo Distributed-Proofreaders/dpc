@@ -108,7 +108,7 @@ $title              = "{$site_abbreviation}: "
 
 //<script src='www.pgdpcanada.net/c/js/domready.js' charset='UTF-8'></script>
 $jslink                 = "
-                <script src='proofpage.js?ver=.206' charset='UTF-8'></script>
+                <script src='proofpage.js?ver=.207' charset='UTF-8'></script>
                 \n";
 $csslink                = "<link rel='stylesheet' href='proofpage.css'>";
 
@@ -119,7 +119,7 @@ $hv_prompt              = ($layout == "vertical")
 							? _("Switch to horizontal layout")
 							: _("Switch to vertical layout");
 $fr_prompt              = _("Find and replace text");
-$preview_prompt         = _("Preview formatted page");
+$preview_prompt         = _("Preview formatted page ALT-p");
 $wc_prompt              = _("Wordcheck");
 $bad_prompt             = _("Request PM to fix bad page.");
 $quit_prompt            = _("Quit proofing without saving");
@@ -130,7 +130,7 @@ $tweet_prompt           = _("View or edit page message");
 
 $prompt_return_quit     = _("Return Page and Quit");
 $prompt_prompt          = _("Click for options...");
-$prompt_submit_continue = _("Submit and Continue");
+$prompt_submit_continue = _("Submit and Continue ALT-c");
 $prompt_submit_quit     = _("Submit and Quit");
 $prompt_draft_continue  = _("Save Draft and Continue");
 $prompt_draft_quit      = _("Save Draft and Quit");
@@ -468,7 +468,7 @@ function loaded() {
             <button title='thought break'
                 onclick='return top.eInsertThoughtBreak()'>
                 &lt;tb&gt;</button>
-            <button title='footnote'
+            <button title='footnote ALT-f'
                 onclick='return top.eSetFootnote()'>
                 [Footnote: ]</button>
             <button title='illustration'
