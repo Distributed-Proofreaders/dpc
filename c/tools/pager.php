@@ -125,8 +125,6 @@ function pgclick(e){
     }
 }
 
-
-
 /*
 function eAnchor(id) {
     var selvalue = id.replace(/pg/, '');
@@ -166,7 +164,7 @@ addEvent(document, 'click', pgclick);
 <input type='hidden' name='imageurl' id='imageurl' value='/c/imgsrv.php'>
 <input type='hidden' name='projectid' id='projectid' value='$projectid'>'
 
-<select id='selpage' name='selpage' size='$npages'>
+<select id='selpage' name='selpage' size='$npages' onchange='eSelect(this)'>
     " . implode("\n", $options) . "
 </select>
 
