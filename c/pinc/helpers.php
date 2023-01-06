@@ -1215,6 +1215,8 @@ function ProjectSmoothDownloadUrls($projectid) {
         $url = build_path($smoothurl, $filename);
 		if (substr_compare($filename, "_src.txt", -8) === 0)
 			$type = "fpgen-src";
+        else if (substr_compare($filename, "_k.epub", -7) === 0)
+            $type = "kindle-epub";
         $rslt[$type] = $url;
     }
     return $rslt;
