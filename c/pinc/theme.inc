@@ -639,7 +639,7 @@ function show_admin_sidebar() {
     <a href='/c/search2.php'>Extended Project Search</a>
     <a href='/c/user_pages.php'>Diffs for a Round</a>
     <a href='/c/tools/bad.php'>Bad Pages</a>
-    <a href='https://docs.google.com/spreadsheets/d/1Ut-t3zDouO5eSJShQsreG0LTjvFP2dszgXHGa-CUWcY/edit#gid=0'>DoD Spreadsheet</a>
+    <a href='https://docs.google.com/spreadsheets/d/1bZe2sg3M6Qn6-zomdPCmkhyD6Jy9KoFbY4P1dXguhYc/edit#gid=0'>DoD Spreadsheet</a>
     <a href='https://docs.google.com/spreadsheets/d/1lU5VeCLMIPhkqqGc-g0iE7Ld5EU5b-sI7DcoKiUwZPo/edit#gid=0'>Clearance Spreadsheet</a>
     <a href='/c/clearance.php'>Clearance Reconciliation</a>
     ";
