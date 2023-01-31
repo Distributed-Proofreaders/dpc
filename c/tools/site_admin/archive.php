@@ -23,7 +23,7 @@ if($page_back && ($page_number > 0)) {
     $page_number--;
 }
 
-$month = new DateTimeImmutable();
+$month = new DateTime("first day of this month");
 $dayofmonth = $month->format("d");
 $month = $month->modify("-$page_number month");
 $month = $month->format("Ym");
@@ -65,7 +65,7 @@ if ($archive_now) {
     }
 }
 
-echo _("<h1 class='center'>Projects to Archive for $month</h1>\n");
+echo _("<h1 class='center'>Projects to Archive for $month (-$page_number)</h1>\n");
 
 if ($page_number == 1 && $dayofmonth < 15) {
     echo _("<h2 class='center'>Do not archive until after the 15th!</h1>\n");
