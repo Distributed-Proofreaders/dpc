@@ -892,6 +892,8 @@ function stackedChart($newProjInfo, $transitionInfo) {
     $max = 0;
     foreach ($data as $row) {
         $v = $row[2];
+        if (!is_numeric($v))
+            continue;
         if ($v > $max)
             $max = $v;
         $v = $row[1];
@@ -992,6 +994,8 @@ function projectRoundChart($nproj, $div) {
     // ignoring the P1 Queue, since it is so large.
     $maxn = 0;
     foreach ($nproj as $row) {
+        if (!is_numeric($row[1]))
+            continue;
         if ($row[1] > $maxn)
             $maxn = $row[1];
     }
