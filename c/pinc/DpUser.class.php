@@ -376,6 +376,9 @@ class DpUser
     }
 
     public function Username() {
+        if (!isset($this->_row))
+            // DpSessionUser, who isn't logged in yet, _row can be null!
+            return null;
         return $this->_row['username'];
     }
 
