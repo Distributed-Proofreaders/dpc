@@ -222,7 +222,7 @@ function EchoMemberHistory($usrname, $roundid) {
             : sprintf( _('Last %d Days'), $range );
         $choices[] = link_to_member_stats($usrname, $roundid, $text);
     }
-    $choices_str = join( $choices, ' | ' );
+    $choices_str = join(' | ', $choices);
     $history_link = link_to_user_history($usrname, $roundid, $range, "User count history");
 
     echo "<p>$history_link</p>\n";
