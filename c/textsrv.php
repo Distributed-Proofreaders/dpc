@@ -26,9 +26,9 @@ else {
     $page = new DpPage($projectid, $pagename);
     $text = ($phase != "")
         ? $text = $page->PhaseText($phase)
-        : ($version == "")
+        : (($version == "")
             ? $page->ActiveText()
-            : $page->VersionText($version);
+            : $page->VersionText($version));
 }
 
 echo
