@@ -23,8 +23,9 @@ if($page_back && ($page_number > 0)) {
     $page_number--;
 }
 
-$month = new DateTime("first day of this month");
+$month = new DateTimeImmutable();
 $dayofmonth = $month->format("d");
+$month = new DateTime("first day of this month");
 $month = $month->modify("-$page_number month");
 $month = $month->format("Ym");
 if ($page_number == 1)
