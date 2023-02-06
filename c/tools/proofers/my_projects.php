@@ -198,9 +198,12 @@ function echo_open_proofing_projects($username, $heading) {
     $tbl->AddColumn("<Last activity", "max_time", "eLastTime", "sortkey=strtime");
 
 
-    // Note STRAIGHT_JOIN hint. Without it, a user (like biker) with a very
-    // large number of rows in the page_versions table ends up with a useless
-    // plan. 10 seconds of cpu; only 2.3 seconds with the hint.
+    // This comment is obsolete:
+    //   Note STRAIGHT_JOIN hint. Without it, a user (like biker) with a very
+    //   large number of rows in the page_versions table ends up with a useless
+    //   plan. 10 seconds of cpu; only 2.3 seconds with the hint.
+    // Instead, added the inline page_versions table join, pre-filtering
+    // out POSTED rows.
     $sql = "
         SELECT  pv.projectid,
                 GROUP_CONCAT(DISTINCT pv.phase
