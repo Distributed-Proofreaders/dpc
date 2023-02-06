@@ -281,6 +281,15 @@ function results_navigator($rows_per_page, $results_offset, $numrows) {
         $num_found_rows,
         $numrows);
 
+    // These tests fixed string+int errors when we went to php8
+    // Need to see why these were non-numeric!
+    if (!is_numeric($num_found_rows))
+        $num_found_rows = 0;
+    if (!is_numeric($results_offset))
+        $results_offset = 0;
+    if (!is_numeric($rows_per_page))
+        $rows_per_page = 0;
+
     if ( $results_offset + $num_found_rows < $numrows ) {
         $t = _('Next');
         $next_offset = $results_offset + $rows_per_page;
