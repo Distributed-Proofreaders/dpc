@@ -942,12 +942,12 @@ class DpProject
             case "P1":
             case "P2":
                 $this->SetPhase($to_phase);
-                assert($this->ClonePageVersions( $to_phase, "PROOF", "A"));
+                $this->ClonePageVersions( $to_phase, "PROOF", "A");
                 break;
             case "P3":
             case "F1":
                 $this->SetPhase($to_phase);
-                assert($this->ClonePageVersions( $to_phase, "FORMAT", "A"));
+                $this->ClonePageVersions( $to_phase, "FORMAT", "A");
                 break;
 
             case "F2":
@@ -3298,9 +3298,15 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
                             : $w1[1] - $w2[1];
                 }
                 else {
-                    return $w1[0] == $w2[0]
+                	#MS PHP8
+                	#return $w1[0] == $w2[0]
+                    #    ? 0
+                    #	 : strtolower($w1[0]) > strtolower($w2[0])
+                    #        ? 1
+                    #        : -1 ;
+                    return ($w1[0] == $w2[0]
                         ? 0
-                        : strtolower($w1[0]) > strtolower($w2[0])
+                        : (strtolower($w1[0]) > strtolower($w2[0])))
                             ? 1
                             : -1 ;
                 }
