@@ -26,6 +26,7 @@ class DpDb
         $this->_is_log_queries  = $islog ;
         $this->_is_time_queries = $istime ;
         $this->_is_echo_queries = $isecho;
+        mysqli_report(MYSQLI_REPORT_OFF);
     	$this->_mysqli          = new mysqli("p:".$db_server, $db_user,
                                     $db_password, $db_name);
 
@@ -302,6 +303,8 @@ class DpDb
         $row = $result->fetch_array(MYSQLI_NUM);
         $result->free();                 
         $this->DrainResults();
+        if (is_null($row))
+            return null;
         return $row[0] ;
     }
 
