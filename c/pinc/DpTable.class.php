@@ -426,7 +426,7 @@ class DpTable
     // The row "<tr>" gets class "colheadings"
     // If it's numbered, a cell is added at the left with blank content
     // Then concatenate the StrCaption properties of the columns.
-    private function StrHeadings($isnumbered = false, $columnValues) {
+    private function StrHeadings($isnumbered, $columnValues) {
         $s = "<tr class='colheadings'>\n";
         if($isnumbered)
             $s .= "<th> &nbsp;</th>\n";

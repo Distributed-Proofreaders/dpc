@@ -1014,12 +1014,6 @@ function url_for_suspect_words($projectid) {
     return url_for_word_context($projectid, "suspect");
 }
 
-function link_to_refresh_suspect_words($projectid, $prompt,
-                                         $is_new_tab = false, $options) {
-    return link_to_url(url_for_refresh_suspect_words($projectid, $options),
-        $prompt, $is_new_tab);
-}
-
 function url_for_refresh_suspect_words($projectid, $options) {
     return url_for_word_context($projectid, "suspect", $options);
 }
