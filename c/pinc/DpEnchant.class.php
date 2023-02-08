@@ -118,7 +118,7 @@ class DpEnchantedWords  {
         file_put_contents($txtpath, $text);
 //	    die($txtpath);
         chmod($txtpath, 0777);
-        $this->_cmd = "enchant -L -l -d $langcode $txtpath";
+        $this->_cmd = "enchant-2 -L -l -d $langcode $txtpath";
 
         $enchanted = shell_exec($this->_cmd);
 
