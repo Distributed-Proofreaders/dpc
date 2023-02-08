@@ -339,7 +339,7 @@ table.tblpicker th {
     #digraph-content {
 	margin: auto;
 	padding: 20px;
-	border 2px solid black;
+	border: 2px solid black;
 	width: 80%;
     }
 
