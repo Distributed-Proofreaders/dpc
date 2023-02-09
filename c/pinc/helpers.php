@@ -1301,7 +1301,8 @@ function PageVersionPath($projectid, $pagecode, $version_number) {
 
 function PageVersionText($projectid, $pagename, $version_number) {
     $path = PageVersionPath($projectid, $pagename, $version_number);
-	assert(file_exists($path));
+	if (!file_exists($path))
+        throw new Exception("Missing text file which should exist: $path\n");
 	return file_get_contents($path);
 }
 
