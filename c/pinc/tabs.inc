@@ -43,7 +43,8 @@ function echo_stylesheet_for_tabs() {
   global $theme, $theme_name, $code_url;
 
   $image_path = "$code_url/pinc/templates/$theme_name/graphics";
-  $tabs = $theme['tabs'];
+  if (isset($theme['tabs']))
+      $tabs = $theme['tabs'];
 
   if (isset($tabs['use_default_graphics']) && $tabs['use_default_graphics']) {
     $image_path = "$code_url/pinc/templates/default_graphics";
@@ -52,6 +53,10 @@ function echo_stylesheet_for_tabs() {
     if ($tabs['background'] == null)
       $tabs['background'] = $theme['color_navbar_bg'];
   }
+
+  // Not sure who should have set this, but this saves a php warning.
+  if (!isset($theme['color_logobar_bg']))
+      $theme['color_logobar_bg'] = 'white';
 
   ?>
 
