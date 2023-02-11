@@ -895,6 +895,22 @@ class DpProject
         return $msgs;
     }
 
+    private function newPhase($to_phase, $task) {
+        global $dpdb;
+
+        try {
+            $dpdb->beginTransaction();
+            $this->SetPhase($to_phase);
+            if (!$this->ClonePageVersions( $to_phase, $task, "A"))
+                throw new Exception($this->_projectid . ": Cloning pages to $to_phase failed");
+            $dpdb->commit();
+        } finally {
+            $dpdb->rollback();
+            // SetPhase probably changed our phase, get our data correct
+            $this->refresh();
+        }
+    }
+
 	/*
 	 * Called from
 	 *      Project Page
@@ -908,6 +924,7 @@ class DpProject
 	 */
     public function MaybeAdvanceRound() {
         global $Context;
+        global $dpdb;
 
         if($this->IsPosted()) {
             return null;
@@ -941,13 +958,11 @@ class DpProject
             case "PREP":
             case "P1":
             case "P2":
-                $this->SetPhase($to_phase);
-                $this->ClonePageVersions( $to_phase, "PROOF", "A");
+                $this->newPhase($to_phase, "PROOF");
                 break;
             case "P3":
             case "F1":
-                $this->SetPhase($to_phase);
-                $this->ClonePageVersions( $to_phase, "FORMAT", "A");
+                $this->newPhase($to_phase, "FORMAT");
                 break;
 
             case "F2":
@@ -1068,7 +1083,12 @@ class DpProject
 	private function ClonePageVersionFile( $projectid, $pagename, $version ) {
 		$from_path = PageVersionPath($projectid, $pagename, $version);
 		$to_path   = PageVersionPath($projectid, $pagename, $version + 1);
-		return copy($from_path, $to_path);
+        if (copy($from_path, $to_path) === FALSE)
+            // Note error_get_last() is returning null, don't know why.
+            // Removed @ from before copy(), so that Warning will include
+            // the error message
+            throw new Exception($this->_projectid . ": Text File copy page $pagename, version $version failed.");
+        return TRUE;
 	}
 
     public function History() {
@@ -1904,9 +1924,10 @@ class DpProject
     public function SetPM($pm) {
         global $dpdb;
         $projectid = $this->ProjectId();
-        $dpdb->SqlExecute("
-            UPDATE projects SET username = '$pm'
-            WHERE projectid = '$projectid'");
+        $sql = "UPDATE projects SET username = ?
+            WHERE projectid = ?";
+        $args = [ &$pm, &$projectid ];
+        $dpdb->SqlExecutePS($sql, $args);
         $this->_row['username'] = $pm;
         if($this->Phase() != "PP") {
             return;

@@ -122,7 +122,11 @@ if($submit_export || $submit_view) {
 }
 // -----
 
-$project->MaybeAdvanceRound();
+try {
+    $project->MaybeAdvanceRound();
+} catch (Exception $e) {
+    $advanceException = $e;
+}
 
 // if user submitted comments for post processing, load them
 if($submit_post_comments) {
@@ -181,7 +185,6 @@ $title_for_theme = $project->NameOfWork() . _(' project page');
 $no_stats = 1;
 theme($title_for_theme, "header");
 
-
 echo "<div id='divproject' class='lfloat clear'>\n";
 //detail_level_switch($project, $level);
 //echo "<div id='divtrace' class='rfloat margined j5'>"
@@ -191,7 +194,7 @@ echo "<h1 class='center clear'>
         {$project->Title()}<br>
         <span class='em80'>by {$project->Author()}</span></h1>\n";
 
-echo_top_box($project);
+echo_top_box($project, @$advanceException);
 //echo "
 //    <div id='status_box_1' class='status_box'>
 //    </div>   <!-- status_box_1 -->\n";
@@ -280,7 +283,7 @@ function detail_level_switch($project, $level = 3) {
 /**
  * @param DpProject $project
  */
-function echo_top_box($project) {
+function echo_top_box($project, $advanceException) {
     echo "
     <div class='center margined clear bordered w50'>\n";
 
@@ -311,6 +314,11 @@ function echo_top_box($project) {
     <div class='liner'>
         <span class='em200'>$phase</span> $proof_link
     </div>\n";
+
+    if ($advanceException != null) {
+        echo "<br><span class='white redback large'>Attempt to advance project phase failed: ",
+            $advanceException->getMessage() , "</span><br>\n";
+    }
     echo "</div>\n";
 }
 
