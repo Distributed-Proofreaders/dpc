@@ -1,9 +1,8 @@
 <?php
 error_reporting(E_ALL);
 
-global $relPath;
-
-require_once dirname(__FILE__) . "/udb_user.php";
+// NOTE file is *NOT* in the public_html root!
+require_once __DIR__ . "/../../../Database.php";
 
 /** @noinspection PhpUndefinedClassInspection */
 class DpDb
@@ -21,14 +20,11 @@ class DpDb
 	private $_querytime;
 
     public function __construct($islog = false, $istime = false, $isecho = false) {
-        global $db_server, $db_user, $db_password, $db_name;
-
         $this->_is_log_queries  = $islog ;
         $this->_is_time_queries = $istime ;
         $this->_is_echo_queries = $isecho;
         mysqli_report(MYSQLI_REPORT_OFF);
-    	$this->_mysqli          = new mysqli("p:".$db_server, $db_user,
-                                    $db_password, $db_name);
+    	$this->_mysqli = getConnection();
 
         if($this->_mysqli->connect_errno) {
             $this->_error_msg = $this->dbcerror();

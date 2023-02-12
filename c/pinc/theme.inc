@@ -231,10 +231,11 @@ function html_logobar() {
     if (IS_SANDBOX) {
         global $watermark;
         echo $watermark;
+        /* No longer have access to the database name.
         if (isSandboxDatabase() === false) {
             global $liveDB;
             echo $liveDB;
-        }
+        }*/
     }
 
     $numproj = $Context->PostedCount();
