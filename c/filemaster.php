@@ -188,7 +188,7 @@ function gather_page_set($project, $path) {
 		switch(FileNameExtension($fpath)) {
 			case "txt":
 				$ary[$key]["external_text"] = $fpath;
-				continue;
+				break;
 
 			case "png":
 			case "jpg":
@@ -196,11 +196,11 @@ function gather_page_set($project, $path) {
 			case "tif":
 			case "tiff":
 				$ary[$key]["external_image"] = $fpath;
-				continue;
+				break;
 
 			default:
 				$ary[$key]["external_other"] = $fpath;
-				continue;
+				break;
 		}
 	}
 
@@ -219,7 +219,7 @@ function gather_files($dir) {
 			case "~readme.txt":
 			case ".":
 			case "..":
-				continue;
+				continue 2;
 			default:
 				break;
 		}
@@ -244,6 +244,9 @@ $str_directory_list = " <pre id='directory_list' class='left w50'>\n";
 if($truepath != "/var/sftp/dpscans") {
 	$str_directory_list .= "<span class='left likealink' onclick='eSetPath(\"..\");'> Up</span>\n";
 }
+
+if (!is_dir($truepath))
+    $pathError = "Server configuration error. $showpath is missing or inaccessible";
 
 // build directory display
 $dirpaths = DirectoryList( $truepath );
@@ -384,7 +387,10 @@ function submitLoadCheck(e) {
                 <h4 class='center w100'> Directory </h4>
 
               <h5 class='center clear'>$showpath</h5>
-
+        ";
+    if (isset($pathError))
+          echo "<h5 class='center clear red'>$pathError</h5>";
+    echo "
 				<!-- the next two are to pass them along to js -->
               <input type='hidden' id='dpscans_path' name='dpscans_path'  value='$dpscans_path' />
               <input type='hidden' id='showpath' name='showpath'  value='$showpath' />
