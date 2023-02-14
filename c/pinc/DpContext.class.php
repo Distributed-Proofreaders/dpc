@@ -689,8 +689,17 @@ class DpContext {
 		return $this->PutPageVersionText($projectid, $pagename, $version, $text);
 	}
 
+    private static function html2BBCodes($msg) {
+        $nmsg = preg_replace("/<a href='([^']*)'>([^<]*)<\/a>/",
+            "[url=$1]$2[/url]", $msg);
+        if ($nmsg != null)
+            $msg = $nmsg;
+        return $msg;
+    }
+
 	public static function SendForumMessage($from, $to, $subject, $message) {
 //		$bb = $this->Bb();
+        $message = DpContext::html2BBCodes($message);
 		DpPhpbb3::SendPrivateMessage($subject, $message, $from, $to);
 	}
 
