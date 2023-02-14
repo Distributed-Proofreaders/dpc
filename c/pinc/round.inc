@@ -122,7 +122,8 @@ function etitle($title, $row) {
 }
 
 function elang($lang) {
-	if(strlen($lang) < 4) {
+    $n = strlen($lang);
+    if ($n == 2 || ($n > 2 && substr($lang, 2, 1) == '-')) {
 		$lang = LanguageName($lang);
 	}
 	return $lang;
