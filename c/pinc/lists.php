@@ -52,7 +52,8 @@ $font_sizes = array(
 // these languages may be associated with projects
 // should be in the order to be displayed as a list
 $_active_languages_array_2 = array( 
-    "it", "nl", "eo", "en", "fi", "fr", "de", "de-alt", "la",
+    "it", "nl", "eo", "en", "en-au", "en-ca", "en-gb", "en-us",
+    "fi", "fr", "de", "de-alt", "la",
     "pt", "es", "sv", "ar", "bn", "bg", "ca", "cs",
     "da", "el", "et", "eu",
     "fo", "fa", "ga", "gl", "grc", "he",
@@ -66,8 +67,10 @@ $wclangs = array(
     "da" => "Danish",
     "nl" => "Dutch",
     "en" => "English",
-    "en_GB" => "English Great Britain",
-    "en_US" => "English US",
+    "en-au" => "English Australian",
+    "en-ca" => "English Canadian",
+    "en-gb" => "English Great Britain",
+    "en-us" => "English US",
     "fi" => "Finnish",
     "fr" => "French",
     "de" => "German",
@@ -130,6 +133,9 @@ $lang_codes = array(
   "nl" => "Dutch",
   "dz" => "Dzongkha",
   "en" => "English",
+  "en-au" => "English Australian",
+  "en-gb" => "English Great Britain",
+  "en-ca" => "English Canadian",
   "eo" => "Esperanto",
   "et" => "Estonian",
   "ee" => "Ewe",
