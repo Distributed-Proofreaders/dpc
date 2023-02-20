@@ -159,7 +159,7 @@ if ( count($rows) == 0 ) {
 // -------------------------------------------------------------
 
 echo "<div id='divframe'>\n";
-echo results_navigator($rows_per_page, $results_offset, $numrows);
+//echo results_navigator($rows_per_page, $results_offset, $numrows);
 
 if($is_all) {
    echo "<a class='rfloat' href='{$pm_url}/projectmgr.php?show=user_active&username={$username}'>Show Only Active Projects</a>\n";
@@ -192,7 +192,7 @@ $tbl->EchoTable();
 
 $numrows = count($rows);
 
-echo results_navigator($rows_per_page, $results_offset, $numrows);
+//echo results_navigator($rows_per_page, $results_offset, $numrows);
 echo "</div>  <!-- divframe -->\n";
 
 // }
