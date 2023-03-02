@@ -21,8 +21,9 @@ if($pagename == "all") {
     $text = ($phase == "latest")
         ? $project->ActiveText()
         : $project->RoundText($phase);
-}
-else {
+} else {
+    if ($version != "" && !is_numeric($version))
+        die("Invalid version");
     $page = new DpPage($projectid, $pagename);
     $text = ($phase != "")
         ? $text = $page->PhaseText($phase)
