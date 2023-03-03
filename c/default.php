@@ -40,8 +40,8 @@ that started on March 22, 2012.
 All our proofreaders, managers, developers and so on are
 volunteers. The main principles of our mission are to: (1) preserve Canadiana,
 one page at a time, (2) take advantage of the favourable copyright laws in
-Canada to make books published after 1923, written by authors who died at least
-50 years ago, more available to the public.</p>
+Canada to make books written by authors who died before 1972
+more available to the public.</p>
 
 <p>DPC software is licensed and available under GNU GPL v2. Source code can be found 
 <a href='https://github.com/Distributed-Proofreaders/dpc/commits/master'>here</a>.\n");
