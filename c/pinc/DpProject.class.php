@@ -3628,6 +3628,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         }
         $notfiles[] = "wordcheck";
         $notfiles[] = "text";
+        $notfiles[] = "holding";
 
         foreach ($filepaths as $filepath) {
             $filename = basename($filepath);
