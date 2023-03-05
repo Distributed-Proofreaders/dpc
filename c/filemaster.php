@@ -58,6 +58,7 @@ $submit_load_others     = IsArg("submit_load_others", IsArg("submit_load_others2
 $submit_delete_others   = IsArg("submit_delete_others", IsArg("submit_delete_others2"));      // submit button
 
 $newproject             = IsArg("newproject");
+$useHolding             = IsArg("UseHolding");
 
 $username               = $User->Username();
 
@@ -76,6 +77,33 @@ $readme = readme_data($truepath);
 if($readme != "" && $project->CPComments() == "") {
 	$project->SetCPComments($readme);
 }
+
+$holdingpath = build_path($project->ProjectPath(), "holding");
+
+//echo "<pre>"; print_r($_POST); echo "</pre>\n";
+
+// Operations against the project holding area.
+if (isArg("submit_upload")) {
+    $msg = uploadToHolding($_FILES['uploadfiles'], $holdingpath);
+    if ($msg != '')
+        die($msg);
+    $useHolding = true;
+}
+
+if (isArg("submit_remove_all")) {
+    emptyHolding($holdingpath);
+    $useHolding = true;
+}
+
+// ****TEMP UNTIL FTP WORKING
+$useHolding = true;
+
+if ($useHolding) {
+    $truepath = build_path($project->ProjectPath(), "holding");
+    @mkdir($truepath);
+    $holdingChecked = 'checked';
+} else
+    $holdingChecked = '';
 
 // -----------------------------------------------------------------
 //  Submit processing
@@ -147,6 +175,8 @@ if ( $submit_delete && count( $chk_text ) > 0 ) {
 // do it again to incorporate changes
 $protopages = gather_page_set($project, $truepath);
 
+//echo "<pre>\n"; print_r($protopages); echo "</pre>\n";
+
 
 // combine existing pages with potential pages
 // (pairs of files)
@@ -203,6 +233,18 @@ function gather_page_set($project, $path) {
 				break;
 		}
 	}
+
+    // Now look in the project for files which are already other files.
+    $fpaths = $project->ExtraFilePaths();
+    //echo "<pre>"; print_r($fpaths); echo "</pre>";
+    foreach ($fpaths as $fpath) {
+        $pgname = rootname($fpath);
+        $key = "pg_" . $pgname;
+		$ary[$key]["projectid"] = $projectid;
+		$ary[$key]["row_id"] = $key;
+        $ary[$key]["external_other"] = $fpath;
+        $ary[$key]["name"] = $pgname;
+    }
 
 	ksort($ary);
 //		dump($ary);
@@ -322,7 +364,6 @@ $tblother->SetRows( $otherrows );
 
 $delcaption     = _("Delete selected");
 $loadcaption    = _("Load selected");
-$uploadcaption  = _("Browse files to upload");
 
 // ---------------------------------------------------
 // page display
@@ -368,83 +409,53 @@ function submitLoadCheck(e) {
     }
     return false;
 }
+
+function changeHold()
+{
+    var check = document.getElementById('UseHolding').checked;
+    console.log('CHECKED: ' + check);
+    $('workform').submit();
+}
+
 		</script>\n";
-//	if( $projectid && $project) {
 		echo "<p>" . link_to_project( $projectid, "Return to project" ) . "</p>";
 		echo "
-  <div class='pagetitle'> {$project->TitleAuthor()} </div>
-  <div id='divwork'>\n";
-//	}
+    <div class='pagetitle'> {$project->TitleAuthor()} </div>
+    <div id='divwork'>\n";
 
-  echo "
-    <div class='center' id='divworkform'>
-	<form name='workform' id='workform' method='POST'>
+    // We have two forms, which may be nested.  All <input> elements for
+    // this main form need to use <input form='workform'>
+    // Create the form here.
+    echo "<form name='workform' id='workform' method='POST'></form>\n";
 
-        <div id='divright' class='rfloat padded center w50'>
-          <div id='dirs_and_files' class='center margined bordered padded' style='margin-left: 2em;'>
-            <p>host = www.pgdpcanada.net, userid = dpscans, password = 2C4ever</p>
-            <div id='divdirs' style='max-height: 20em;'>
-                <h4 class='center w100'> Directory </h4>
+    echo "<div class='center' id='divworkform'>\n";
 
-              <h5 class='center clear'>$showpath</h5>
-        ";
-    if (isset($pathError))
-          echo "<h5 class='center clear red'>$pathError</h5>";
-    echo "
-				<!-- the next two are to pass them along to js -->
-              <input type='hidden' id='dpscans_path' name='dpscans_path'  value='$dpscans_path' />
-              <input type='hidden' id='showpath' name='showpath'  value='$showpath' />
-            $str_directory_list
-            </div> <!-- divdirs -->
+    // Left checkbox, right FTP or Holding
+    echo "<div>\n";
+    echo "<div id='divleft' class='half lfloat padded'>\n";
+    emitHoldingCheckbox($holdingChecked);
+    echo "</div> <!-- divleft -->\n";
+    echo "<div id='divright' class='rfloat padded center' style='width:50%'>\n";
+    if ($useHolding)
+        emitHolding($holdingpath);
+    else
+        emitFTPSelector($showpath, $pathError, $dpscans_path,
+            $str_directory_list);
+    echo "</div>  <!-- divright -->\n";
+    echo "</div>\n";
 
-        </div> <!-- dirs_and_files -->\n";
+    echo "<hr style='height:.4em; width:100%; background-color:black;'>\n";
 
+    echo "<div id='divright' class='rfloat padded center' style='width:50%'>\n";
+    emitOtherFiles($tblother);
+    echo "</div>  <!-- divright -->\n";
 
-    echo "
-        <div id='divimages' class='margined center bordered padded' style='margin-left: 2em;'>
-          <h4>Other Files</h4>
-          <input type='submit' name='submit_load_others' value='Load selected'
-            '/>
-          <input type='submit' name='submit_delete_others' value='Delete selected'
-            />\n";
-          $tblother->EchoTableNumbered();
-    echo "
-          <input type='submit' name='submit_load_others2' value='Load selected'
-          />
-          <input type='submit' name='submit_delete_others2' value='Delete selected'
-           />
-        </div> <!-- divimages -->
-  ";
+    echo "<div id='divleft' class='half lfloat padded'>\n";
+    emitProjectPages($tblpages, $delcaption, $loadcaption);
+    echo "</div> <!-- divleft -->\n";
 
-  echo "
-      </div>  <!-- divright -->\n";
-
-  echo "
-       <div id='divleft' class='half bordered rfloat padded'>
-        <h3 class='center'>Project Pages</h3>
-          <div id='divbuttons' class='w100'>
-            <input type='submit' name='submit_delete' class='rfloat margined' value='$delcaption'
-             />
-            <input type='submit' name='submit_load' class='rfloat margined' value='$loadcaption' onclick='submitLoadCheck(event);'
-            />
-          </div> <!-- divbuttons -->\n";
-          $tblpages->EchoTable();
-  echo "
-       <div id='divbuttons2' class='w100'>
-            <input type='submit' name='submit_delete2' class='rfloat margined' value='$delcaption'
-             />
-            <input type='submit' name='submit_load2' class='rfloat margined' value='$loadcaption'
-            />
-          </div> <!-- divbuttons2 -->\n";
-
-echo "
-        </div> <!-- divleft -->\n";
-
-echo "
-    </form>
-
-  </div> <!-- divwork -->
-    </div>\n";
+    echo "</div> <!-- divworkform (center) -->\n";
+    echo "</div> <!-- divwork -->\n";
 
     theme("", "footer");
     exit;
@@ -505,13 +516,13 @@ function eInDb($row) {
 		? "Yes" : "No";
 }
 function chkall() {
-    return "^<input type='checkbox' id='chkall' name='chkall'
+    return "^<input form='workform' type='checkbox' id='chkall' name='chkall'
                     onclick='eCheckAll(event)'>"._("All");
 }
 
 
 function chkall2() {
-    return "^<input type='checkbox' id='chkall2' name='chkall2'
+    return "^<input form='workform' type='checkbox' id='chkall2' name='chkall2'
                     onclick='eCheckAll2(event)'>"._("All");
 }
 
@@ -556,7 +567,7 @@ function etextcheck($page, $row) {
     $key = "pg_" . $name;
 //    if (isset($row['encoding']) && $row['encoding'] == 'other')
 //        $enable = "disabled";
-	return "<input type='checkbox' name='chk_text[{$key}]' {$enable}>\n";
+	return "<input form='workform' type='checkbox' name='chk_text[{$key}]' {$enable}>\n";
 //	return ( isset( $proto['external_image'] )
 //	         && isset( $proto['external_text'] ) )
 //		? "<input type='checkbox' name='chk_text[{$key}]'>\n"
@@ -569,7 +580,7 @@ function othercheck($name) {
 	$key  = "pg_" . $name;
 //	$proto = $protopages[ $key ];
 //	$frompath = isset($proto['external_image']) ? $proto['external_image'] : $proto['external_text'];
-	return "<input type='checkbox' name='chk_other[$key]'>";
+	return "<input form='workform' type='checkbox' name='chk_other[$key]'>";
 }
 
 function exttxtlen($page) {
@@ -655,4 +666,211 @@ function epathlink($path) {
 	}
 	return basename($path);
 }
+
+function emptyHolding($target) {
+    $hfiles = @scandir($target);
+    if (!$hfiles)
+        $hfiles = array();
+    foreach ($hfiles as $f) {
+        if ($f == '.' || $f == '..')
+            continue;
+        //echo "<pre>Unlinking $target/$f\n</pre>";
+        unlink("$target/$f");
+    }
+    echo "<pre>rmdir $target\n</pre>";
+    rmdir($target);
+}
+
+function uploadToHolding($f, $target) {
+    $msg = '';
+    foreach ($f['tmp_name'] as $index => $tmp) {
+        $name = $f['name'][$index];
+        $error = $f['error'][$index];
+        $size = $f['size'][$index];
+        //error_log("$name, $tmp, $error, $size");
+        if ($error != UPLOAD_ERR_OK) {
+            $msg .= "File $name upload failed: $error\n";
+            continue;
+        }
+        filenameValidation($name, array('jpg', 'png', 'txt'));
+        if (!rename($tmp, "$target/$name")) {
+            $err = error_get_last();
+            $msg .= "Rename $tmp to $target/$name: " . $err['message'];
+        }
+    }
+    return $msg;
+}
+
+function filenameValidation($file, $exts)
+{
+    $parts = pathinfo($file);
+    if (empty($parts['extension']))
+        fatal("Empty extension");
+    if (!in_array($parts['extension'], $exts))
+        fatal("Cannot act on extension '" . $parts['extension'] . "'");
+    if (substr($file, 0, 1) == "/")
+        fatal("No absolute paths allowed");
+    if (strpos($parts['dirname'], '.') != false)
+        fatal("No dots allowed");
+    if ($parts['dirname'] != '.')
+        fatal("No directories allowed!");
+    if (strpos($parts['dirname'], '\\') != false)
+        fatal("No backslashes");
+    if (substr($parts['filename'], 0, 1) == '.')
+        fatal("No leading dot for filename");
+}
+
+function showHolding($p)
+{
+    echo "<p>";
+    $hfiles = @scandir($p);
+    if (!$hfiles)
+        $hfiles = array();
+    $first = true;
+    foreach ($hfiles as $f) {
+        if ($f == '.' || $f == '..')
+            continue;
+        if ($first) {
+            echo "<p>Existing files in holding area:</p>";
+            echo "<p style='margin-left:1em; margin-right:1em;'>\n";
+            $first = false;
+        } else
+            echo ", ";
+        echo $f;
+    }
+    if ($first)
+        echo "<p>No files currently in the holding area.";
+    else
+        echo "</p><p><input form='holdingform' type='submit' name='submit_remove_all' value='Remove All'>\n";
+    echo "</p>\n";
+}
+
+function emitHoldingCheckbox($holdingChecked)
+{
+    echo "
+        <div class='center margined'>
+        <div style='margin-bottom:.5em;'>
+        <p>Files are normally uploaded using ftp to the dpscans directory.
+        Use this checkbox to instead upload them directly to a holding
+        directory specific to this project.
+        The project holding directory is not directly accessible,
+        but is only an intermediary area used by the tables below.
+        </p>
+        <p>Until ftp to dpscans is working again, this checkbox is forced on!</p>
+        <input form='workform' type='checkbox' id='UseHolding' name='UseHolding' onchange='changeHold();' $holdingChecked>
+        <label for='UseHolding'>Operate using Project Holding Area</label>
+        <p>Files which are paired, i.e. both a .png/.jpg and .txt are found with
+        the same name, will appear in the <i>Project Pages</i> table below left.
+        If they are not paired, they will appear in the <i>Other Files</i> table
+        below right.  Thus, if you are using multiple directories, after
+        uploading the images directory, for example,
+        they will first appear in the <i>Other Files</i> table.
+        When you subsequently
+        load all the text files they will be paired and then appear in
+        the <i>Project Pages</i> table.</p>
+        <p>Unpaired files whose base name match an existing page name will also
+        appear in the <i>Project Pages</i> table, however you cannot re-load
+        those pages without also uploading their pair.</p>
+        <p>Files loaded below will be automatically deleted from the
+        project holding area. Files loaded from the ftp repository will
+        not be automatically deleted and must be deleted manually via ftp.
+        <p>No page naming convention is imposed by the software.</p>
+        </div>
+        </div>
+    ";
+}
+
+function emitHolding($holdingpath)
+{
+    echo "
+        <div class='center margined bordered' id='divuploadform' style='margin-left:2em;'>
+        <div style='margin-bottom:1em;'>
+        <h3 class='center'>File Upload to Project’s Holding Area</h3>
+        <form name='holdingform' id='holdingform' multipart='' method='POST' enctype='multipart/form-data'></form>
+    ";
+
+    showHolding($holdingpath);
+
+    echo "
+            <input form='holdingform' type='file' name='uploadfiles[]' multiple='multiple' accept='.jpg, .png, .txt'>
+            &nbsp;<input form='holdingform' type='submit' name='submit_upload' value='Upload'>
+        </div>
+        </div>
+    ";
+}
+
+function emitFTPSelector($showpath, $pathError, $dpscans_path, $str_directory_list)
+{
+    echo "
+      <div id='dirs_and_files' class='center margined bordered' style='margin-left: 2em;'>
+        <p>host = www.pgdpcanada.net, userid = dpscans, password = 2C4ever</p>
+        <div id='divdirs' style='max-height: 20em;'>
+            <h4 class='center w100'> Directory </h4>
+            <h5 class='center clear'>$showpath</h5>
+    ";
+
+    if (isset($pathError))
+          echo "<h5 class='center clear red'>$pathError</h5>";
+
+    echo "
+			<!-- the next two are to pass them along to js -->
+            <input form='workform' type='hidden' id='dpscans_path' name='dpscans_path'  value='$dpscans_path' />
+            <input form='workform' type='hidden' id='showpath' name='showpath'  value='$showpath' />
+            $str_directory_list
+        </div> <!-- divdirs -->
+      </div> <!-- dirs_and_files -->
+    ";
+}
+
+function emitOtherFiles($tblother)
+{
+    echo "
+          <div class='margined bordered' style='margin-left:2em;'>
+          <div style='margin-bottom: 1em;'>
+          <h3>Other Files</h3>
+          <input form='workform' type='submit' name='submit_load_others' value='Load selected'
+            '/>
+          <input form='workform' type='submit' name='submit_delete_others' value='Delete selected'
+            />
+    ";
+    $tblother->EchoTableNumbered();
+    echo "
+          <input form='workform' type='submit' name='submit_load_others2' value='Load selected'
+          />
+          <input form='workform' type='submit' name='submit_delete_others2' value='Delete selected'
+           />
+        </div>
+        </div>
+    ";
+}
+
+function emitProjectPages($tblpages, $delcaption, $loadcaption)
+{
+    echo "
+      <div class='margined bordered'>
+        <h3 class='center'>Project Pages</h3>
+          <div id='divbuttons' class='w100'>
+            <input form='workform' type='submit' name='submit_delete' class='rfloat margined' value='$delcaption'
+             />
+            <input form='workform' type='submit' name='submit_load' class='rfloat margined' value='$loadcaption' onclick='submitLoadCheck(event);'
+            />
+          </div> <!-- divbuttons -->
+    ";
+    $tblpages->EchoTable();
+    echo "
+       <div id='divbuttons2' class='w100'>
+            <input form='workform' type='submit' name='submit_delete2' class='rfloat margined' value='$delcaption'
+             />
+            <input form='workform' type='submit' name='submit_load2' class='rfloat margined' value='$loadcaption'
+            />
+          </div> <!-- divbuttons2 -->
+        </div>
+    ";
+}
+
+function fatal($msg)
+{
+    die($msg);
+}
+
 // vim: sw=4 ts=4 expandtab
