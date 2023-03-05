@@ -3199,7 +3199,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $projectid = $this->ProjectId();
         $pagename = $this->PageNameForByteOffset($offset);
         $version = $this->LastPageVersion($pagename);
-//        $imagefile = $this->ImageFileForPageName($pagename);
+        $imagefile = $this->ImageFileForPageName($pagename);
         if(! $pagename) {
             assert(false);
             dump($projectid);
@@ -3217,7 +3217,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $ary['pgoffset'] = $pgoffset;
         $ary['pgposn'] = $pgposn;
         $ary['word'] = $word;
-        $ary['imageurl'] = $this->ImageUrl($pagename);
+        $ary['imageurl'] = $this->ImageUrl($imagefile);
         $ary['projectid'] = $projectid;
         $ary['pagename'] = $pagename;
         $ary['lineindex'] = $lineindex;
