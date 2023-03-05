@@ -149,6 +149,8 @@ if ( count($rows) == 0 ) {
     return;
 }
 
+echo "<div class='center bold'>" . count($rows) . " projects</div>\n";
+
 // Formerly, a user's search results could only contain projects
 // that the user could manage. Now that we've opened up the search page,
 // this is no longer true. E.g., the results may contain New projects
