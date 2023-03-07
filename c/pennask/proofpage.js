@@ -1,5 +1,5 @@
 /*
-    version 0.207
+    version 0.209
 
     word flags--
     host always returns the text it's sent but tagging may be
@@ -804,26 +804,22 @@ function eKeyUp() {
 }
 
 function eKeyDown(e) {
-    var kCode;
-
     set_text_element();
-
-    kCode = (e.which && typeof e.which == "number") 
-        ? e.which 
-        : e.keyCode;
 
     // handle keyboard shortcuts
     if(e.altKey) {
-        if(!e.ctrlKey && !e.metaKey /*&& !e.shiftKey*/) {
-            if (eAltKeyPress(kCode))
+        // Note we want to distinguish between ALT-2 on the keyboard and
+        // ALT-2 on the keypad which is probably a keycode being typed.
+        if(!e.ctrlKey && !e.metaKey && !e.code.startsWith("Numpad")/*&& !e.shiftKey*/) {
+            if (eAltKeyPress(e.key))
                 e.preventDefault();
         }
         _keystack = "";
         return true;
     }
 
-    switch(kCode) {
-        case  8:  // backspace
+    switch (e.key) {
+        case 'Backspace':
             //noinspection IfStatementWithTooManyBranchesJS,IfStatementWithTooManyBranchesJS
             if(_keystack.length == 0) {
             }
@@ -841,9 +837,9 @@ function eKeyDown(e) {
     return true;
 }
 
-function eAltKeyPress(kCode) {
-    var k = String.fromCharCode(kCode);
-    switch (k) {
+function eAltKeyPress(key) {
+    //var k = String.fromCharCode(kCode);
+    switch (key) {
     case "c":
     case "C":
         $("opt_submit_continue").click();
@@ -3577,6 +3573,8 @@ function writeAjax(a_args) {
 function readAjax() {
     var msg;
     var errstr;
+    //console.debug("Ajax read: state=" + _ajax.readyState +
+    //    ", status: " + _ajax.status + ", text=" + _ajax.responseText);
     if(_ajax.readyState == 4) {
         msg = _ajax.responseText;
         if(_ajax.status != 200) {
