@@ -1648,12 +1648,12 @@ class DpProject
 		return $text;
 	}
 
-	public function ActivePageArray() {
+	private function ActivePageArray() {
 		return $this->PagePhaseTextArray($this->Phase());
 	}
     // in the following, $roundid is the last text
     // to include if not null
-    public function PagePhaseTextArray($phase = "") {
+    private function PagePhaseTextArray($phase = "") {
         global $dpdb;
 
         switch($phase) {
@@ -1684,7 +1684,7 @@ class DpProject
 					ON pg.projectid = pv.projectid
 					AND pg.pagename = pv.pagename
 
-				WHERE p.projectid = '{$this->ProjectId()}'
+				WHERE p.projectid = ?
 				GROUP BY pg.pagename
 				";
 	    }
@@ -1707,13 +1707,14 @@ class DpProject
 					ON pg.projectid = pv.projectid
 					AND pg.pagename = pv.pagename
 
-				WHERE p.projectid = '{$this->ProjectId()}'
+				WHERE p.projectid = ?
 					AND pv.phase = '$phase'
 				GROUP BY pg.pagename, ppv.phase
 				";
 
 	    }
-	    return $dpdb->SqlRows($sql);
+        $projectid = $this->ProjectId();
+	    return $dpdb->SqlRowsPS($sql, [&$projectid]);
     }
 
     public function IsPage($pagename) {
@@ -1733,14 +1734,6 @@ class DpProject
             return null;
         }
     }
-
-/*
-    public function FirstPage() {
-        $rows = $this->PageRows();
-        $firstname = $rows[0]["fileid"];
-        return new DpPage($this->ProjectId(), $firstname);
-    }
-*/
 
 /*
  *  only used in zip_images.php
@@ -1969,21 +1962,8 @@ class DpProject
         return $this->_row['nameofwork'];
     } 
 
-    public function SetFieldValue($fieldname, $value) {
-        global $dpdb;
-        $sql = "UPDATE projects SET {$fieldname} = ?
-                WHERE projectid = '{$this->ProjectId()}'";
-        $args = [&$value];
-        $dpdb->SqlExecutePS($sql, $args);
-    }
-
     public function NameOfWork() {
         return $this->Title();
-    }
-
-    public function SetNameOfWork($name) {
-        $this->SetFieldValue("nameofwork", $name);
-        $this->_row['nameofwork'] = $name;
     }
 
     public function Author() {
@@ -2071,7 +2051,7 @@ class DpProject
             $args = [&$projectid];
             $sql = "
                 UPDATE projects SET postednum = NULL
-                WHERE projectid = '$projectid'";
+                WHERE projectid = ?";
         } else {
             $args = [&$postednum, &$projectid];
             $sql = "
@@ -2270,34 +2250,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return $dpdb->SqlOneValuePS($sql, $args) > 0;
 	}
 
-
-    public function UserCheckedOutPageCount() {
-        global $User;
-        global $dpdb;
-//        $phase = $this->Phase();
-
-	    return $dpdb->SqlOneValue("
-	        SELECT COUNT(1)
-	        FROM projects p
-			JOIN page_last_versions pv
-	        	ON p.projectid = pv.projectid
-	        WHERE pv.username = '{$User->Username()}'
-	        	AND pv.state = 'O'");
-    }
-
-    public function UserSavedPageCount() {
-	    global $User;
-	    global $dpdb;
-	    //        $phase = $this->Phase();
-
-	    return $dpdb->SqlOneValue("
-	        SELECT COUNT(1) FROM projects p
-			JOIN page_last_versions pv ON p.projectid = pv.projectid
-	        WHERE pv.username = '{$User->Username()}'
-	        	AND pv.state = 'C'");
-
-    }
-
 	public function UserCreatedBy() {
 		global $User;
 		return $User->NameIs($this->CreatedBy());
@@ -2308,19 +2260,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         return $User->NameIs($this->ProjectManager());
     }
 
-    public function UserMayPostProof() {
-        return $this->UserIsPM();
-    }
-
-    public function UserMayMentee() {
-        return true;
-    }
-
-    public function UserMayMentor() {
-        return true;
-    }
-
-    public function NextAvailablePage() {
+    private function NextAvailablePage() {
         if(! $this->IsAvailable()) {
             return null;
         }
@@ -2333,16 +2273,31 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
     }
 
     public function CheckOutNextAvailablePage() {
-        $page = $this->NextAvailablePage();
-        if($page) {
-            $page->CheckOutPage();
-            return $page;
+        global $dpdb;
+
+        try {
+            // Need a transaction, so after finding the next page, we
+            // it doesn't get taken before we check it out.
+            // Note requires the sql in the below function to use FOR UPDATE
+            // Subsequent user getting next page will wait until we commit
+            // after DpPage.CheckOutPage has updated the row.  The subsequent
+            // user will then fetch the next next page.
+            $dpdb->beginTransaction();
+            $page = $this->NextAvailablePage();
+            if($page) {
+                //sleep(5); For Testing to actually get a conflict
+                $page->CheckOutPage();
+                $dpdb->commit();
+                return $page;
+            }
+        } finally {
+            $dpdb->rollback();
         }
 
         return null;
     }
 
-    public function next_available_page_for_user() {
+    private function next_available_page_for_user() {
         global $dpdb;
         global $User;
 
@@ -2373,6 +2328,7 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
             )
 		ORDER BY pv.pagename
 		LIMIT 1
+        FOR UPDATE
 		";
 
         $id = $this->ProjectId();
@@ -2417,14 +2373,6 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $pg = $this->Page($pagename);
         $pg->Reclaim();
         return $pg;
-    }
-
-    public function MostRecentSavePageDate() {
-        global $dpdb;
-        return $dpdb->SqlOneValue ("
-			SELECT MAX(version_time) FROM page_versions
-			WHERE state = 'C'
-				AND projectid = '{$this->ProjectId()}'");
     }
 
     private function NextRoundId() {
@@ -3551,27 +3499,27 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
 
     public function IsPPHold() {
         global $dpdb;
-        return $dpdb->SqlOneValue("
+        $projectid = $this->ProjectId();
+        return $dpdb->SqlOneValuePS("
             SELECT COUNT(1) FROM project_holds
-            WHERE projectid = '{$this->ProjectId()}'
+            WHERE projectid = ?
                 AND hold_code = 'pp'
-                AND phase = 'PP'") > 0;
+                AND phase = 'PP'", [&$projectid]) > 0;
     }
 
     public function SetPPHold($note = "") {
         if(! $this->IsPPHold()) {
             $this->SetAutoHold("PP", "pp", $note);
         }
-
     }
 
 	public function QCHoldNote() {
 		global $dpdb;
 		$projectid = $this->ProjectId();
-		return $dpdb->SqlOneValue("
+		return $dpdb->SqlOneValuePS("
 			SELECT note FROM project_holds
-			WHERE projectid = '$projectid'
-			      AND hold_code = 'qc'");
+			WHERE projectid = ?
+			      AND hold_code = 'qc'", [&$projectid]);
 	}
 
 	public function SetAutoQCHold() {
@@ -3616,10 +3564,10 @@ Please review the [url={$url}]project comments[/url] before posting, as well as 
         $path = build_path($this->ProjectPath(), "*");
         $filepaths = glob($path);
 
-        $images = $dpdb->SqlValues("
+        $images = $dpdb->SqlValuesPS("
             SELECT imagefile FROM pages
-            WHERE projectid = '$projectid'
-            ORDER BY pagename");
+            WHERE projectid = ?
+            ORDER BY pagename", [&$projectid]);
 
         $notfiles = [];
         $extrapaths = [];

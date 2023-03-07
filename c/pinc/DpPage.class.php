@@ -404,7 +404,9 @@ class DpPage
                     AND phase = ?";
 
             $args = [&$username, &$projectid, &$pagename, &$phase];
-            $dpdb->SqlExecutePS($sql, $args);
+            $ret = $dpdb->SqlExecutePS($sql, $args);
+            if ($ret != 1)
+                throw new Exception("Checkout page $pagename, project $projectid, user $username, phase $phase failed: $ret rows updated");
             $this->RecalcProjectPageCounts();
             $this->_refresh_row();
             assert($this->State() == "O");
