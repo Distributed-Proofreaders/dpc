@@ -450,13 +450,13 @@ class DpDb
                     eventtime,
                     logtext,
                     errormsg)
-                VALUES (
-                    '$username',
-                    UNIX_TIMESTAMP(),
-                    '$text',
-                    '$errormsg')";
+                VALUES (?, UNIX_TIMESTAMP(), ?, ?)";
+        $args = [ &$username, &$text, &$errormsg ];
+        $typestring = "sss";
         $this->_sql = $sql;
-        $this->_mysqli->query($sql); 
+        $stmt = $this->_mysqli->prepare($sql);
+        $stmt->bind_param("sss", $username, $text, $errormsg);
+        $stmt->execute();
         if($this->_mysqli->error) {
             say($this->_mysqli->error);
         }
