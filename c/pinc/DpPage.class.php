@@ -405,8 +405,16 @@ class DpPage
 
             $args = [&$username, &$projectid, &$pagename, &$phase];
             $ret = $dpdb->SqlExecutePS($sql, $args);
-            if ($ret != 1)
-                throw new Exception("Checkout page $pagename, project $projectid, user $username, phase $phase failed: $ret rows updated");
+            // Note that ret is the number of updated rows, not matched rows.
+            // If the changes don't actually change, you get 0. In the case
+            // of Save Draft and Continue, the act of saving the draft has
+            // updated the timestamp; so when it checks it out again, it is
+            // almost certainly the same second (unix_timestamp is only seconds)
+            // and the row is unchanged. The only way it appears to find the
+            // rows matched, as opposed to the rows updated is with info()
+            // which is text! "Rows matched: 1  Changed: 0  Warnings: 0"
+            if ($ret != 1 && strstr($dpdb->info(), "matched: 1") === FALSE)
+                throw new Exception("Checkout page $pagename, project $projectid, user $username, phase $phase failed: $ret rows updated: " . $dpdb->info());
             $this->RecalcProjectPageCounts();
             $this->_refresh_row();
             assert($this->State() == "O");
