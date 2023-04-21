@@ -39,10 +39,6 @@ if($langcode == "") {
 }
 assert($langcode != "");
 
-($User->IsProjectManager() || $User->IsSiteManager()
-                           || $User->IsProjectFacilitator())
-    or die('permission denied');
-
 if($isQuit) {
     redirect_to_project_manager();
     exit;
