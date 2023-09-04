@@ -109,6 +109,10 @@ $no_stats = 1;
 theme("PPV: Post Processing Verification", "header");
 
 // -----------------------------------------------------------------------------
+        // This was part of below, but the faq isn't there anymore.
+        //and use the
+        //<a href='/c/faq/ppv_report.txt'>PPV Report Card</a>
+        //for each project you PPV.
 ?>
 
 <h1 class='center'>Post-Processing Verification ("PPV")</h1>
@@ -116,11 +120,9 @@ theme("PPV: Post Processing Verification", "header");
     <p>In this task, experienced volunteers verify texts that have already been
         Post-Processed, and mentor new Post-Processors.  Before working in this task,
         make sure you read the <b>new</b>
-        <a href='/wiki/index.php/Post-Processing_Verification_Guidelines'>Post-Processing Verification Guidelines</a>
-        and use the
-        <a href='/c/faq/ppv_report.txt'>PPV Report Card</a>
-        for each project you PPV. As always, the
-        <a href='/forum/viewforum.php?f=13'>Post-Processing Forum</a>
+        <a href='/wiki/index.php/Post-Processing_Verification_Guidelines'>Post-Processing Verification Guidelines</a>.
+        As always, the
+        <a href='/forumdpc/viewforum.php?f=13'>Post-Processing Forum</a>
         is available for any of your questions.</p>
 
     <hr/>
